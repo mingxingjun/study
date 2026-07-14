@@ -1,0 +1,286 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-black: #171717;
+  --color-white: #ffffff;
+
+  /* 中性灰阶 - 基于 ui-ux-pro-max 设计系统 */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
+  --color-gray-400: #a3a3a3;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #404040;
+  --color-gray-800: #262626;
+  --color-gray-900: #171717;
+  --color-gray-950: #0a0a0a;
+
+  /* 暖色中性 - 保留纸张质感 */
+  --color-warm-50: #faf9f7;
+  --color-warm-100: #f5f4f1;
+  --color-warm-200: #e8e5e0;
+  --color-warm-300: #d6d1ca;
+  --color-warm-400: #b0a9a0;
+
+  /* 品牌强调色 */
+  --color-primary: #171717;
+  --color-secondary: #404040;
+  --color-accent: #d4af37;
+  --color-accent-light: #f5e6b3;
+
+  /* 字体 - Fira 系列 */
+  --font-sans: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fafafa;
+  color: #171717;
+  line-height: 1.6;
+}
+
+/* 标题字体 - Fira Code 带来技术感 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Fira Code', 'Fira Sans', sans-serif;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+/* ========== 入场动画系统 - 200ms 快速响应 ========== */
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes staggerFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.page-fade-in {
+  animation: pageFadeIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.stagger-1 { animation: staggerFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both; will-change: transform, opacity; }
+.stagger-2 { animation: staggerFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.10s both; will-change: transform, opacity; }
+.stagger-3 { animation: staggerFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both; will-change: transform, opacity; }
+.stagger-4 { animation: staggerFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both; will-change: transform, opacity; }
+.stagger-5 { animation: staggerFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both; will-change: transform, opacity; }
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.scale-in {
+  animation: scaleIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ========== 交互过渡 - 150-200ms ========== */
+
+button, a, input, textarea, select {
+  transition: color 0.15s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.15s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.15s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ========== 扁平卡片悬浮效果 - 颜色变化 + 轻微浮起 ========== */
+
+.card-hover {
+  transition: border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  .card-hover:hover {
+    border-color: var(--color-gray-300);
+    background-color: var(--color-gray-50);
+  }
+}
+
+.hover-lift {
+  transition: translate 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  .hover-lift:hover {
+    translate: 0 -2px;
+  }
+}
+
+/* ========== 滚动条美化 ========== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
+}
+
+/* ========== 文字选区 ========== */
+
+::selection {
+  background-color: #171717;
+  color: #fafafa;
+}
+
+/* ========== 可见的焦点状态 ========== */
+
+*:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ========== 减少动画偏好 ========== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========== 自定义下拉框样式 ========== */
+
+.custom-select {
+  background-image: none;
+  color-scheme: light;
+}
+
+.custom-select option {
+  background-color: #ffffff;
+  color: #171717;
+  padding: 8px 12px;
+}
+
+.custom-select option:checked,
+.custom-select option:hover,
+.custom-select option:focus {
+  background-color: #f5f5f5;
+  color: #171717;
+}
+
+.custom-select::-ms-expand {
+  display: none;
+}
+
+/* ========== Utility Classes ========== */
+
+.font-mono {
+  font-family: 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+}
