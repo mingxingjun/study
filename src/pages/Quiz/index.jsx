@@ -58,7 +58,7 @@ const Quiz = () => {
   const navigate = useNavigate();
   usePageTitle('开始刷题');
   const { state, addAnswer, addWrongQuestion } = useStudyContext();
-  const { agents, thinkAndSay, clearHistory } = useAgents();
+  const { agents, thinkAndSay, thinkAndCallAI, clearHistory } = useAgents();
 
   // 当前可用的题目（正式模式优先使用 state.questions，演示模式可回退到示例题库）
   const availableQuestions = useMemo(() => {
@@ -296,13 +296,29 @@ const Quiz = () => {
         question: currentQuestion,
         userAnswer: selectedAnswer
       });
-      const userAnswerText = selectedAnswer || '未作答';
-      const correctAnswerText = currentQuestion?.answer || '';
-      const explanationText = currentQuestion?.explanation || '';
-      const message = aiResult?.feedback
-        ? `AI 批改：${aiResult.feedback}`
-        : `这道题你答错了。你的答案是：${userAnswerText}，正确答案是：${correctAnswerText}。${explanationText ? '解析：' + explanationText : '请对照解析理解考点，避免类似错误。'}`;
-      thinkAndSay('explainer', message);
+
+      // 构建 AI 分析提示，发送当前题目详情给 explainer agent
+      const analysisPrompt = `请分析以下错题：\n题目：${currentQuestion.question}\n${
+        currentQuestion.options?.length > 0
+          ? '选项：\n' + currentQuestion.options.map((o, i) =>
+              String.fromCharCode(65 + i) + '. ' + o.replace(/^[A-F][.、]\s*/, '')
+            ).join('\n') + '\n'
+          : ''
+      }用户答案：${selectedAnswer}\n正确答案：${currentQuestion.answer}\n${
+        currentQuestion.explanation
+          ? `题目解析：${currentQuestion.explanation}\n`
+          : ''
+      }${
+        aiResult?.feedback
+          ? `AI 批改反馈：${aiResult.feedback}\n`
+          : ''
+      }请简要说明错误原因和正确思路。`;
+
+      // 异步调用 AI，不阻塞用户继续答题
+      thinkAndCallAI('explainer', analysisPrompt, {
+        question: currentQuestion.question,
+        userAnswer: selectedAnswer
+      });
     }
 
     const answeredCount = currentIndex + 1;
@@ -325,7 +341,8 @@ const Quiz = () => {
     correctCount,
     addAnswer,
     addWrongQuestion,
-    thinkAndSay
+    thinkAndSay,
+    thinkAndCallAI
   ]);
 
   const nextQuestion = useCallback(() => {
