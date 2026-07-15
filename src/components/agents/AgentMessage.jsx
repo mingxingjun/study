@@ -7,6 +7,9 @@ import MathRenderer from '../MathRenderer';
  * @returns {Object|null} 解析后的对象
  */
 const tryParseStructuredJson = (text) => {
+    if (!text || typeof text !== 'string') {
+        return null;
+    }
     try {
         const parsed = JSON.parse(text);
         if (parsed && typeof parsed === 'object') {
