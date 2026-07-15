@@ -922,7 +922,7 @@ export const getSuperviseMessage = async (agentConfig, context = {}) => {
 };
 
 /** 每个分块的最大字符数（用于分块解析） */
-const DOC_CHUNK_SIZE = 8000;
+const DOC_CHUNK_SIZE = 10000;
 
 /**
  * 按标题/模块拆分文档文本为多个 chunk
