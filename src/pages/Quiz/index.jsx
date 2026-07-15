@@ -8,6 +8,7 @@ import { sampleQuestions } from '../../mock/questions';
 import { sampleKnowledgePoints } from '../../mock/sampleData';
 import { getToday } from '../../utils/date';
 import { gradeAnswer, isAIConfigured } from '../../services/aiService';
+import { quizExplainerPrompt } from '../../config/agentPrompts';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import QuestionCard from './QuestionCard';
@@ -314,11 +315,11 @@ const Quiz = () => {
           : ''
       }请简要说明错误原因和正确思路。`;
 
-      // 异步调用 AI，不阻塞用户继续答题
+      // 异步调用 AI，使用精简 prompt + 降低 max_tokens，减少 token 消耗
       thinkAndCallAI('explainer', analysisPrompt, {
         question: currentQuestion.question,
         userAnswer: selectedAnswer
-      });
+      }, quizExplainerPrompt, { maxTokens: 2048, temperature: 0.3 });
     }
 
     const answeredCount = currentIndex + 1;

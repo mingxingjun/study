@@ -253,7 +253,7 @@ export const useAgents = () => {
    * @param {Object} [context] - 额外上下文 { question, userAnswer, knowledgePoint, etc }
    * @returns {Promise<string>} AI 响应文本
    */
-  const callAgentAI = useCallback(async (agentId, userMessage, context = {}) => {
+  const callAgentAI = useCallback(async (agentId, userMessage, context = {}, customSystemPrompt, customOptions) => {
     // Demo mode: return mock response
     if (mode === 'demo') {
       return getMockResponse(agentId, context);
@@ -265,12 +265,14 @@ export const useAgents = () => {
       throw new Error('AI 未配置，请先在设置页面配置');
     }
 
+    const systemPrompt = customSystemPrompt || agentPrompts[agentId] || '你是一个学习助手。';
     const messages = [
-      { role: 'system', content: agentPrompts[agentId] || '你是一个学习助手。' },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage }
     ];
 
-    const response = await callAI(config, messages, getAgentOptions(agentId));
+    const options = customOptions || getAgentOptions(agentId);
+    const response = await callAI(config, messages, options);
     return response;
   }, [mode, aiConfig]);
 
@@ -279,13 +281,15 @@ export const useAgents = () => {
    * @param {string} agentId - Agent ID
    * @param {string} userMessage - 用户消息
    * @param {Object} [context] - 额外上下文
+   * @param {string} [customSystemPrompt] - 自定义系统提示词（可选，覆盖默认）
+   * @param {Object} [customOptions] - 自定义生成参数（可选，覆盖默认 maxTokens/temperature）
    * @returns {Promise<string>} AI 响应
    */
-  const thinkAndCallAI = useCallback(async (agentId, userMessage, context = {}) => {
+  const thinkAndCallAI = useCallback(async (agentId, userMessage, context = {}, customSystemPrompt, customOptions) => {
     setAgentStatusInternal(agentId, 'thinking');
 
     try {
-      const response = await callAgentAI(agentId, userMessage, context);
+      const response = await callAgentAI(agentId, userMessage, context, customSystemPrompt, customOptions);
       addMessageInternal(agentId, response);
 
       // Auto return to idle after speaking

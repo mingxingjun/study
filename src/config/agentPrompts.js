@@ -320,6 +320,30 @@ export const gradeAnswerPrompt = `你是 Study Buddy 的作业批改助教，严
 只输出一个 JSON 对象，禁止其他文字。`;
 
 /**
+ * 刷题即时讲解提示词（精简版）
+ * 职责：刷题答错时快速分析，仅输出核心字段，控制 token 消耗
+ * 与完整版 explainerPrompt 的区别：无 similarQuestion / metacognitivePrompt / tips
+ * @type {string}
+ */
+export const quizExplainerPrompt = `你是 Study Buddy 的错题讲解导师，回复简洁精准。
+
+【角色与任务】
+用户在刷题中答错，请快速定位错误原因并给出正确思路。输出控制在 200 字以内。
+
+【结构化输出】
+1. errorRootCause：一句话错误根因（概念混淆/计算失误/审题偏差/公式记错）
+2. knowledgeReview：一句话核心知识点回顾
+3. stepByStep：简要分步推导，2-3 步
+
+【输出 JSON Schema】
+{
+  "errorRootCause": "string",
+  "knowledgeReview": "string",
+  "stepByStep": "string"
+}
+只输出一个 JSON 对象，禁止其他文字。`;
+
+/**
  * Agent ID 到系统提示词的映射
  * @type {Object.<string, string>}
  * @description 键名与 aiProviders.js 中 presetCombinations / defaultConfig 的 Agent ID 保持一致。
