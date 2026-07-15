@@ -10,13 +10,9 @@ const QUESTION_TYPE = {
     SINGLE: 'single',         // 单选题
     MULTIPLE: 'multiple',     // 多选题
     TRUE_FALSE: 'truefalse',  // 判断题
-    FILL_BLANK: 'fillblank'   // 填空题
+    FILL_BLANK: 'fillblank',  // 填空题
+    ESSAY: 'essay'            // 简答题
 };
-
-/**
- * 判断题答案正则（√ × 对 错）
- */
-const TRUE_FALSE_ANSWER_REGEX = /^[√×对错]$/;
 
 /**
  * 多选题答案正则（2个或以上大写字母，如 AB、ABC、ABCD）
@@ -39,20 +35,24 @@ const FILL_BLANK_REGEX = /_{3,}/;
  * @returns {string} 题目类型（QUESTION_TYPE 之一，无法识别返回空字符串）
  */
 const detectQuestionType = (q) => {
-    // 题干包含连续下划线，优先识别为填空题
-    if (FILL_BLANK_REGEX.test(q.question)) {
+    // 题干包含连续下划线，或答案含"第x空"，优先识别为填空题
+    if (FILL_BLANK_REGEX.test(q.question) || /第\d+空/.test(q.answer)) {
         return QUESTION_TYPE.FILL_BLANK;
     }
-    // 判断题答案保持原字符，不转大写
-    if (TRUE_FALSE_ANSWER_REGEX.test(q.answer)) {
+    // 判断题答案已归一化为 true/false
+    if (/^(true|false)$/.test(q.answer)) {
         return QUESTION_TYPE.TRUE_FALSE;
     }
-    const answer = q.answer.toUpperCase();
+    const answer = (q.answer || '').toUpperCase();
     if (MULTIPLE_CHOICE_ANSWER_REGEX.test(answer)) {
         return QUESTION_TYPE.MULTIPLE;
     }
     if (SINGLE_CHOICE_ANSWER_REGEX.test(answer)) {
         return QUESTION_TYPE.SINGLE;
+    }
+    // 无选项但有答案，按简答题处理
+    if (q.answer) {
+        return QUESTION_TYPE.ESSAY;
     }
     return '';
 };
@@ -130,30 +130,34 @@ export const parseQuestionBank = (text) => {
 
         if (!currentQuestion) continue;
 
-        // 匹配选项，如 "A. 选项内容" 或 "A、选项内容"
-        const optionMatch = line.match(/^([A-D])[.、]\s*(.+)/);
+        // 匹配选项，如 "A. 选项内容" 或 "A、选项内容" 或 "A 选项内容"
+        const optionMatch = line.match(/^([A-D])[.、．\s]\s*(.+)/);
         if (optionMatch) {
             currentQuestion.options.push(`${optionMatch[1]}. ${optionMatch[2]}`);
             currentField = 'options';
             continue;
         }
 
-        // 匹配答案，支持单选(A-D)、多选(ABCD)、判断(√×对错)
-        const answerMatch = line.match(/^答案[：:]\s*([A-Da-d]+|√|×|对|错)/);
+        // 匹配答案，兼容"答案："或"正确答案："；支持选择、判断、填空、简答
+        const answerMatch = line.match(/^(?:正确)?答案[：:]\s*(.+)/);
         if (answerMatch) {
-            const ans = answerMatch[1];
-            // 判断题答案保持原样，选择题答案统一转大写
-            if (TRUE_FALSE_ANSWER_REGEX.test(ans)) {
-                currentQuestion.answer = ans;
-            } else {
-                currentQuestion.answer = ans.toUpperCase();
+            let ans = answerMatch[1].trim();
+            const upperAns = ans.toUpperCase();
+            if (/^[A-D]+$/.test(upperAns)) {
+                // 选择题答案统一转大写
+                ans = upperAns;
+            } else if (/^(正确|对|√)$/.test(ans)) {
+                ans = 'true';
+            } else if (/^(错误|错|×)$/.test(ans)) {
+                ans = 'false';
             }
+            currentQuestion.answer = ans;
             currentField = 'answer';
             continue;
         }
 
-        // 匹配解析
-        const explanationMatch = line.match(/^解析[：:]\s*(.*)/);
+        // 匹配解析（兼容"解析："和"答案解析："）
+        const explanationMatch = line.match(/^(?:答案)?解析[：:]\s*(.*)/);
         if (explanationMatch) {
             currentQuestion.explanation = explanationMatch[1];
             currentField = 'explanation';
@@ -161,9 +165,15 @@ export const parseQuestionBank = (text) => {
         }
 
         // 续行内容追加到对应字段
-        if (currentField === 'explanation') {
+        // 遇到新的章节标题（如"二、填空题"）时停止追加，避免污染上一题答案
+        const sectionHeadingRegex = /^[一二三四五六七八九十]{1,3}[、．.]\s*|^第[一二三四五六七八九十\d]+[章节]/;
+        if (sectionHeadingRegex.test(line)) {
+            // do nothing
+        } else if (currentField === 'answer') {
+            currentQuestion.answer += ' ' + line;
+        } else if (currentField === 'explanation') {
             currentQuestion.explanation += ' ' + line;
-        } else if (currentField === 'question' && !line.match(/^[A-D][.、]/)) {
+        } else if (currentField === 'question' && !line.match(/^[A-D][.、．\s]/)) {
             currentQuestion.question += ' ' + line;
         }
     }

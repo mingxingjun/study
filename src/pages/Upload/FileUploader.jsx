@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button';
 import ProgressBar from '../../components/ui/ProgressBar';
 import { useStudyContext } from '../../context/StudyContext';
 import { parseDocument } from '../../utils/documentParser';
+import { parseQuestionBank } from '../../utils/questionParser';
 import { parseDocumentWithAI, isAIConfigured } from '../../services/aiService';
 
 const FILE_TYPES = {
@@ -80,9 +81,10 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
   // 正式模式：真实文档解析 + AI 分析
   const parseFileWithAI = async (fileEntry) => {
     const agentConfig = state.aiConfig['quiz-master'];
+    const isQuestionBank = fileEntry.type === 'questionBank';
 
-    // AI 未配置时显示错误并降级到演示流程
-    if (!isAIConfigured(agentConfig)) {
+    // 非题库文件需要 AI 配置；题库文件使用本地规则解析，无需 AI
+    if (!isQuestionBank && !isAIConfigured(agentConfig)) {
       setParseStatus(prev => ({
         ...prev,
         [fileEntry.id]: {
@@ -110,14 +112,24 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
         }));
       });
 
-      // 阶段二：AI 分析
-      setParseStatus(prev => ({
-        ...prev,
-        [fileEntry.id]: { status: 'parsing', progress: 100, message: 'AI 分析中...' }
-      }));
-
-      const fileType = fileEntry.name.split('.').pop().toLowerCase();
-      const result = await parseDocumentWithAI(agentConfig, text, fileType, fileEntry.id);
+      let result;
+      if (isQuestionBank) {
+        // 题库文档：使用本地规则解析，完整保留原题
+        setParseStatus(prev => ({
+          ...prev,
+          [fileEntry.id]: { status: 'parsing', progress: 100, message: '正在识别题目...' }
+        }));
+        const parsed = parseQuestionBank(text);
+        result = { knowledgePoints: [], questions: parsed.questions };
+      } else {
+        // 复习资料：使用 AI 提取知识点与生成题目
+        setParseStatus(prev => ({
+          ...prev,
+          [fileEntry.id]: { status: 'parsing', progress: 100, message: 'AI 分析中...' }
+        }));
+        const fileType = fileEntry.name.split('.').pop().toLowerCase();
+        result = await parseDocumentWithAI(agentConfig, text, fileType, fileEntry.id);
+      }
 
       // 阶段三：解析完成
       setParseStatus(prev => ({
@@ -140,7 +152,7 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
         [fileEntry.id]: {
           status: 'error',
           message: '解析失败',
-          error: error.message || 'AI 解析文档失败，请检查 API Key 是否正确'
+          error: error.message || (isQuestionBank ? '题库解析失败，请检查文件格式' : 'AI 解析文档失败，请检查 API Key 是否正确')
         }
       }));
       // 正式模式下不再静默降级到演示数据，让用户看到明确的错误信息
