@@ -105,8 +105,33 @@ const Upload = () => {
       resultKeys: Object.keys(parsedData.result || {})
     });
     setParsedResults(prev => {
-      const filtered = prev.filter(r => r.file.id !== parsedData.file.id);
-      return [...filtered, parsedData];
+      // 同名文件合并：保留题目更多的那份结果，同时补充知识点
+      const existingIdx = prev.findIndex(r => r.file.name === parsedData.file.name);
+      if (existingIdx >= 0) {
+        const existing = prev[existingIdx];
+        const merged = {
+          ...existing,
+          result: {
+            // 优先保留题目更多的那份（本地解析通常更完整）
+            questions: existing.result.questions.length >= parsedData.result.questions.length
+              ? existing.result.questions
+              : parsedData.result.questions,
+            // 知识点优先保留有内容的（AI 解析会生成知识点）
+            knowledgePoints: existing.result.knowledgePoints.length > 0
+              ? existing.result.knowledgePoints
+              : parsedData.result.knowledgePoints
+          }
+        };
+        console.log('同名文件合并:', {
+          fileName: parsedData.file.name,
+          finalQuestions: merged.result.questions.length,
+          finalKnowledgePoints: merged.result.knowledgePoints.length
+        });
+        const next = [...prev];
+        next[existingIdx] = merged;
+        return next;
+      }
+      return [...prev, parsedData];
     });
   };
 
