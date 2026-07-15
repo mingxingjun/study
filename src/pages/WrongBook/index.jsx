@@ -13,17 +13,68 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import useStaggerAnimation from '../../hooks/useStaggerAnimation';
 
+/**
+ * 构建发送给 AI 的错题分析消息
+ * @param {Object} wrongQuestion - 错题对象
+ * @returns {string} 用户消息
+ */
+const buildAnalysisPrompt = (wrongQuestion) => {
+  const { question, userAnswer } = wrongQuestion;
+  let prompt = `请分析以下错题：\n题目：${question.question}`;
+  if (question.options && question.options.length > 0) {
+    prompt += '\n选项：\n' + question.options.map((o, i) =>
+      String.fromCharCode(65 + i) + '. ' + o.replace(/^[A-F][.、]\s*/, '')
+    ).join('\n');
+  }
+  prompt += `\n用户答案：${userAnswer}\n正确答案：${question.answer}`;
+  if (question.explanation) {
+    prompt += `\n题目解析：${question.explanation}`;
+  }
+  prompt += '\n\n请按照你的结构化思维链进行分析，输出 JSON 格式。';
+  return prompt;
+};
+
+/**
+ * 尝试从 AI 响应中提取 JSON 分析结果
+ * @param {string} response - AI 原始响应
+ * @returns {Object|null} 解析后的分析对象
+ */
+const parseAnalysisResponse = (response) => {
+  try {
+    return JSON.parse(response);
+  } catch {
+    // 尝试提取 JSON 代码块
+    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || response.match(/```\s*([\s\S]*?)\s*```/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[1]);
+      } catch { /* fall through */ }
+    }
+    // 尝试提取 { ... } 对象
+    const objMatch = response.match(/\{[\s\S]*\}/);
+    if (objMatch) {
+      try {
+        return JSON.parse(objMatch[0]);
+      } catch { /* fall through */ }
+    }
+    return null;
+  }
+};
+
 const WrongBook = () => {
   const navigate = useNavigate();
   usePageTitle('错题本');
   const { state, markWrongQuestionMastered } = useStudyContext();
-  const { agents, thinkAndSay, clearHistory } = useAgents();
+  const { agents, thinkAndSay, thinkAndCallAI, clearHistory } = useAgents();
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [prioritizeDue, setPrioritizeDue] = useState(true);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const pageRef = useStaggerAnimation([], '.stagger-item');
 
   const explainerAgent = agents.find(a => a.id === 'explainer');
 
+  // 页面初始化：清空 explainer 历史，显示欢迎语
   useEffect(() => {
     clearHistory('explainer');
     const timer = setTimeout(() => {
@@ -32,14 +83,52 @@ const WrongBook = () => {
     return () => clearTimeout(timer);
   }, [clearHistory, thinkAndSay]);
 
+  // 选中错题时，调用 AI 进行针对性分析
   useEffect(() => {
-    if (selectedQuestion && explainerAgent) {
-      thinkAndSay('explainer', '让我来帮你详细分析这道题...', 500);
-    }
-  }, [selectedQuestion?.id, selectedQuestion, explainerAgent, thinkAndSay]);
+    if (!selectedQuestion) return;
+
+    let cancelled = false;
+    const analyzeQuestion = async () => {
+      setIsAnalyzing(true);
+      setAiAnalysis(null);
+
+      try {
+        const { question, userAnswer } = selectedQuestion;
+        const userMessage = buildAnalysisPrompt(selectedQuestion);
+        const response = await thinkAndCallAI('explainer', userMessage, {
+          question: question.question,
+          userAnswer
+        });
+
+        if (cancelled) return;
+
+        const analysis = parseAnalysisResponse(response);
+        if (analysis) {
+          setAiAnalysis(analysis);
+        } else {
+          // 解析失败，将原始文本作为纯文本展示
+          setAiAnalysis({ plainText: response });
+        }
+      } catch (error) {
+        console.error('AI 错题分析失败:', error);
+        if (!cancelled) {
+          setAiAnalysis(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsAnalyzing(false);
+        }
+      }
+    };
+
+    analyzeQuestion();
+    return () => { cancelled = true; };
+  }, [selectedQuestion?.id, selectedQuestion, thinkAndCallAI]);
 
   const handleSelectQuestion = (wq) => {
     setSelectedQuestion(wq);
+    setAiAnalysis(null);
+    setIsAnalyzing(false);
   };
 
   const handleMarkMastered = () => {
@@ -131,6 +220,8 @@ const WrongBook = () => {
                 questions={questions}
                 resourceLinks={resourceLinks}
                 explainerAgent={explainerAgent}
+                aiAnalysis={aiAnalysis}
+                isAnalyzing={isAnalyzing}
                 onPracticeSimilar={handlePracticeSimilar}
               />
 

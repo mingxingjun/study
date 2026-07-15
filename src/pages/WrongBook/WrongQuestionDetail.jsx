@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { ExternalLink, Check, Clock } from 'lucide-react';
+import { ExternalLink, Check, Clock, Loader2, Brain, BookOpen, Lightbulb, Target, RotateCcw } from 'lucide-react';
 import AgentMessage from '../../components/agents/AgentMessage';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
@@ -17,6 +17,8 @@ const WrongQuestionDetail = ({
   questions,
   resourceLinks,
   explainerAgent,
+  aiAnalysis,
+  isAnalyzing,
   onPracticeSimilar
 }) => {
   const stepsRef = useRef(null);
@@ -24,7 +26,7 @@ const WrongQuestionDetail = ({
 
   /**
    * 解析步骤依次淡入动画
-   * 当错题切换或组件首次渲染时触发
+   * 当错题切换或 AI 分析完成时触发
    */
   useGSAP(() => {
     if (!stepsRef.current || reducedMotion) {
@@ -48,7 +50,7 @@ const WrongQuestionDetail = ({
         clearProps: 'transform'
       }
     );
-  }, [wrongQuestion?.id, reducedMotion]);
+  }, [wrongQuestion?.id, aiAnalysis, reducedMotion]);
 
   if (!wrongQuestion) return null;
 
@@ -63,30 +65,107 @@ const WrongQuestionDetail = ({
 
   const getOptionLetter = (index) => String.fromCharCode(65 + index);
 
-  const steps = [
-    {
-      title: '错因分析',
-      content: `这道题你选择了 ${userAnswer}，而正确答案是 ${question.answer}。\n\n${question.explanation ? '关键考点：' + question.explanation : '你可能混淆了相关概念，建议仔细回顾相关知识点。'}`,
-    },
-    {
-      title: '知识点回顾',
-      content: knowledgePoint
-        ? `【${knowledgePoint.name}】\n\n${knowledgePoint.description}`
-        : '这道题涉及的知识点需要重点复习，建议先回顾基础概念再做题。',
-    },
-    ...(relatedResources.length > 0 ? [{
-      title: '相关教学资源',
-      content: 'resources',
-    }] : []),
-    {
-      title: '正确思路',
-      content: `正确解法：\n\n${question.explanation || '仔细审题，回忆相关知识点，逐步推导得出答案。'}`,
-    },
-    {
-      title: '相似题推荐',
-      content: 'similar',
+  /**
+   * 根据 AI 分析结果构建解析步骤
+   */
+  const buildSteps = () => {
+    // 有 AI 分析时，使用 AI 生成的内容
+    if (aiAnalysis && !aiAnalysis.plainText) {
+      const steps = [];
+      if (aiAnalysis.errorRootCause) {
+        steps.push({
+          icon: <Target size={16} />,
+          title: '错因分析',
+          content: aiAnalysis.errorRootCause
+        });
+      }
+      if (aiAnalysis.knowledgeReview) {
+        steps.push({
+          icon: <BookOpen size={16} />,
+          title: '知识点回顾',
+          content: aiAnalysis.knowledgeReview
+        });
+      }
+      if (relatedResources.length > 0) {
+        steps.push({
+          icon: <ExternalLink size={16} />,
+          title: '相关教学资源',
+          content: 'resources'
+        });
+      }
+      if (aiAnalysis.stepByStep) {
+        steps.push({
+          icon: <Lightbulb size={16} />,
+          title: '正确思路',
+          content: aiAnalysis.stepByStep
+        });
+      }
+      if (aiAnalysis.metacognitivePrompt) {
+        steps.push({
+          icon: <Brain size={16} />,
+          title: '反思引导',
+          content: aiAnalysis.metacognitivePrompt
+        });
+      }
+      if (aiAnalysis.similarQuestion) {
+        steps.push({
+          icon: <RotateCcw size={16} />,
+          title: '相似题推荐',
+          content: 'ai-similar'
+        });
+      }
+      if (aiAnalysis.tips) {
+        steps.push({
+          icon: <Check size={16} />,
+          title: '复习建议',
+          content: aiAnalysis.tips
+        });
+      }
+      return steps;
     }
-  ];
+
+    // 纯文本回退
+    if (aiAnalysis?.plainText) {
+      return [{
+        icon: <Brain size={16} />,
+        title: 'AI 分析',
+        content: aiAnalysis.plainText
+      }];
+    }
+
+    // 无 AI 分析时，使用静态数据
+    return [
+      {
+        icon: <Target size={16} />,
+        title: '错因分析',
+        content: `这道题你选择了 ${userAnswer}，而正确答案是 ${question.answer}。\n\n${question.explanation ? '关键考点：' + question.explanation : '你可能混淆了相关概念，建议仔细回顾相关知识点。'}`,
+      },
+      {
+        icon: <BookOpen size={16} />,
+        title: '知识点回顾',
+        content: knowledgePoint
+          ? `【${knowledgePoint.name}】\n\n${knowledgePoint.description}`
+          : '这道题涉及的知识点需要重点复习，建议先回顾基础概念再做题。',
+      },
+      ...(relatedResources.length > 0 ? [{
+        icon: <ExternalLink size={16} />,
+        title: '相关教学资源',
+        content: 'resources',
+      }] : []),
+      {
+        icon: <Lightbulb size={16} />,
+        title: '正确思路',
+        content: `正确解法：\n\n${question.explanation || '仔细审题，回忆相关知识点，逐步推导得出答案。'}`,
+      },
+      {
+        icon: <RotateCcw size={16} />,
+        title: '相似题推荐',
+        content: 'similar',
+      }
+    ];
+  };
+
+  const steps = buildSteps();
 
   return (
     <div className="space-y-6">
@@ -169,11 +248,25 @@ const WrongQuestionDetail = ({
       </Card>
 
       {explainerAgent && (
-        <AgentMessage agent={explainerAgent} message="让我来帮你详细分析这道题..." />
+        isAnalyzing ? (
+          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <Loader2 size={18} className="text-gray-600 animate-spin flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">AI 正在分析这道错题...</p>
+              <p className="text-xs text-gray-500 mt-0.5">结合题目内容与你的作答情况进行深度解析</p>
+            </div>
+          </div>
+        ) : aiAnalysis ? (
+          <AgentMessage agent={explainerAgent} message="分析完成！以下是这道题的详细解析——" />
+        ) : (
+          <AgentMessage agent={explainerAgent} message="让我来帮你详细分析这道题..." />
+        )
       )}
 
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-primary mb-8">题目解析</h3>
+        <h3 className="text-lg font-semibold text-primary mb-8">
+          {isAnalyzing ? '正在分析中...' : '题目解析'}
+        </h3>
         <ol ref={stepsRef}>
           {steps.map((stepConfig, stepIndex) => (
             <li key={stepIndex} className="step-item relative pl-9 pb-6 last:pb-0">
@@ -184,7 +277,10 @@ const WrongQuestionDetail = ({
                 {stepIndex + 1}
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-base font-semibold text-gray-900 mb-2">
+                <h4 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  {stepConfig.icon && (
+                    <span className="text-gray-500">{stepConfig.icon}</span>
+                  )}
                   {stepConfig.title}
                 </h4>
 
@@ -223,6 +319,33 @@ const WrongQuestionDetail = ({
                       ))
                     ) : (
                       <p className="text-sm text-gray-500">暂无相似题目</p>
+                    )}
+                  </div>
+                ) : stepConfig.content === 'ai-similar' ? (
+                  <div className="space-y-2.5">
+                    {aiAnalysis?.similarQuestion && (
+                      <div className="p-3.5 bg-gray-50 rounded-xl">
+                        <p className="text-sm text-gray-700 mb-2.5 leading-relaxed">
+                          <MathRenderer text={aiAnalysis.similarQuestion.question || '暂无相似题目'} />
+                        </p>
+                        {aiAnalysis.similarQuestion.options?.length > 0 && (
+                          <div className="space-y-1.5 mb-3">
+                            {aiAnalysis.similarQuestion.options.map((opt, i) => (
+                              <div key={i} className="text-xs text-gray-600">
+                                <MathRenderer text={String.fromCharCode(65 + i) + '. ' + opt} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {aiAnalysis.similarQuestion.answer && (
+                          <p className="text-xs text-gray-500 mb-2">
+                            答案：<span className="font-medium text-gray-900">{aiAnalysis.similarQuestion.answer}</span>
+                            {aiAnalysis.similarQuestion.explanation && (
+                              <span className="ml-2">（{aiAnalysis.similarQuestion.explanation}）</span>
+                            )}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 ) : (

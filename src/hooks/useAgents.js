@@ -221,6 +221,24 @@ export const useAgents = () => {
     if (agentId === 'quiz-master') {
       return Promise.resolve('好的，我来为你出题！');
     } else if (agentId === 'explainer') {
+      // 有题目上下文时，返回结构化错题分析
+      if (context.question) {
+        return Promise.resolve(JSON.stringify({
+          isCorrect: false,
+          score: 30,
+          errorRootCause: '概念混淆：你可能混淆了相关知识点，导致选择了错误答案。建议回顾基础概念，理解各选项之间的本质区别后再做类似题目。',
+          knowledgeReview: '本题考察的核心知识点需要结合理论理解和实际应用。建议从基础定义出发，理解每个概念的内涵与外延，逐步建立完整的知识体系。',
+          stepByStep: '1. 审题：仔细阅读题干，明确题目在问什么，抓住关键信息。\n2. 分析选项：逐一分析每个选项，排除明显错误或与题干无关的选项。\n3. 对比验证：将剩余选项与已学知识进行对比，找到最符合题意的答案。\n4. 确认答案：用排除法和知识点验证确定最终答案。',
+          metacognitivePrompt: '下次遇到类似题目，你会先从哪里入手分析？能否总结出一个通用的解题框架？',
+          similarQuestion: {
+            question: '这是一道与错题考察相同知识点的变式题，建议你尝试做一下以巩固理解。',
+            options: ['A. 选项一', 'B. 选项二', 'C. 选项三', 'D. 选项四'],
+            answer: 'B',
+            explanation: '本题与错题考察相同知识点，通过变式练习可以加深对概念的理解，避免同类错误。'
+          },
+          tips: '1. 整理错题时，用不同颜色标注错误类型（概念不清/计算失误/审题偏差），方便针对性复习。\n2. 每周回顾一次错题本，重点关注反复出错的题型，做到举一反三。'
+        }));
+      }
       return Promise.resolve('让我来为你详细解析这道题。');
     } else if (agentId === 'supervisor') {
       return Promise.resolve(mockGetSuperviseMessage(context));
