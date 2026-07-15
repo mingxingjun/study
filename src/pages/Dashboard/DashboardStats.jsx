@@ -67,7 +67,7 @@ const DashboardStats = ({ stats, questionsCount = 0 }) => {
       value: `${accuracy}%`,
       label: accuracy >= 80 ? '表现优秀' : accuracy >= 60 ? '继续努力' : '需要加油',
       subtext: `共答题 ${stats.totalQuestions} 道`,
-      visual: <CircularProgress value={accuracy} />
+      visual: <CircularProgress value={accuracy} size={56} />
     },
     {
       icon: <Clock className="w-4 h-4 text-gray-600" />,
@@ -108,7 +108,7 @@ const DashboardStats = ({ stats, questionsCount = 0 }) => {
           </div>
 
           <div className="flex items-center justify-between gap-3 min-w-0">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <div className="flex items-baseline gap-1.5 mb-1.5">
                 <span className="font-mono text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums truncate">
                   {item.value}
@@ -129,7 +129,7 @@ const DashboardStats = ({ stats, questionsCount = 0 }) => {
             </div>
 
             {item.visual && (
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 w-14 sm:w-16 flex items-center justify-center">
                 {item.visual}
               </div>
             )}

@@ -19,7 +19,7 @@ const SECTION_HEADING_REGEX = /^\s*(?:[一二三四五六七八九十]{1,3}[、�
 const LINE_PATTERNS = {
   question: /^\s*(?:\d+|[一二三四五六七八九十]{1,3})[.、．：:)]\s*(.+)$/,
   option: /^\s*([A-Ha-h])[.、．：:)]\s*(.+)$/,
-  answer: /^\s*(?:正确)?答案[：:]\s*(.+)$/,
+  answer: /^\s*(?:正确)?答案[：:]\s*(.*)$/,
   explanation: /^\s*(?:答案)?解析[：:]\s*(.*)$/
 };
 
@@ -97,10 +97,24 @@ const sanitizeQuestion = (q) => {
   q.options.sort((a, b) => a.charCodeAt(0) - b.charCodeAt(0));
 };
 
-const finalizeQuestion = (current, questions, successCount) => {
+const getInvalidReason = (q) => {
+  if (!q.question) return '缺少题干';
+  if (!q.answer) return '缺少答案';
+  const type = detectQuestionType(q);
+  if (!type) return '无法识别题型';
+  if ((type === QUESTION_TYPE.SINGLE || type === QUESTION_TYPE.MULTIPLE) && q.options.length < 2) {
+    return '选择题选项不足';
+  }
+  return '未知错误';
+};
+
+const finalizeQuestion = (current, questions, invalidQuestions, successCount) => {
   if (!current) return successCount;
   sanitizeQuestion(current);
-  if (!isValidQuestion(current)) return successCount;
+  if (!isValidQuestion(current)) {
+    invalidQuestions.push({ ...current, reason: getInvalidReason(current) });
+    return successCount;
+  }
   current.type = detectQuestionType(current);
   current.id = `q-parsed-${successCount + 1}`;
   questions.push(current);
@@ -109,10 +123,10 @@ const finalizeQuestion = (current, questions, successCount) => {
 
 export const parseQuestionBank = (text) => {
   const questions = [];
+  const invalidQuestions = [];
   const answerKey = {};
   let successCount = 0;
   let totalCount = 0;
-  let invalidCount = 0;
   let current = null;
   let currentField = null;
 
@@ -120,21 +134,36 @@ export const parseQuestionBank = (text) => {
 
   for (const line of lines) {
     if (SECTION_HEADING_REGEX.test(line)) {
+      // 章节标题作为边界：先结算上一题，再清空当前题，避免跨章节丢失最后一题
+      successCount = finalizeQuestion(current, questions, invalidQuestions, successCount);
       current = null;
       currentField = null;
       continue;
     }
 
+    // 答案中的分项编号（如 1. xxx 2. xxx）不应被识别为新题目
+    if (current && currentField === 'answer' && /^\s*\d+[.．]\s*/.test(line)) {
+      current.answer += ' ' + line;
+      continue;
+    }
+
     const questionMatch = LINE_PATTERNS.question.exec(line);
     if (questionMatch) {
-      successCount = finalizeQuestion(current, questions, successCount);
-      if (current && !isValidQuestion(current)) {
-        invalidCount += 1;
-      }
+      successCount = finalizeQuestion(current, questions, invalidQuestions, successCount);
       totalCount += 1;
       current = createQuestion(questionMatch[0].trim());
-      current.question = questionMatch[1].trim();
-      currentField = 'question';
+      const content = questionMatch[1];
+      // 处理题干与答案在同一行的情况：简述题常出现"正确答案："紧跟题干
+      const inlineAnswerMatch = content.match(/((?:正确)?答案[：:])/);
+      if (inlineAnswerMatch) {
+        const idx = inlineAnswerMatch.index;
+        current.question = content.slice(0, idx).trim();
+        current.answer = normalizeAnswer(content.slice(idx + inlineAnswerMatch[1].length).trim());
+        currentField = 'answer';
+      } else {
+        current.question = content.trim();
+        currentField = 'question';
+      }
       continue;
     }
 
@@ -174,11 +203,7 @@ export const parseQuestionBank = (text) => {
     }
   }
 
-  const beforeFinal = successCount;
-  successCount = finalizeQuestion(current, questions, successCount);
-  if (current && beforeFinal === successCount) {
-    invalidCount += 1;
-  }
+  successCount = finalizeQuestion(current, questions, invalidQuestions, successCount);
 
   questions.forEach((q) => {
     answerKey[q.id] = q.answer;
@@ -191,10 +216,11 @@ export const parseQuestionBank = (text) => {
 
   return {
     questions,
+    invalidQuestions,
     answerKey,
     successCount,
     totalCount,
-    invalidCount,
+    invalidCount: invalidQuestions.length,
     typeDistribution
   };
 };
