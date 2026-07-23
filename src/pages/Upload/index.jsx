@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, AlertCircle, Check, RotateCcw } from 'lucide-react';
+import { ArrowRight, AlertCircle, Check, RotateCcw, X } from 'lucide-react';
 import { useStudyContext } from '../../context/StudyContext';
 import { useAgents } from '../../hooks/useAgents';
 import usePageTitle from '../../hooks/usePageTitle';
@@ -83,6 +83,7 @@ const Upload = () => {
   const pageRef = useStaggerAnimation([], '.stagger-item');
   const {
     state,
+    dispatch,
     uploadMaterial,
     setPlan,
     setQuestions,
@@ -103,8 +104,10 @@ const Upload = () => {
   const [knowledgePoints, setKnowledgePoints] = useState([]);
   // 正式模式下存储 FileUploader 解析返回的知识点和题目
   const [parsedResults, setParsedResults] = useState([]);
-  // 审核界面状态：正在审核的解析结果（正式模式）
-  const [reviewingFile, setReviewingFile] = useState(null);
+  // 审核界面状态：正在审核的解析结果（正式模式，支持从持久化恢复）
+  const [reviewingFile, setReviewingFile] = useState(() => {
+    return state.pendingReview || null;
+  });
 
   useEffect(() => {
     if (state.plan && state.plan.knowledgePoints) {
@@ -160,16 +163,21 @@ const Upload = () => {
 
     // 正式模式：解析完成后触发审核界面
     if (state.mode === 'formal' && parsedData.result?.questions?.length > 0) {
-      setReviewingFile({
+      const reviewData = {
         fileName: parsedData.file.name,
         questions: parsedData.result.questions || [],
         knowledgePoints: parsedData.result.knowledgePoints || [],
         rawText: parsedData.result.rawText || '',
         method: parsedData.method || 'rule',
-        duration: parsedData.result?.duration || 0,
+        duration: 0,
         retryCount: 0,
+        timestamp: Date.now(),
+      };
+      setReviewingFile({
+        ...reviewData,
         file: parsedData.file,
       });
+      dispatch({ type: 'SET_PENDING_REVIEW', payload: reviewData });
     }
   };
 
@@ -200,6 +208,9 @@ const Upload = () => {
 
     setQuestions(questionsWithId);
     setKnowledgePoints(finalKnowledgePoints);
+
+    // 清除持久化的待审核结果
+    dispatch({ type: 'CLEAR_PENDING_REVIEW' });
 
     // 上传资料记录
     if (reviewingFile) {
@@ -437,7 +448,8 @@ const Upload = () => {
   const stepEnglish = ['UPLOAD', 'PARSING', 'PLAN'];
 
   return (
-    <div ref={pageRef} className="page-fade-in">
+    <>
+      <div ref={pageRef} className="page-fade-in">
       <div className="max-w-4xl mx-auto">
         {/* 标题区 - 衬线大字 + mono 日期 + 金色强调 */}
         <div className="mb-14 stagger-item">
@@ -526,36 +538,17 @@ const Upload = () => {
               />
             </Card>
 
-            {/* 审核界面：正式模式下解析完成后显示 */}
-            {reviewingFile && (
-              <div className="stagger-item">
-                <ParseReview
-                  parsedResult={reviewingFile}
-                  onConfirm={(finalQuestions, finalKnowledgePoints) => {
-                    handleReviewConfirm(finalQuestions, finalKnowledgePoints);
-                    setReviewingFile(null);
-                  }}
-                  onReParse={async (hints) => {
-                    await handleReParse(reviewingFile.file, hints);
-                  }}
-                  onClose={() => setReviewingFile(null)}
-                />
-              </div>
-            )}
-
-            {/* 原有确认导入按钮：无审核界面时显示 */}
-            {!reviewingFile && (
-              <div className="flex justify-end stagger-item">
-                <Button
-                  onClick={handleStartParse}
-                  disabled={!canStartParse}
-                  size="lg"
-                >
-                  开始刷题
-                  <ArrowRight size={18} />
-                </Button>
-              </div>
-            )}
+            {/* 开始刷题按钮 */}
+            <div className="flex justify-end stagger-item">
+              <Button
+                onClick={handleStartParse}
+                disabled={!canStartParse}
+                size="lg"
+              >
+                开始刷题
+                <ArrowRight size={18} />
+              </Button>
+            </div>
           </div>
         )}
 
@@ -663,6 +656,46 @@ const Upload = () => {
         )}
       </div>
     </div>
+
+    {/* 审核界面：全屏模态层（解析完成后直接弹出） */}
+    {reviewingFile && (
+      <div className="fixed inset-0 z-50 bg-white overflow-auto">
+        {/* 顶部关闭栏 */}
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-serif text-primary">审核解析结果</p>
+            <p className="text-xs text-gray-400">{reviewingFile.fileName}</p>
+          </div>
+          <button
+            onClick={() => {
+              setReviewingFile(null);
+              dispatch({ type: 'CLEAR_PENDING_REVIEW' });
+            }}
+            className="text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        {/* 审核内容 */}
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <ParseReview
+            parsedResult={reviewingFile}
+            onConfirm={(finalQuestions, finalKnowledgePoints) => {
+              handleReviewConfirm(finalQuestions, finalKnowledgePoints);
+              setReviewingFile(null);
+            }}
+            onReParse={async (hints) => {
+              await handleReParse(reviewingFile.file, hints);
+            }}
+            onClose={() => {
+              setReviewingFile(null);
+              dispatch({ type: 'CLEAR_PENDING_REVIEW' });
+            }}
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

@@ -27,6 +27,8 @@ import {
     parseDocumentWithAI,
     parseImagesWithAI,
     reParseDocument,
+    extractDocumentStructure,
+    parseQuestionsBatch,
     isAIConfigured,
     isMultimodalModel
 } from '../services/aiService';
@@ -393,6 +395,58 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             // AI 多模态解析成功，信心度为 high
             merged.questions = addConfidence(merged.questions, CONFIDENCE.HIGH);
             return buildResult(merged, 'ai-multimodal', warning, text);
+        }
+
+        // ========== 阶段 4.5：AI 两阶段解析（优先于单次解析） ==========
+        if (text.trim()) {
+            try {
+                if (onProgress) onProgress(30);
+
+                // 阶段 1：提取文档结构
+                const structure = await extractDocumentStructure(agentConfig, text);
+
+                if (onProgress) onProgress(45);
+
+                if (structure.questionRanges && structure.questionRanges.length > 0) {
+                    // 阶段 2：根据结构信息截取每道题，逐题并行解析
+                    const questionTexts = structure.questionRanges.map(range => {
+                        const start = Math.max(0, (range.estimatedStart || 0) - 10);
+                        const end = Math.min(text.length, (range.estimatedEnd || text.length) + 10);
+                        return text.slice(start, end);
+                    });
+
+                    if (onProgress) onProgress(50);
+
+                    const questions = await parseQuestionsBatch(agentConfig, questionTexts);
+
+                    if (onProgress) onProgress(90);
+
+                    if (questions.length > 0) {
+                        // 提取知识点（从题目中汇总）
+                        const knowledgePoints = [...new Set(
+                            questions.map(q => q.knowledgePoint).filter(Boolean)
+                        )].map((name, i) => ({
+                            id: `kp-${Date.now()}-${i}`,
+                            name,
+                            description: `来自文档解析的知识点`,
+                            questionCount: questions.filter(q => q.knowledgePoint === name).length
+                        }));
+
+                        return buildResult(
+                            { questions: addConfidence(questions, CONFIDENCE.HIGH), knowledgePoints },
+                            'ai-two-pass',
+                            `两阶段解析完成：共识别 ${structure.totalQuestions} 题，成功解析 ${questions.length} 题`,
+                            text
+                        );
+                    }
+                }
+
+                // 阶段 1 成功但阶段 2 无结果，回退到单次解析
+                console.warn('两阶段解析的阶段 2 无结果，回退到单次 AI 解析');
+            } catch (err) {
+                // 两阶段解析失败，回退到单次解析
+                console.warn('两阶段解析失败，回退到单次 AI 解析:', err.message);
+            }
         }
 
         // 情况 B：仅文本解析（模型不支持多模态或文档无图片）

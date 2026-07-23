@@ -1584,6 +1584,122 @@ export const parseImagesWithAI = async (agentConfig, images, materialId = 'image
     return mergeParseResults(parseResults, materialId);
 };
 
+// ==================== 两阶段 AI 解析 ====================
+
+/**
+ * 阶段 1：提取文档结构（题目边界定位）
+ * 只分析文档中题目的位置边界，不解析具体内容
+ * @param {Object} agentConfig - AI 配置 { providerId, modelId, apiKey }
+ * @param {string} text - 文档原文
+ * @returns {Promise<Object>} 结构信息 { questionRanges, answerSection, totalQuestions, numberingFormat }
+ */
+export const extractDocumentStructure = async (agentConfig, text) => {
+    const { providerId, apiKey } = agentConfig;
+    const provider = getProviderById(providerId);
+    if (!provider) {
+        throw new Error(`未知 AI 厂商: ${providerId}`);
+    }
+    if (!apiKey) {
+        throw new Error('API Key 未配置');
+    }
+
+    const { structureExtractionPrompt } = await import('../config/agentPrompts.js');
+
+    const maxTokens = 4096;
+    const temperature = 0.1;
+
+    const messages = [
+        { role: 'system', content: structureExtractionPrompt },
+        { role: 'user', content: text }
+    ];
+
+    const rawResponse = await callAI(agentConfig, messages, {
+        maxTokens,
+        temperature
+    });
+
+    const parsed = parseJsonFromText(rawResponse);
+    const structure = parsed.data || parsed;
+
+    return {
+        questionRanges: structure.questionRanges || [],
+        answerSection: structure.answerSection || { exists: false },
+        totalQuestions: structure.totalQuestions || 0,
+        numberingFormat: structure.numberingFormat || '1.'
+    };
+};
+
+/**
+ * 阶段 2：解析单道题目
+ * 对单道题目进行深度解析，提取题干、选项、答案、解析等完整信息
+ * @param {Object} agentConfig - AI 配置 { providerId, modelId, apiKey }
+ * @param {string} questionText - 单道题目的文本
+ * @returns {Promise<Object>} 解析后的题目对象
+ */
+export const parseSingleQuestion = async (agentConfig, questionText) => {
+    const { providerId, apiKey } = agentConfig;
+    const provider = getProviderById(providerId);
+    if (!provider) {
+        throw new Error(`未知 AI 厂商: ${providerId}`);
+    }
+    if (!apiKey) {
+        throw new Error('API Key 未配置');
+    }
+
+    const { perQuestionParsePrompt } = await import('../config/agentPrompts.js');
+
+    const maxTokens = 2048;
+    const temperature = 0.1;
+
+    const messages = [
+        { role: 'system', content: perQuestionParsePrompt },
+        { role: 'user', content: questionText }
+    ];
+
+    const rawResponse = await callAI(agentConfig, messages, {
+        maxTokens,
+        temperature
+    });
+
+    const parsed = parseJsonFromText(rawResponse);
+    const question = parsed.data || parsed;
+
+    return {
+        id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        question: question.question || questionText.slice(0, 200),
+        options: question.options || [],
+        correctAnswer: question.correctAnswer || '',
+        explanation: question.explanation || '',
+        difficulty: question.difficulty || 'medium',
+        type: question.type || 'single',
+        knowledgePoint: question.knowledgePoint || '',
+        confidence: 'high'
+    };
+};
+
+/**
+ * 批量并行解析题目（分批控制并发数）
+ * 避免同时发起过多请求触发速率限制
+ * @param {Object} agentConfig - AI 配置 { providerId, modelId, apiKey }
+ * @param {string[]} questionTexts - 题目文本数组
+ * @param {number} [batchSize=10] - 每批并发数
+ * @returns {Promise<Object[]>} 解析后的题目数组
+ */
+export const parseQuestionsBatch = async (agentConfig, questionTexts, batchSize = 10) => {
+    const results = [];
+    for (let i = 0; i < questionTexts.length; i += batchSize) {
+        const batch = questionTexts.slice(i, i + batchSize);
+        const batchResults = await Promise.all(
+            batch.map(text => parseSingleQuestion(agentConfig, text).catch(err => {
+                console.warn('单题解析失败:', err.message);
+                return null;
+            }))
+        );
+        results.push(...batchResults);
+    }
+    return results.filter(Boolean);
+};
+
 // ==================== 默认导出 ====================
 
 export default {
@@ -1597,6 +1713,9 @@ export default {
     parseDocumentWithAI,
     reParseDocument,
     parseImagesWithAI,
+    extractDocumentStructure,
+    parseSingleQuestion,
+    parseQuestionsBatch,
     isAIConfigured,
     isMultimodalModel,
     getProviderById,

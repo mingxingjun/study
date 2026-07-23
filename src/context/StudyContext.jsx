@@ -149,7 +149,9 @@ const initialState = {
     'quiz-master': { providerId: '', modelId: '', apiKey: '' },
     'explainer': { providerId: '', modelId: '', apiKey: '' },
     'supervisor': { providerId: '', modelId: '', apiKey: '' }
-  }
+  },
+  /** 待审核的解析结果（持久化，防止页面切换时丢失） */
+  pendingReview: null
 };
 
 /**
@@ -555,6 +557,12 @@ const studyReducer = (state, action) => {
         ...state,
         aiConfig: defaultConfig
       };
+
+    case 'SET_PENDING_REVIEW':
+      return { ...state, pendingReview: action.payload };
+
+    case 'CLEAR_PENDING_REVIEW':
+      return { ...state, pendingReview: null };
 
     case 'RESET_STATE':
       return initialState;
