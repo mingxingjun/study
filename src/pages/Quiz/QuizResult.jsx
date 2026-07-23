@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import Card from '../../components/ui/Card';
+import VisualizationRenderer from '../../components/visualization/VisualizationRenderer';
 
 /**
  * 答题结果组件
@@ -76,6 +77,20 @@ const QuizResult = ({
                 )}
               </div>
               <p className="text-sm text-gray-700 leading-relaxed">{aiFeedback.feedback}</p>
+
+              {/* AI 反馈自带的可视化 - 在解析文字之后，帮助直观理解 */}
+              {Array.isArray(aiFeedback.visualizations) && aiFeedback.visualizations.length > 0 && (
+                <div className="mt-3 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400 mb-2">
+                    可视化解析
+                  </p>
+                  <div className="space-y-2">
+                    {aiFeedback.visualizations.map((viz, index) => (
+                      <VisualizationRenderer key={index} visualization={viz} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

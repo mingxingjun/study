@@ -9,6 +9,7 @@ import Card from '../../components/ui/Card';
 import QuestionImage from '../../components/ui/QuestionImage';
 import MathRenderer from '../../components/MathRenderer';
 import FormulaInput from '../../components/FormulaInput';
+import VisualizationRenderer from '../../components/visualization/VisualizationRenderer';
 import useReducedMotion from '../../hooks/useReducedMotion';
 
 /**
@@ -196,6 +197,20 @@ const QuestionCard = ({
       {question.image && (
         <div className="mb-7">
           <QuestionImage src={question.image} alt="题目图片" />
+        </div>
+      )}
+
+      {/* 题目自带可视化 - 在题干与选项之间 */}
+      {Array.isArray(question.visualizations) && question.visualizations.length > 0 && (
+        <div className="bg-gray-50 rounded-xl p-4 my-3 mb-7">
+          <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400 mb-3">
+            可视化解析
+          </p>
+          <div className="space-y-2">
+            {question.visualizations.map((viz, index) => (
+              <VisualizationRenderer key={index} visualization={viz} />
+            ))}
+          </div>
         </div>
       )}
 

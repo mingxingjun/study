@@ -1,5 +1,7 @@
 import AgentAvatar from './AgentAvatar';
 import MathRenderer from '../MathRenderer';
+import VisualizationRenderer from '../visualization/VisualizationRenderer';
+import { BarChart3 } from 'lucide-react';
 
 /**
  * 尝试解析结构化 JSON 分析结果
@@ -85,6 +87,39 @@ const StructuredAnalysis = ({ data }) => {
 };
 
 /**
+ * 可视化解析区域：渲染 AI 返回的 visualizations 数组
+ * 位于文字内容之后，用分隔线区分；卡片样式遵循 Refined Editorial Minimalism 设计系统
+ * @param {Object} props
+ * @param {Array} props.visualizations - 可视化配置数组，每项含 type/data/title
+ * @returns {React.ReactElement|null} visualizations 为空时返回 null
+ */
+const VisualizationSection = ({ visualizations }) => {
+    if (!Array.isArray(visualizations) || visualizations.length === 0) {
+        return null;
+    }
+    return (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-1.5 mb-3">
+                <BarChart3 className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
+                <span className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
+                    可视化解析
+                </span>
+            </div>
+            <div className="space-y-3">
+                {visualizations.map((viz, idx) => (
+                    <div
+                        key={idx}
+                        className="bg-white rounded-xl border border-gray-200 p-3"
+                    >
+                        <VisualizationRenderer visualization={viz} />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+/**
  * Agent 消息气泡组件
  * @param {Object} props
  * @param {Object} props.agent - Agent 对象
@@ -98,6 +133,20 @@ const AgentMessage = ({ agent, message, isTyping = false, className = '' }) => {
     const structuredData = tryParseStructuredJson(message);
     const hasStructuredContent = structuredData &&
         (structuredData.errorRootCause || structuredData.knowledgeReview || structuredData.stepByStep);
+
+    // 提取可视化数据：优先从解析结果对象中获取，兼容消息对象顶层直接携带 visualizations 的情况
+    const messageVisualizations = message && typeof message === 'object'
+        ? message.visualizations
+        : null;
+    const visualizations = Array.isArray(structuredData?.visualizations)
+        ? structuredData.visualizations
+        : Array.isArray(messageVisualizations)
+            ? messageVisualizations
+            : [];
+    const hasVisualizations = visualizations.length > 0;
+
+    // 当存在可视化但无文字结构化字段时，仍走结构化分支以渲染可视化区域
+    const renderStructured = hasStructuredContent || hasVisualizations;
 
     return (
         <div className={`flex items-start gap-3 animate-fade-in ${className}`}>
@@ -124,8 +173,13 @@ const AgentMessage = ({ agent, message, isTyping = false, className = '' }) => {
                             />
                         </span>
                     </div>
-                ) : hasStructuredContent ? (
-                    <StructuredAnalysis data={structuredData} />
+                ) : renderStructured ? (
+                    <>
+                        <StructuredAnalysis data={structuredData} />
+                        {hasVisualizations && (
+                            <VisualizationSection visualizations={visualizations} />
+                        )}
+                    </>
                 ) : (
                     <div className="text-sm text-gray-700 leading-relaxed">
                         <MathRenderer text={message} />

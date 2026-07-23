@@ -1,15 +1,270 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { ExternalLink, Check, Clock, Loader2, Brain, BookOpen, Lightbulb, Target, RotateCcw } from 'lucide-react';
+import {
+    ExternalLink, Check, Clock, Loader2, Brain, BookOpen, Lightbulb,
+    Target, RotateCcw, Plus, BarChart3, X, Trash2
+} from 'lucide-react';
 import AgentMessage from '../../components/agents/AgentMessage';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import QuestionImage from '../../components/ui/QuestionImage';
 import MathRenderer from '../../components/MathRenderer';
+import VisualizationRenderer from '../../components/visualization/VisualizationRenderer';
+import FunctionPlot from '../../components/visualization/FunctionPlot';
+import { useStudyContext } from '../../context/StudyContext';
 import { sampleKnowledgePoints } from '../../mock/sampleData';
 import useReducedMotion from '../../hooks/useReducedMotion';
 import { getNextReviewDate, getReviewIntervalText } from '../../utils/reviewSchedule';
+
+/** 可视化创建表单的默认值 */
+const DEFAULT_VIZ_FORM = {
+    expr: 'sin(x)',
+    xMin: '-10',
+    xMax: '10',
+    yMin: '',
+    yMax: '',
+    title: ''
+};
+
+/**
+ * 根据表单值构建 FunctionPlot 需要的 data 对象
+ * @param {Object} form - 表单值
+ * @returns {Object} FunctionPlot data
+ */
+const buildPlotData = (form) => {
+    const xMin = parseFloat(form.xMin);
+    const xMax = parseFloat(form.xMax);
+    const data = {
+        functions: [{ expr: form.expr || '0', label: form.expr || 'f(x)' }],
+        xRange: [Number.isFinite(xMin) ? xMin : -10, Number.isFinite(xMax) ? xMax : 10]
+    };
+    const yMin = parseFloat(form.yMin);
+    const yMax = parseFloat(form.yMax);
+    if (Number.isFinite(yMin) && Number.isFinite(yMax)) {
+        data.yRange = [yMin, yMax];
+    }
+    return data;
+};
+
+/**
+ * 可视化创建表单 Modal - 函数图像实时预览
+ * @param {Object} props
+ * @param {boolean} props.open - 是否显示
+ * @param {Function} props.onClose - 关闭回调
+ * @param {Function} props.onConfirm - 确认回调，接收 visualization 对象
+ */
+const VisualizationFormModal = ({ open, onClose, onConfirm }) => {
+    const [form, setForm] = useState(DEFAULT_VIZ_FORM);
+
+    if (!open) return null;
+
+    /** 更新表单字段 */
+    const handleChange = (field, value) => {
+        setForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    /** 确认创建，组装可视化对象并回调 */
+    const handleConfirm = () => {
+        const visualization = {
+            id: `viz-${Date.now()}`,
+            type: 'function-plot',
+            title: form.title || `y = ${form.expr}`,
+            data: buildPlotData(form)
+        };
+        onConfirm(visualization);
+        setForm(DEFAULT_VIZ_FORM);
+    };
+
+    /** 取消并重置表单 */
+    const handleCancel = () => {
+        setForm(DEFAULT_VIZ_FORM);
+        onClose();
+    };
+
+    const inputClass = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 font-mono focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors';
+    const labelClass = 'block text-xs font-mono uppercase tracking-wider text-gray-500 mb-2';
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+            onClick={handleCancel}
+        >
+            <div
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* 弹窗头部 */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                    <div className="flex items-baseline gap-3">
+                        <h3 className="text-xl text-primary font-serif" style={{ fontWeight: 500 }}>
+                            添加可视化
+                        </h3>
+                        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400">
+                            New Visualization
+                        </span>
+                    </div>
+                    <button
+                        onClick={handleCancel}
+                        className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                        aria-label="关闭"
+                    >
+                        <X size={18} className="text-gray-500" />
+                    </button>
+                </div>
+
+                {/* 表单内容 */}
+                <div className="p-6 space-y-5">
+                    {/* 可视化类型 - 当前仅支持函数图像 */}
+                    <div>
+                        <label className={labelClass}>可视化类型</label>
+                        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-accent/40 bg-accent/10 text-sm text-primary">
+                            <BarChart3 size={14} className="text-accent-dark" />
+                            函数图像
+                        </div>
+                    </div>
+
+                    {/* 函数表达式 */}
+                    <div>
+                        <label className={labelClass}>
+                            函数表达式 <span className="text-accent-dark">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={form.expr}
+                            onChange={(e) => handleChange('expr', e.target.value)}
+                            placeholder="如 sin(x), x^2, exp(-x)"
+                            className={inputClass}
+                        />
+                        <p className="text-[11px] text-gray-400 mt-1.5 font-mono">
+                            支持 sin/cos/tan/exp/log/sqrt/abs，^ 表示幂运算
+                        </p>
+                    </div>
+
+                    {/* x 范围 */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass}>X 最小值</label>
+                            <input
+                                type="number"
+                                value={form.xMin}
+                                onChange={(e) => handleChange('xMin', e.target.value)}
+                                className={inputClass}
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClass}>X 最大值</label>
+                            <input
+                                type="number"
+                                value={form.xMax}
+                                onChange={(e) => handleChange('xMax', e.target.value)}
+                                className={inputClass}
+                            />
+                        </div>
+                    </div>
+
+                    {/* y 范围（可选） */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelClass}>
+                                Y 最小值 <span className="text-gray-400 normal-case">(可选)</span>
+                            </label>
+                            <input
+                                type="number"
+                                value={form.yMin}
+                                onChange={(e) => handleChange('yMin', e.target.value)}
+                                placeholder="自动"
+                                className={inputClass}
+                            />
+                        </div>
+                        <div>
+                            <label className={labelClass}>
+                                Y 最大值 <span className="text-gray-400 normal-case">(可选)</span>
+                            </label>
+                            <input
+                                type="number"
+                                value={form.yMax}
+                                onChange={(e) => handleChange('yMax', e.target.value)}
+                                placeholder="自动"
+                                className={inputClass}
+                            />
+                        </div>
+                    </div>
+
+                    {/* 标题（可选） */}
+                    <div>
+                        <label className={labelClass}>
+                            标题 <span className="text-gray-400 normal-case">(可选)</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={form.title}
+                            onChange={(e) => handleChange('title', e.target.value)}
+                            placeholder="留空将使用表达式作为标题"
+                            className={`${inputClass} font-sans`}
+                        />
+                    </div>
+
+                    {/* 实时预览 */}
+                    <div>
+                        <label className={labelClass}>实时预览</label>
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                            <FunctionPlot data={buildPlotData(form)} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* 底部按钮 */}
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+                    <Button variant="secondary" onClick={handleCancel}>
+                        取消
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={handleConfirm}
+                        disabled={!form.expr.trim()}
+                    >
+                        <Plus size={14} />
+                        添加
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+/**
+ * 单条可视化卡片 - 渲染 VisualizationRenderer，用户创建的可视化带标签和删除按钮
+ * @param {Object} props
+ * @param {Object} props.visualization - 可视化对象 {type, title, data}
+ * @param {boolean} [props.isUserCreated=false] - 是否为用户创建
+ * @param {Function} [props.onDelete] - 删除回调（仅用户创建时使用）
+ */
+const VisualizationItem = ({ visualization, isUserCreated = false, onDelete }) => (
+    <div className="relative p-5 bg-warm-50 rounded-xl border border-gray-200/60">
+        <div className="flex items-center justify-between mb-3">
+            {isUserCreated ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-accent-dark bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
+                    用户创建
+                </span>
+            ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                    AI 生成
+                </span>
+            )}
+            {isUserCreated && onDelete && (
+                <button
+                    onClick={onDelete}
+                    className="p-1 rounded-full hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-700"
+                    aria-label="删除可视化"
+                >
+                    <Trash2 size={14} />
+                </button>
+            )}
+        </div>
+        <VisualizationRenderer visualization={visualization} />
+    </div>
+);
 
 const WrongQuestionDetail = ({
   wrongQuestion,
@@ -21,8 +276,10 @@ const WrongQuestionDetail = ({
   isAnalyzing,
   onPracticeSimilar
 }) => {
+  const { state, addUserVisualization, deleteUserVisualization } = useStudyContext();
   const stepsRef = useRef(null);
   const reducedMotion = useReducedMotion();
+  const [showVizForm, setShowVizForm] = useState(false);
 
   /**
    * 解析步骤依次淡入动画
@@ -55,6 +312,15 @@ const WrongQuestionDetail = ({
   if (!wrongQuestion) return null;
 
   const { question, userAnswer, mastered } = wrongQuestion;
+  // 从 state 读取最新的错题数据，确保 userVisualizations 字段同步更新
+  const latestWrongQuestion = state.wrongQuestions.find(wq => wq.id === wrongQuestion.id) || wrongQuestion;
+  // 提取 AI 返回的可视化（过滤无效项）
+  const aiVisualizations = (aiAnalysis?.visualizations || []).filter(
+    v => v && typeof v === 'object' && typeof v.type === 'string'
+  );
+  // 用户手动创建的可视化
+  const userVisualizations = latestWrongQuestion.userVisualizations || [];
+  const hasVisualizations = aiVisualizations.length > 0 || userVisualizations.length > 0;
   const nextReviewDate = getNextReviewDate(wrongQuestion, answerRecords);
   const reviewText = getReviewIntervalText(wrongQuestion, answerRecords);
   const knowledgePoint = sampleKnowledgePoints.find(kp => kp.id === question.knowledgePointId);
@@ -64,6 +330,17 @@ const WrongQuestionDetail = ({
     .slice(0, 3);
 
   const getOptionLetter = (index) => String.fromCharCode(65 + index);
+
+  /** 确认添加用户可视化 */
+  const handleConfirmAddViz = (visualization) => {
+    addUserVisualization(wrongQuestion.id, visualization);
+    setShowVizForm(false);
+  };
+
+  /** 删除用户可视化 */
+  const handleDeleteViz = (vizId) => {
+    deleteUserVisualization(wrongQuestion.id, vizId);
+  };
 
   /**
    * 根据 AI 分析结果构建解析步骤
@@ -401,6 +678,64 @@ const WrongQuestionDetail = ({
           })}
         </ol>
       </Card>
+
+      {/* 可视化解析区域 - AI 可视化 + 用户创建可视化 */}
+      <Card className="p-8" elevated>
+        {/* 区块标题 - 衬线 + mono 副标 + 渐变线 */}
+        <div className="flex items-baseline gap-3 mb-6">
+          <h3 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
+            📊 可视化解析
+          </h3>
+          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400">
+            Visualizations
+          </span>
+          <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+        </div>
+
+        {/* 可视化列表 - AI 生成在前，用户创建在后 */}
+        {hasVisualizations ? (
+          <div className="space-y-4">
+            {aiVisualizations.map((viz, idx) => (
+              <VisualizationItem
+                key={`ai-viz-${idx}`}
+                visualization={viz}
+                isUserCreated={false}
+              />
+            ))}
+            {userVisualizations.map((viz) => (
+              <VisualizationItem
+                key={viz.id}
+                visualization={viz}
+                isUserCreated={true}
+                onDelete={() => handleDeleteViz(viz.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 italic mb-4">
+            本题暂无可视化，可点击下方按钮手动添加函数图像辅助理解
+          </p>
+        )}
+
+        {/* 添加可视化按钮 - 金色边框 + Plus 图标 */}
+        <div className="mt-6">
+          <Button
+            variant="secondary"
+            onClick={() => setShowVizForm(true)}
+            className="border-accent text-accent-dark hover:bg-accent/10 hover:border-accent-dark"
+          >
+            <Plus size={14} />
+            添加可视化
+          </Button>
+        </div>
+      </Card>
+
+      {/* 可视化创建 Modal */}
+      <VisualizationFormModal
+        open={showVizForm}
+        onClose={() => setShowVizForm(false)}
+        onConfirm={handleConfirmAddViz}
+      />
     </div>
   );
 };

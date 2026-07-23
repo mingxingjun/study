@@ -796,6 +796,23 @@ const parseJsonFromText = (text) => {
     }
 };
 
+/**
+ * 规范化可视化数据数组
+ * 确保 visualizations 字段始终为数组，并过滤掉结构不完整的项
+ * 用于 explainer / document-parser agent 返回结果的统一处理
+ * @param {*} visualizations - AI 返回的 visualizations 字段（可能为 undefined、数组或非数组）
+ * @returns {Array} 规范化后的可视化数据数组，无效时为空数组 []
+ */
+const normalizeVisualizations = (visualizations) => {
+    if (!Array.isArray(visualizations)) {
+        return [];
+    }
+    // 仅保留同时具备 type 和 data 字段的有效项
+    return visualizations.filter(item =>
+        item && typeof item === 'object' && typeof item.type === 'string' && item.data
+    );
+};
+
 // ==================== 便捷业务函数 ====================
 
 /**
@@ -861,12 +878,12 @@ export const generateQuestions = async (agentConfig, knowledgePoint, count = 5, 
  * @param {Object} agentConfig - Agent 配置 { providerId, modelId, apiKey }
  * @param {Object} question - 题目对象
  * @param {string} userAnswer - 用户提交的答案
- * @returns {Promise<Object>} 解析结果，包含 isCorrect、correctAnswer、explanation、tips
+ * @returns {Promise<Object>} 解析结果，包含 isCorrect、correctAnswer、explanation、tips、visualizations
  */
 export const explainQuestion = async (agentConfig, question, userAnswer) => {
     const userPrompt = `请解析以下题目，用户的答案是: ${userAnswer}\n` +
         `题目信息: ${JSON.stringify(question)}\n` +
-        '请返回 JSON 格式，包含 isCorrect、correctAnswer、explanation、tips 字段。';
+        '请返回 JSON 格式，包含 isCorrect、correctAnswer、explanation、tips、visualizations 字段。';
 
     const messages = [
         { role: 'system', content: explainerPrompt },
@@ -875,7 +892,12 @@ export const explainQuestion = async (agentConfig, question, userAnswer) => {
 
     try {
         const content = await callAI(agentConfig, messages, getAgentOptions('explainer'));
-        return parseJsonFromText(content);
+        const parsed = parseJsonFromText(content);
+        // 规范化 visualizations 字段：AI 未返回或格式错误时默认为空数组
+        return {
+            ...parsed,
+            visualizations: normalizeVisualizations(parsed.visualizations)
+        };
     } catch (error) {
         console.warn('解析题目失败，降级到 Mock 数据:', error);
         return mockExplainQuestion(question, userAnswer);
@@ -1124,7 +1146,9 @@ const mergeParseResults = (results, materialId) => {
                 ...q,
                 id: `q-${questions.length + idx + 1}`,
                 knowledgePointId: globalKpId,
-                materialId: q.materialId || materialId
+                materialId: q.materialId || materialId,
+                // 规范化 visualizations 字段，AI 未返回或格式错误时默认为空数组
+                visualizations: normalizeVisualizations(q.visualizations)
             });
         });
     });
@@ -1185,7 +1209,13 @@ export const parseDocumentWithAI = async (agentConfig, text, documentType = 'tex
         ];
 
         const content = await callAI(agentConfig, messages, getAgentOptions('document-parser'));
-        return parseJsonFromText(content);
+        const parsed = parseJsonFromText(content);
+        // 规范化每个题目的 visualizations 字段，AI 未返回或格式错误时默认为空数组
+        const normalizedQuestions = (parsed.questions || []).map(q => ({
+            ...q,
+            visualizations: normalizeVisualizations(q.visualizations)
+        }));
+        return { ...parsed, questions: normalizedQuestions };
     }
 
     // 分块解析：分块之间主动延迟，避免触发服务商速率限制
@@ -1273,7 +1303,9 @@ export const mockExplainQuestion = (question, userAnswer) => {
         explanation: question.explanation,
         tips: isCorrect
             ? '回答正确！继续保持！'
-            : '不要灰心，仔细看一下解析，理解其中的原理后再试试类似题目。'
+            : '不要灰心，仔细看一下解析，理解其中的原理后再试试类似题目。',
+        // Mock 模式默认不生成可视化数据
+        visualizations: []
     };
 };
 
@@ -1396,7 +1428,13 @@ export const parseImagesWithAI = async (agentConfig, images, materialId = 'image
         return { knowledgePoints: [], questions: [] };
     }
     if (parseResults.length === 1) {
-        return parseResults[0];
+        // 规范化单批次结果中每个题目的 visualizations 字段
+        const singleResult = parseResults[0];
+        const normalizedQuestions = (singleResult.questions || []).map(q => ({
+            ...q,
+            visualizations: normalizeVisualizations(q.visualizations)
+        }));
+        return { ...singleResult, questions: normalizedQuestions };
     }
     return mergeParseResults(parseResults, materialId);
 };

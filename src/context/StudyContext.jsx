@@ -80,6 +80,7 @@ const calculateCurrentStreak = (checkInDates) => {
  * @property {boolean} mastered
  * @property {string} addedAt
  * @property {string} lastWrongAt
+ * @property {Array} [userVisualizations] - 用户手动创建的可视化数据
  */
 
 /**
@@ -271,6 +272,50 @@ const studyReducer = (state, action) => {
         wrongQuestions: state.wrongQuestions.map(wq =>
           wq.id === action.payload
             ? { ...wq, mastered: true }
+            : wq
+        )
+      };
+    }
+
+    /**
+     * 为指定错题添加一条用户手动创建的可视化
+     * @param {Object} action.payload
+     * @param {string} action.payload.wrongQuestionId - 错题 id
+     * @param {Object} action.payload.visualization - 可视化对象 {id, type, title, data}
+     */
+    case 'ADD_USER_VISUALIZATION': {
+      const { wrongQuestionId, visualization } = action.payload;
+      return {
+        ...state,
+        wrongQuestions: state.wrongQuestions.map(wq =>
+          wq.id === wrongQuestionId
+            ? {
+                ...wq,
+                userVisualizations: [...(wq.userVisualizations || []), visualization]
+              }
+            : wq
+        )
+      };
+    }
+
+    /**
+     * 删除指定错题的某条用户可视化
+     * @param {Object} action.payload
+     * @param {string} action.payload.wrongQuestionId - 错题 id
+     * @param {string} action.payload.visualizationId - 可视化 id
+     */
+    case 'DELETE_USER_VISUALIZATION': {
+      const { wrongQuestionId, visualizationId } = action.payload;
+      return {
+        ...state,
+        wrongQuestions: state.wrongQuestions.map(wq =>
+          wq.id === wrongQuestionId
+            ? {
+                ...wq,
+                userVisualizations: (wq.userVisualizations || []).filter(
+                  v => v.id !== visualizationId
+                )
+              }
             : wq
         )
       };
@@ -593,6 +638,18 @@ export const StudyProvider = ({ children }) => {
     (id) => dispatch({ type: 'MARK_WRONG_QUESTION_MASTERED', payload: id }),
     []
   );
+  /** 为指定错题添加一条用户手动创建的可视化 */
+  const addUserVisualization = useCallback(
+    (wrongQuestionId, visualization) =>
+      dispatch({ type: 'ADD_USER_VISUALIZATION', payload: { wrongQuestionId, visualization } }),
+    []
+  );
+  /** 删除指定错题的某条用户可视化 */
+  const deleteUserVisualization = useCallback(
+    (wrongQuestionId, visualizationId) =>
+      dispatch({ type: 'DELETE_USER_VISUALIZATION', payload: { wrongQuestionId, visualizationId } }),
+    []
+  );
   const markMastered = useCallback(
     (knowledgePointId) => dispatch({ type: 'MARK_MASTERED', payload: { knowledgePointId } }),
     []
@@ -668,6 +725,8 @@ export const StudyProvider = ({ children }) => {
     addAnswer,
     addWrongQuestion,
     markWrongQuestionMastered,
+    addUserVisualization,
+    deleteUserVisualization,
     markMastered,
     addResourceLink,
     deleteResourceLink,
