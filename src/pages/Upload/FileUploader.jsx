@@ -32,6 +32,7 @@ const FILE_TYPES = {
 /** 解析方式的显示标签映射 */
 const METHOD_LABELS = {
   structured: '结构化解析',
+  rule: '规则解析',
   ai: 'AI 解析',
   'ai-multimodal': 'AI 多模态解析',
   'rule-fallback': '规则解析（AI 降级）',
@@ -435,7 +436,7 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
                           {/* 解析方式标签 */}
                           {mode === 'formal' && status?.method && (
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono tabular-nums ${
-                              status.method === 'structured' || status.method === 'ai'
+                              status.method === 'structured' || status.method === 'ai' || status.method === 'ai-multimodal' || status.method === 'rule'
                                 ? 'bg-accent/10 text-accent-dark border border-accent/30'
                                 : 'bg-amber-50 text-amber-700 border border-amber-200'
                             }`}>

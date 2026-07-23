@@ -1,21 +1,22 @@
 /**
  * @file 题库解析统一入口（Pipeline）
- * @description 按 文件类型路由到最佳解析器，实现 AI 优先 + 规则兜底策略：
+ * @description 按 文件类型路由到最佳解析器，实现 规则优先 + AI 补充 策略：
  *
  * 解析流程：
  *   1. 结构化格式（.json/.csv/.md）→ structuredParser 精准解析（100% 可靠）
  *   2. 非结构化文档（.pdf/.docx/.txt）→ 提取文本和图片
- *      2.1 若已配置 AI 且模型支持多模态 → 文本+图片并行处理：
- *          - 文本走 parseDocumentWithAI（AI 智能解析，适应任意版式）
- *          - 图片走 parseImagesWithAI（多模态视觉识别题目）
- *          - 合并两路结果
- *      2.2 若已配置 AI 但模型不支持多模态 → 仅文本走 parseDocumentWithAI
- *      2.3 AI 失败或未配置 → parseQuestionBank 规则解析兜底
+ *      2.1 文本先走规则解析（快速、免费、稳定）
+ *      2.2 规则解析质量好（successRate ≥ 0.7 且题目数 ≥ 3）→ 直接返回规则结果
+ *      2.3 规则解析不足（成功率低或 0 题）→ 走 AI 补充解析：
+ *          - 若模型支持多模态且有图片 → 文本+图片并行处理
+ *          - 否则仅文本走 AI 解析
+ *          - AI 失败时用规则结果兜底
+ *      2.4 未配置 AI → 直接返回规则结果
  *   3. Excel（.xlsx/.xls）→ 提示用户另存为 CSV（避免引入大依赖）
  *
  * 输出统一结构：
  *   { questions, knowledgePoints, method, warning, invalidQuestions, ... }
- *   - method: 'structured' | 'ai' | 'ai-multimodal' | 'rule-fallback' | 'rule-only'
+ *   - method: 'structured' | 'rule' | 'ai' | 'ai-multimodal' | 'rule-fallback' | 'rule-only'
  *   - warning: 降级/失败提示（空字符串表示无警告）
  */
 
@@ -123,6 +124,10 @@ const mergeTextAndImageResults = (textResult, imageResult, materialId) => {
 /**
  * 统一题库解析入口
  *
+ * 策略：规则优先 + AI 补充
+ * - 结构化格式（JSON/CSV/MD）→ structuredParser 精准解析
+ * - 文档格式 → 先规则解析，质量好直接用；不足时走 AI 补充；AI 失败用规则兜底
+ *
  * @param {File} file - 文件对象
  * @param {Object} agentConfig - AI Agent 配置 { providerId, modelId, apiKey }
  * @param {Function} [onProgress] - 进度回调 (0-100)
@@ -131,12 +136,12 @@ const mergeTextAndImageResults = (textResult, imageResult, materialId) => {
  * @example
  * // 正式模式：配置了 AI
  * const result = await parseQuestionFile(file, aiConfig, p => setProgress(p));
- * // result.method === 'ai' | 'ai-multimodal' | 'structured' | 'rule-fallback'
+ * // result.method === 'rule' | 'ai' | 'ai-multimodal' | 'structured' | 'rule-fallback'
  *
  * @example
- * // 未配置 AI：自动降级到规则解析
+ * // 未配置 AI：仅用规则解析
  * const result = await parseQuestionFile(file, null);
- * // result.method === 'rule-only' | 'rule-fallback'
+ * // result.method === 'rule-only'
  */
 export const parseQuestionFile = async (file, agentConfig, onProgress) => {
     const ext = getExtension(file.name);
@@ -186,8 +191,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
         if (needImages) {
             if (onProgress) onProgress(10);
             const docResult = await parseDocumentWithImages(file, (progress) => {
-                // 文本+图片提取占整体 10%-50%
-                if (onProgress) onProgress(10 + Math.floor(progress * 0.4));
+                // 文本+图片提取占整体 10%-40%
+                if (onProgress) onProgress(10 + Math.floor(progress * 0.3));
             });
             text = docResult.text;
             images = docResult.images || [];
@@ -195,7 +200,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
         } else {
             if (onProgress) onProgress(10);
             text = await parseDocument(file, (progress) => {
-                if (onProgress) onProgress(10 + Math.floor(progress * 0.4));
+                if (onProgress) onProgress(10 + Math.floor(progress * 0.3));
             });
         }
     } catch (error) {
@@ -210,166 +215,189 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
         console.warn('文档提取文本为空，但提取到图片，将走多模态 AI 识别');
     }
 
-    // ========== 阶段 4：AI 优先解析（若已配置 AI）==========
-    if (isAIConfigured(agentConfig)) {
-        const supportsMultimodal = isMultimodalModel(agentConfig);
-        const hasImages = images.length > 0;
-        const materialId = file.name || `upload-${Date.now()}`;
-
+    // ========== 阶段 4：规则优先解析文本 ==========
+    if (onProgress) onProgress(45);
+    let ruleResult = null;
+    if (text.trim()) {
         try {
-            // 4.1 文本+图片并行处理（模型支持多模态且文档有图片）
-            if (supportsMultimodal && hasImages) {
-                if (onProgress) onProgress(55);
-
-                // 并行启动文本解析和图片识别
-                // 使用 allSettled 确保一路失败不影响另一路
-                const [textSettled, imageSettled] = await Promise.allSettled([
-                    // 文本解析（如果文本为空，跳过此步）
-                    text.trim()
-                        ? parseDocumentWithAI(agentConfig, text, ext, materialId)
-                        : Promise.resolve({ knowledgePoints: [], questions: [] }),
-                    parseImagesWithAI(agentConfig, images, materialId)
-                ]);
-
-                const textResult = textSettled.status === 'fulfilled'
-                    ? textSettled.value
-                    : null;
-                const imageResult = imageSettled.status === 'fulfilled'
-                    ? imageSettled.value
-                    : null;
-
-                // 文本和图片都失败
-                if (!textResult && !imageResult) {
-                    throw new Error('文本解析和图片识别均失败');
-                }
-
-                // 合并两路结果
-                const merged = mergeTextAndImageResults(textResult, imageResult, materialId);
-                const totalQuestions = merged.questions?.length || 0;
-
-                if (totalQuestions === 0) {
-                    // 合并后仍 0 题，降级到规则解析
-                    console.warn('AI 多模态解析返回 0 道题目，降级到规则解析');
-                    const ruleResult = parseQuestionBank(text);
-                    if (ruleResult.questions.length > 0) {
-                        return buildResult(
-                            ruleResult,
-                            'rule-fallback',
-                            'AI 未能从文档中识别题目，已降级到规则解析（图片题无法识别）'
-                        );
-                    }
-                    return buildResult(
-                        { questions: [], knowledgePoints: [] },
-                        'ai-multimodal',
-                        'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置'
-                    );
-                }
-
-                if (onProgress) onProgress(100);
-                // 文本和图片任一失败时给出部分降级提示
-                let warning = '';
-                if (!textResult) {
-                    warning = '文本解析失败，仅使用图片识别结果';
-                } else if (!imageResult) {
-                    warning = '图片识别失败，仅使用文本解析结果';
-                }
-                return buildResult(merged, 'ai-multimodal', warning);
-            }
-
-            // 4.2 仅文本解析（模型不支持多模态或文档无图片）
-            if (text.trim()) {
-                if (onProgress) onProgress(55);
-                const aiResult = await parseDocumentWithAI(agentConfig, text, ext, materialId);
-                const aiQuestions = aiResult.questions || [];
-                const aiKnowledgePoints = aiResult.knowledgePoints || [];
-
-                // AI 解析结果检查：题目数为 0 时降级
-                if (aiQuestions.length === 0) {
-                    console.warn('AI 解析返回 0 道题目，降级到规则解析');
-                    const ruleResult = parseQuestionBank(text);
-                    if (ruleResult.questions.length > 0) {
-                        return buildResult(
-                            ruleResult,
-                            'rule-fallback',
-                            'AI 未能从文档中识别题目，已降级到规则解析'
-                        );
-                    }
-                    // 文档有图片但模型不支持多模态，给出更明确的提示
-                    const multimodalHint = hasImages && !supportsMultimodal
-                        ? '。检测到文档包含图片，但当前 AI 模型不支持多模态，建议切换到 GLM-4-Plus / Qwen3.6-Plus / Gemini 2.5 / GPT-4o 等支持视觉的模型'
-                        : '';
-                    return buildResult(
-                        { questions: [], knowledgePoints: [] },
-                        'ai',
-                        'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置' + multimodalHint
-                    );
-                }
-
-                if (onProgress) onProgress(100);
-                return buildResult(
-                    { questions: aiQuestions, knowledgePoints: aiKnowledgePoints },
-                    'ai'
-                );
-            }
-
-            // 4.3 文本为空、模型不支持多模态但有图片：无法处理
-            if (hasImages && !supportsMultimodal) {
-                throw new Error(
-                    '文档提取文本为空且包含图片，但当前 AI 模型不支持多模态视觉输入。' +
-                    '建议切换到 GLM-4-Plus / Qwen3.6-Plus / Gemini 2.5 / GPT-4o 等支持视觉的模型后重试。'
-                );
-            }
-        } catch (error) {
-            // AI 解析失败，降级到规则解析
-            console.warn('AI 解析失败，降级到规则解析:', error);
-            const ruleResult = parseQuestionBank(text);
-            if (ruleResult.questions.length > 0) {
-                return buildResult(
-                    ruleResult,
-                    'rule-fallback',
-                    `AI 解析失败（${error.message}），已降级到规则解析，复杂版式可能识别不全`
-                );
-            }
-            // AI 失败且规则解析也无结果
-            throw new Error(
-                `AI 解析失败且规则解析未识别到题目。AI 错误: ${error.message}。` +
-                '请检查 AI 配置、API Key 余额，或调整文档格式后重试。'
+            ruleResult = parseQuestionBank(text);
+            console.log(
+                `规则解析完成：成功 ${ruleResult.successCount}/${ruleResult.totalCount} 题` +
+                (ruleResult.invalidCount > 0 ? `（${ruleResult.invalidCount} 题无效）` : '')
             );
+        } catch (error) {
+            console.warn('规则解析异常:', error);
         }
     }
 
-    // ========== 阶段 5：未配置 AI，直接规则解析 + 提示 ==========
-    if (onProgress) onProgress(80);
-    const ruleResult = parseQuestionBank(text);
-    if (onProgress) onProgress(100);
+    // 评估规则解析质量
+    const ruleQuestions = ruleResult?.questions || [];
+    const ruleSuccessRate = ruleResult && ruleResult.totalCount > 0
+        ? ruleResult.successCount / ruleResult.totalCount
+        : 0;
+    // 规则解析质量好：成功率 ≥ 0.7 且题目数 ≥ 3
+    const ruleQualityGood = ruleResult && ruleQuestions.length >= 3 && ruleSuccessRate >= 0.7;
 
-    if (ruleResult.questions.length === 0) {
+    // ========== 阶段 5：规则解析质量好，直接返回 ==========
+    if (ruleQualityGood) {
+        if (onProgress) onProgress(100);
+        let warning = '';
+        if (ruleSuccessRate < 1) {
+            warning = `规则解析成功率 ${Math.round(ruleSuccessRate * 100)}%` +
+                `（${ruleResult.successCount}/${ruleResult.totalCount}）` +
+                `${ruleResult.invalidCount > 0 ? `，${ruleResult.invalidCount} 题因信息不完整被丢弃` : ''}。` +
+                '配置 AI 可识别更复杂的版式。';
+        }
+        return buildResult(ruleResult, 'rule', warning);
+    }
+
+    // ========== 阶段 6：规则解析不足，走 AI 补充 ==========
+    if (!isAIConfigured(agentConfig)) {
+        // ========== 阶段 6.1：未配置 AI，直接返回规则结果 ==========
+        if (onProgress) onProgress(100);
+        if (ruleResult && ruleQuestions.length > 0) {
+            return buildResult(
+                ruleResult,
+                'rule-only',
+                `未配置 AI，规则解析成功率 ${Math.round(ruleSuccessRate * 100)}%` +
+                `（${ruleResult.successCount}/${ruleResult.totalCount}）。` +
+                '配置 AI 可识别更多版式与复杂格式。'
+            );
+        }
+        // 规则解析也无结果
+        const hasImagesHint = images.length > 0
+            ? `。检测到 ${images.length} 张图片，需配置支持多模态的 AI（GLM-4-Plus / Qwen3.6-Plus / Gemini 2.5 / GPT-4o）识别图片题`
+            : '';
         return buildResult(
-            ruleResult,
+            { questions: [], knowledgePoints: [] },
             'rule-only',
-            '未配置 AI 且规则解析未识别到题目。建议在设置页配置 AI 后重新解析，' +
-            'AI 能识别多种版式、答案表、英文题库等复杂格式。'
+            '未配置 AI 且规则解析未识别到题目。建议配置 AI 后重新解析，' +
+            'AI 能识别多种版式、答案表、英文题库等复杂格式' + hasImagesHint
         );
     }
 
-    // 规则解析有结果，根据成功率给出不同程度的提示
-    const successRate = ruleResult.totalCount > 0
-        ? ruleResult.successCount / ruleResult.totalCount
-        : 1;
-    let warning = '';
-    if (successRate < 0.5) {
-        warning = `未配置 AI，规则解析成功率仅 ${Math.round(successRate * 100)}%` +
-            `（${ruleResult.successCount}/${ruleResult.totalCount}）。` +
-            '建议配置 AI 获得更好的解析效果，AI 能识别多种版式和答案表。';
-    } else if (successRate < 1) {
-        warning = `未配置 AI，规则解析成功率 ${Math.round(successRate * 100)}%` +
-            `（${ruleResult.successCount}/${ruleResult.totalCount}）。` +
-            '配置 AI 可进一步提升复杂版式的识别率。';
-    } else {
-        warning = '未配置 AI，使用规则解析。配置 AI 可支持更多版式与英文题库。';
-    }
+    // ========== 阶段 6.2：已配置 AI，走 AI 补充解析 ==========
+    const supportsMultimodal = isMultimodalModel(agentConfig);
+    const hasImages = images.length > 0;
+    const materialId = file.name || `upload-${Date.now()}`;
 
-    return buildResult(ruleResult, 'rule-only', warning);
+    try {
+        // 情况 A：模型支持多模态且文档有图片 → 文本+图片并行处理
+        if (supportsMultimodal && hasImages) {
+            if (onProgress) onProgress(55);
+
+            // 并行启动文本解析和图片识别
+            // 使用 allSettled 确保一路失败不影响另一路
+            const [textSettled, imageSettled] = await Promise.allSettled([
+                // 文本解析（如果文本为空，跳过此步）
+                text.trim()
+                    ? parseDocumentWithAI(agentConfig, text, ext, materialId)
+                    : Promise.resolve({ knowledgePoints: [], questions: [] }),
+                parseImagesWithAI(agentConfig, images, materialId)
+            ]);
+
+            const textResult = textSettled.status === 'fulfilled'
+                ? textSettled.value
+                : null;
+            const imageResult = imageSettled.status === 'fulfilled'
+                ? imageSettled.value
+                : null;
+
+            // 文本和图片都失败
+            if (!textResult && !imageResult) {
+                throw new Error('文本解析和图片识别均失败');
+            }
+
+            // 合并两路结果
+            const merged = mergeTextAndImageResults(textResult, imageResult, materialId);
+            const totalQuestions = merged.questions?.length || 0;
+
+            if (totalQuestions === 0) {
+                // AI 多模态也 0 题，用规则结果兜底
+                if (ruleResult && ruleQuestions.length > 0) {
+                    console.warn('AI 多模态解析返回 0 道题目，用规则解析结果兜底');
+                    return buildResult(
+                        ruleResult,
+                        'rule-fallback',
+                        'AI 未能从文档中识别题目，已用规则解析结果兜底（图片题未识别）'
+                    );
+                }
+                return buildResult(
+                    { questions: [], knowledgePoints: [] },
+                    'ai-multimodal',
+                    'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置'
+                );
+            }
+
+            if (onProgress) onProgress(100);
+            // 文本和图片任一失败时给出部分降级提示
+            let warning = '';
+            if (!textResult) {
+                warning = '文本解析失败，仅使用图片识别结果';
+            } else if (!imageResult) {
+                warning = '图片识别失败，仅使用文本解析结果';
+            }
+            return buildResult(merged, 'ai-multimodal', warning);
+        }
+
+        // 情况 B：仅文本解析（模型不支持多模态或文档无图片）
+        if (text.trim()) {
+            if (onProgress) onProgress(55);
+            const aiResult = await parseDocumentWithAI(agentConfig, text, ext, materialId);
+            const aiQuestions = aiResult.questions || [];
+            const aiKnowledgePoints = aiResult.knowledgePoints || [];
+
+            // AI 解析返回 0 题，用规则结果兜底
+            if (aiQuestions.length === 0) {
+                console.warn('AI 解析返回 0 道题目，用规则解析结果兜底');
+                if (ruleResult && ruleQuestions.length > 0) {
+                    return buildResult(
+                        ruleResult,
+                        'rule-fallback',
+                        'AI 未能从文档中识别题目，已用规则解析结果兜底'
+                    );
+                }
+                // 文档有图片但模型不支持多模态，给出更明确的提示
+                const multimodalHint = hasImages && !supportsMultimodal
+                    ? '。检测到文档包含图片，但当前 AI 模型不支持多模态，建议切换到 GLM-4-Plus / Qwen3.6-Plus / Gemini 2.5 / GPT-4o 等支持视觉的模型'
+                    : '';
+                return buildResult(
+                    { questions: [], knowledgePoints: [] },
+                    'ai',
+                    'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置' + multimodalHint
+                );
+            }
+
+            if (onProgress) onProgress(100);
+            return buildResult(
+                { questions: aiQuestions, knowledgePoints: aiKnowledgePoints },
+                'ai'
+            );
+        }
+
+        // 情况 C：文本为空、模型不支持多模态但有图片：无法处理
+        if (hasImages && !supportsMultimodal) {
+            throw new Error(
+                '文档提取文本为空且包含图片，但当前 AI 模型不支持多模态视觉输入。' +
+                '建议切换到 GLM-4-Plus / Qwen3.6-Plus / Gemini 2.5 / GPT-4o 等支持视觉的模型后重试。'
+            );
+        }
+    } catch (error) {
+        // AI 解析失败，用规则结果兜底
+        console.warn('AI 解析失败，用规则解析结果兜底:', error);
+        if (ruleResult && ruleQuestions.length > 0) {
+            return buildResult(
+                ruleResult,
+                'rule-fallback',
+                `AI 解析失败（${error.message}），已用规则解析结果兜底，复杂版式可能识别不全`
+            );
+        }
+        // AI 失败且规则解析也无结果
+        throw new Error(
+            `AI 解析失败且规则解析未识别到题目。AI 错误: ${error.message}。` +
+            '请检查 AI 配置、API Key 余额，或调整文档格式后重试。'
+        );
+    }
 };
 
 export default parseQuestionFile;
