@@ -141,40 +141,44 @@ const ExamDatePicker = ({ value, onChange }) => {
   };
 
   return (
-    <div className="space-y-5">
-      {/* 已选日期大卡片 */}
+    <div className="space-y-6">
+      {/* 已选日期大卡片 - 衬线大日期 + mono 倒计时 */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 p-5 bg-gray-50 rounded-2xl border border-gray-200 flex items-center gap-4">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center flex-shrink-0">
-            <CalendarIcon className="w-7 h-7 text-white" />
+        <div className="flex-1 p-5 bg-gray-50/60 rounded-xl border border-gray-200/80 flex items-center gap-5">
+          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
+            <CalendarIcon className="w-7 h-7 text-accent" strokeWidth={1.6} />
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-gray-500 mb-0.5">已选考试日期</p>
+            <p className="text-[11px] font-mono uppercase tracking-wider text-gray-500 mb-1">Selected Date</p>
             {selected ? (
               <div>
-                <p className="text-xl font-bold text-gray-900">
-                  {selected.getFullYear()}年{selected.getMonth() + 1}月{selected.getDate()}日
+                <p className="font-serif text-2xl text-primary tabular-nums" style={{ fontWeight: 400, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+                  {selected.getFullYear()}<span className="text-gray-400 mx-1">.</span>{String(selected.getMonth() + 1).padStart(2, '0')}<span className="text-gray-400 mx-1">.</span>{String(selected.getDate()).padStart(2, '0')}
                 </p>
-                <p className="text-sm text-gray-500">{weekDays[selected.getDay()]}</p>
+                <p className="text-xs text-gray-500 mt-1 font-mono">{weekDays[selected.getDay()]}</p>
               </div>
             ) : (
-              <p className="text-xl font-bold text-gray-400">请选择日期</p>
+              <p className="font-serif text-2xl text-gray-400" style={{ fontWeight: 400 }}>请选择日期</p>
             )}
           </div>
         </div>
 
-        <div className="sm:w-40 p-5 bg-primary rounded-2xl flex flex-col items-center justify-center text-white">
-          <p className="text-xs opacity-80 mb-1">距离考试</p>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold font-mono">{daysUntil ?? '--'}</span>
-            <span className="text-sm">天</span>
+        {/* 倒计时 - 金色强调卡片 */}
+        <div className="sm:w-44 p-5 bg-gradient-to-br from-accent/8 to-accent/3 rounded-xl border border-accent/20 flex flex-col items-center justify-center shadow-gold">
+          <p className="text-[11px] font-mono uppercase tracking-wider text-accent-dark mb-2">Days Until</p>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-serif text-5xl text-primary tabular-nums" style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}>
+              {daysUntil ?? '--'}
+            </span>
+            <span className="text-sm text-gray-500 font-mono">天</span>
           </div>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mt-2">距考试</p>
         </div>
       </div>
 
-      {/* 快捷选择 */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400 mr-1">快捷选择</span>
+      {/* 快捷选择 - 编辑式 pills */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[11px] font-mono uppercase tracking-wider text-gray-400 mr-1">Quick Select</span>
         {quickOptions.map((option) => {
           const dateStr = formatDateStr(new Date(today.getTime() + option.days * 24 * 60 * 60 * 1000));
           const isActive = selectedDate === dateStr;
@@ -183,10 +187,10 @@ const ExamDatePicker = ({ value, onChange }) => {
               key={option.days}
               type="button"
               onClick={() => handleQuickSelect(option.days)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isActive
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  ? 'bg-primary text-accent-light border-primary shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-900 hover:bg-gray-50'
               }`}
             >
               {option.label}
@@ -195,12 +199,12 @@ const ExamDatePicker = ({ value, onChange }) => {
         })}
       </div>
 
-      {/* 日期条 */}
+      {/* 日期条 - 精致 chips + 衬线日期数字 */}
       <div className="relative">
         <button
           type="button"
           onClick={() => scroll(-1)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-colors shadow-sm"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:border-gray-900 transition-colors shadow-sm cursor-pointer"
           aria-label="向左滚动"
         >
           <ChevronLeft size={16} />
@@ -221,19 +225,19 @@ const ExamDatePicker = ({ value, onChange }) => {
                 key={dateStr}
                 type="button"
                 onClick={() => handleSelect(dateStr)}
-                className={`flex-shrink-0 w-[72px] py-3 rounded-xl border text-center transition-colors ${
+                className={`flex-shrink-0 w-[72px] py-3 rounded-xl border text-center transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   isSelected
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'bg-primary text-accent-light border-primary shadow-sm'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <span className="block text-[10px] opacity-80 mb-1">
+                <span className="block text-[10px] opacity-80 mb-1 font-mono uppercase tracking-wider">
                   {isToday ? '今天' : weekDays[date.getDay()]}
                 </span>
-                <span className="block text-lg font-bold font-mono leading-none">
+                <span className="block font-serif text-2xl leading-none tabular-nums" style={{ fontWeight: 400, letterSpacing: '-0.04em' }}>
                   {date.getDate()}
                 </span>
-                <span className="block text-[10px] opacity-70 mt-1">
+                <span className="block text-[10px] opacity-70 mt-1 font-mono tabular-nums">
                   {monthLabels[date.getMonth()]}
                 </span>
               </button>
@@ -244,7 +248,7 @@ const ExamDatePicker = ({ value, onChange }) => {
         <button
           type="button"
           onClick={() => scroll(1)}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-colors shadow-sm"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 backdrop-blur border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:border-gray-900 transition-colors shadow-sm cursor-pointer"
           aria-label="向右滚动"
         >
           <ChevronRight size={16} />
@@ -253,44 +257,46 @@ const ExamDatePicker = ({ value, onChange }) => {
 
       {/* 自定义日期弹层 */}
       <div className="flex items-center gap-3 pt-1">
-        <span className="text-xs text-gray-400">自定义日期</span>
+        <span className="text-[11px] font-mono uppercase tracking-wider text-gray-400">Custom Date</span>
         <button
           type="button"
           onClick={() => setShowDatePicker(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 font-mono hover:border-gray-300 hover:bg-gray-100 transition-colors"
+          className="flex items-center gap-2 px-3.5 py-2 bg-gray-50/60 border border-gray-200 rounded-lg text-sm text-gray-900 font-mono tabular-nums hover:border-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
         >
           {selectedDate || '选择日期'}
-          <CalendarIcon className="w-4 h-4 text-gray-400" />
+          <CalendarIcon className="w-4 h-4 text-gray-400" strokeWidth={1.6} />
         </button>
 
         {showDatePicker && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setShowDatePicker(false)}>
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-5 w-[340px]" onClick={(e) => e.stopPropagation()}>
-              {/* 月份切换 */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowDatePicker(false)}>
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-5 w-[340px] scale-in" onClick={(e) => e.stopPropagation()}>
+              {/* 月份切换 - 衬线 */}
               <div className="flex items-center justify-between mb-4">
                 <button
                   type="button"
                   onClick={() => changeMonth(-1)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer"
+                  aria-label="上一月"
                 >
                   <ChevronLeft size={18} />
                 </button>
-                <span className="text-base font-semibold text-gray-900">
-                  {pickerYear}年{String(pickerMonth + 1).padStart(2, '0')}月
+                <span className="font-serif text-base text-primary" style={{ fontWeight: 500 }}>
+                  {pickerYear}<span className="text-gray-400 mx-1">·</span>{String(pickerMonth + 1).padStart(2, '0')}
                 </span>
                 <button
                   type="button"
                   onClick={() => changeMonth(1)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer"
+                  aria-label="下一月"
                 >
                   <ChevronRight size={18} />
                 </button>
               </div>
 
-              {/* 星期标题 */}
+              {/* 星期标题 - mono */}
               <div className="grid grid-cols-7 mb-2">
                 {weekDays.map((d) => (
-                  <div key={d} className="text-center text-xs text-gray-400 py-1">
+                  <div key={d} className="text-center text-[10px] text-gray-400 py-1 font-mono uppercase tracking-wider">
                     {d}
                   </div>
                 ))}
@@ -312,11 +318,11 @@ const ExamDatePicker = ({ value, onChange }) => {
                         setShowDatePicker(false);
                       }}
                       disabled={!isCurrentMonth}
-                      className={`h-9 w-9 mx-auto rounded-lg text-sm font-medium transition-colors ${
+                      className={`h-9 w-9 mx-auto rounded-lg text-sm font-medium transition-colors font-mono tabular-nums ${
                         isSelected
-                          ? 'bg-primary text-white'
+                          ? 'bg-primary text-accent-light shadow-sm'
                           : cellIsToday
-                            ? 'bg-gray-100 text-primary'
+                            ? 'bg-accent/10 text-accent-dark border border-accent/30'
                             : isCurrentMonth
                               ? 'text-gray-700 hover:bg-gray-100'
                               : 'text-gray-300'
@@ -336,7 +342,7 @@ const ExamDatePicker = ({ value, onChange }) => {
                     handleSelect('');
                     setShowDatePicker(false);
                   }}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer font-mono"
                 >
                   清除
                 </button>
@@ -348,7 +354,7 @@ const ExamDatePicker = ({ value, onChange }) => {
                     setPickerDate(today);
                     setShowDatePicker(false);
                   }}
-                  className="text-sm text-primary font-medium hover:text-accent transition-colors"
+                  className="text-sm text-accent-dark font-medium hover:text-accent transition-colors cursor-pointer font-mono uppercase tracking-wider"
                 >
                   今天
                 </button>

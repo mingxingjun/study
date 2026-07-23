@@ -36,20 +36,25 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
     });
   }, [answerRecords, dailyRecords]);
 
-  // 自定义 Tooltip — 极简灰阶卡片
+  // 自定义 Tooltip — 编辑风极简卡片
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white border border-gray-200/80 rounded-xl shadow-lg px-3.5 py-2.5">
-          <p className="text-xs font-mono text-gray-500 mb-1.5 tracking-wider">{label}</p>
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3">
+          <p className="text-[10px] font-mono text-gray-400 mb-2 tracking-[0.2em] uppercase">
+            {label}
+          </p>
           {payload.map((entry, index) => (
-            <div key={index} className="flex items-center gap-2 text-sm">
+            <div key={index} className="flex items-center gap-2.5 text-sm">
               <span
-                className="w-2 h-2 rounded-full"
+                className="w-1.5 h-1.5 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-gray-600">{entry.name}</span>
-              <span className="font-mono font-medium text-gray-900 ml-auto tabular-nums">
+              <span className="text-gray-500 font-sans">{entry.name}</span>
+              <span
+                className="font-serif font-medium text-primary ml-auto tabular-nums"
+                style={{ letterSpacing: '-0.02em' }}
+              >
                 {entry.value}{entry.name === '正确率' ? '%' : 'min'}
               </span>
             </div>
@@ -62,31 +67,41 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
 
   // 自定义图例 — 极简文字样式
   const renderLegend = (value) => (
-    <span className="text-xs text-gray-600 font-mono tracking-wide px-1">{value}</span>
+    <span className="text-[11px] text-gray-500 font-mono tracking-[0.15em] uppercase px-1">
+      {value}
+    </span>
   );
 
   const hasData = chartData.some(d => d.复习时长 > 0 || d.正确率 > 0);
 
   return (
     <div className="w-full">
-      {/* 标题区 */}
-      <div className="flex items-baseline justify-between mb-5">
+      {/* 标题区 - 衬线主标 + mono 副标 */}
+      <div className="flex items-baseline justify-between mb-6">
         <div>
-          <h3 className="font-mono text-lg font-semibold text-primary">学习趋势</h3>
-          <p className="text-xs text-gray-500 mt-0.5">最近 7 天数据</p>
+          <h3 className="font-serif text-lg text-primary" style={{ fontWeight: 500 }}>
+            最近 7 天学习数据
+          </h3>
+          <p className="text-[11px] text-gray-400 font-mono tracking-wide mt-1">
+            Focus minutes · Accuracy
+          </p>
         </div>
         <span className="text-[10px] text-gray-400 font-mono tracking-[0.2em] uppercase">
-          7 DAYS
+          7 Days
         </span>
       </div>
 
       {!hasData && (
-        <div className="bg-gray-50 rounded-2xl p-10 text-center border border-dashed border-gray-200">
-          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 border border-gray-200/60">
-            <TrendingUp size={22} className="text-gray-400" />
+        <div className="bg-warm-50/60 rounded-xl p-12 text-center border border-dashed border-gray-200">
+          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-200/60 shadow-xs">
+            <TrendingUp size={22} className="text-gray-400" strokeWidth={1.5} />
           </div>
-          <p className="text-sm text-gray-500">暂无学习数据</p>
-          <p className="text-xs text-gray-400 mt-1">开始刷题或专注后，趋势图将在这里显示</p>
+          <p className="font-serif text-base text-gray-700 mb-1.5" style={{ fontWeight: 500 }}>
+            暂无学习数据
+          </p>
+          <p className="text-xs text-gray-400 font-mono tracking-wide">
+            开始刷题或专注后，趋势图将在这里显示
+          </p>
         </div>
       )}
 
@@ -101,14 +116,14 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
             />
             <XAxis
               dataKey="date"
-              tick={{ fill: '#837b71', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+              tick={{ fill: '#837b71', fontSize: 11, fontFamily: 'Fira Code' }}
               axisLine={{ stroke: '#e8e5e0' }}
               tickLine={false}
               dy={8}
             />
             <YAxis
               yAxisId="left"
-              tick={{ fill: '#837b71', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+              tick={{ fill: '#837b71', fontSize: 11, fontFamily: 'Fira Code' }}
               axisLine={false}
               tickLine={false}
             />
@@ -116,7 +131,7 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
               yAxisId="right"
               orientation="right"
               domain={[0, 100]}
-              tick={{ fill: '#837b71', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+              tick={{ fill: '#837b71', fontSize: 11, fontFamily: 'Fira Code' }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `${v}%`}
@@ -131,20 +146,20 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
               yAxisId="left"
               type="monotone"
               dataKey="复习时长"
-              stroke="#1a1815"
+              stroke="#171717"
               strokeWidth={2}
-              dot={{ fill: '#1a1815', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, fill: '#1a1815', stroke: '#faf9f7', strokeWidth: 2 }}
+              dot={{ fill: '#171717', strokeWidth: 0, r: 3 }}
+              activeDot={{ r: 5, fill: '#171717', stroke: '#faf9f7', strokeWidth: 2 }}
             />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="正确率"
-              stroke="#b0a9a0"
+              stroke="#c9a227"
               strokeWidth={2}
               strokeDasharray="4 4"
-              dot={{ fill: '#b0a9a0', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, fill: '#b0a9a0', stroke: '#faf9f7', strokeWidth: 2 }}
+              dot={{ fill: '#c9a227', strokeWidth: 0, r: 3 }}
+              activeDot={{ r: 5, fill: '#c9a227', stroke: '#faf9f7', strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>

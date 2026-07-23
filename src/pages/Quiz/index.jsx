@@ -394,15 +394,20 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-14 stagger-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">开始刷题</h1>
-          <p className="text-gray-500 text-sm">通过刷题巩固知识，发现薄弱点</p>
+          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+          <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+            开始刷题<span className="text-accent-dark">.</span>
+          </h1>
+          <p className="text-gray-500 text-base">通过刷题巩固知识，发现薄弱点</p>
         </div>
-        <Card className="p-16 text-center card-hover stagger-2">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-7">
-            <Check className="text-primary" size={28} />
+        <Card className="p-12 sm:p-16 text-center card-hover stagger-2" elevated>
+          <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-7">
+            <Check className="text-accent-dark" size={28} strokeWidth={1.5} />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-3">当前题目已全部答对</h2>
-          <p className="text-gray-500 mb-8 leading-relaxed max-w-md mx-auto">
+          <h2 className="font-serif text-3xl text-primary mb-4" style={{ fontWeight: 400, letterSpacing: '-0.025em' }}>
+            当前题目已全部答对
+          </h2>
+          <p className="text-gray-500 mb-9 leading-relaxed max-w-md mx-auto">
             已掌握题目已被自动跳过。如需重新练习，可关闭「跳过已答对题目」或去题库管理添加新题。
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -422,15 +427,20 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-14 stagger-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">开始刷题</h1>
-          <p className="text-gray-500 text-sm">通过刷题巩固知识，发现薄弱点</p>
+          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+          <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+            开始刷题<span className="text-accent-dark">.</span>
+          </h1>
+          <p className="text-gray-500 text-base">通过刷题巩固知识，发现薄弱点</p>
         </div>
-        <Card className="p-16 text-center card-hover stagger-2">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-7">
-            <Upload className="text-white" size={28} />
+        <Card className="p-12 sm:p-16 text-center card-hover stagger-2" elevated>
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-7 shadow-md">
+            <Upload className="text-accent" size={28} strokeWidth={1.5} />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-3">还没有可用题目</h2>
-          <p className="text-gray-500 mb-8 leading-relaxed max-w-md mx-auto">
+          <h2 className="font-serif text-3xl text-primary mb-4" style={{ fontWeight: 400, letterSpacing: '-0.025em' }}>
+            还没有可用题目
+          </h2>
+          <p className="text-gray-500 mb-9 leading-relaxed max-w-md mx-auto">
             请先上传复习资料，系统会自动生成题目供你练习
           </p>
           <Button onClick={() => navigate('/upload')} size="lg">
@@ -447,8 +457,11 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-14 stagger-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">练习结果</h1>
-          <p className="text-gray-500 text-sm">查看本次练习的表现</p>
+          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Result · 练习结果</p>
+          <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+            练习结果<span className="text-accent-dark">.</span>
+          </h1>
+          <p className="text-gray-500 text-base">查看本次练习的表现</p>
         </div>
         <div className="stagger-2">
           <QuizSummary
@@ -468,14 +481,17 @@ const Quiz = () => {
   if (!isInitialized) {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
-        <div className="mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">开始刷题</h1>
-          <p className="text-gray-500 text-sm">正在加载题目...</p>
+        <div className="mb-12 stagger-1">
+          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+          <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+            开始刷题<span className="text-accent-dark">.</span>
+          </h1>
+          <p className="text-gray-500 text-base">正在加载题目...</p>
         </div>
         <div className="flex items-center justify-center py-24">
           <div className="flex items-center gap-3 text-gray-400">
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
-            <span className="text-sm">正在加载题目...</span>
+            <div className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse" />
+            <span className="text-sm font-mono tracking-wide">正在加载题目...</span>
           </div>
         </div>
       </div>
@@ -487,13 +503,18 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-14 stagger-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">开始刷题</h1>
-          <p className="text-gray-500 text-sm">通过刷题巩固知识，发现薄弱点</p>
+          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+          <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+            开始刷题<span className="text-accent-dark">.</span>
+          </h1>
+          <p className="text-gray-500 text-base">通过刷题巩固知识，发现薄弱点</p>
         </div>
-        <Card className="p-16 text-center card-hover stagger-2">
-          <h2 className="text-xl font-semibold text-gray-900 mb-3">当前筛选条件下没有题目</h2>
-          <p className="text-gray-500 mb-6">
-            题型 <span className="font-medium text-primary">{getTypeLabel(selectedType)}</span> 暂无题目，尝试切换其他题型或模式
+        <Card className="p-12 sm:p-16 text-center card-hover stagger-2" elevated>
+          <h2 className="font-serif text-2xl text-primary mb-4" style={{ fontWeight: 400, letterSpacing: '-0.025em' }}>
+            当前筛选条件下没有题目
+          </h2>
+          <p className="text-gray-500 mb-8">
+            题型 <span className="font-mono font-medium text-accent-dark">{getTypeLabel(selectedType)}</span> 暂无题目，尝试切换其他题型或模式
           </p>
           <div className="flex items-center justify-center gap-3">
             <Button variant="secondary" onClick={() => setQuizMode('sequential')}>顺序刷题</Button>
@@ -508,49 +529,53 @@ const Quiz = () => {
 
   return (
     <div className="page-fade-in max-w-3xl mx-auto">
-      <div className="mb-14 stagger-1">
-        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">开始刷题</h1>
-        <p className="text-gray-500 text-sm">认真作答，AI 助教会帮你分析错题</p>
+      {/* 页面标题区 - 衬线大字 + mono 标签 + 金色句点 */}
+      <div className="mb-12 stagger-1">
+        <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+        <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+          开始刷题<span className="text-accent-dark">.</span>
+        </h1>
+        <p className="text-gray-500 text-base">认真作答，AI 助教会帮你分析错题</p>
       </div>
 
-      {/* 刷题模式选择 */}
-      <Card className="p-5 mb-6 stagger-2">
+      {/* 刷题模式选择 - 编辑式控制面板 */}
+      <Card className="p-5 sm:p-6 mb-6 stagger-2" elevated>
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            <ListOrdered size={16} className="text-primary" />
-            <span>刷题模式</span>
+            <ListOrdered size={15} className="text-accent-dark" strokeWidth={1.5} />
+            <span className="font-mono text-xs uppercase tracking-[0.2em]">刷题模式</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setQuizMode('sequential')}
-              className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
                 quizMode === 'sequential'
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                  ? 'bg-primary text-white border-primary shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
               }`}
             >
               顺序
             </button>
             <button
               onClick={() => setQuizMode('random')}
-              className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
                 quizMode === 'random'
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                  ? 'bg-primary text-white border-primary shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
               }`}
             >
-              <Shuffle size={14} className="inline mr-1" />
+              <Shuffle size={13} className="inline mr-1.5" strokeWidth={2} />
               随机
             </button>
             <button
               onClick={() => setQuizMode('type')}
-              className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
                 quizMode === 'type'
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                  ? 'bg-primary text-white border-primary shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
               }`}
             >
-              <Filter size={14} className="inline mr-1" />
+              <Filter size={13} className="inline mr-1.5" strokeWidth={2} />
               按题型
             </button>
           </div>
@@ -561,10 +586,10 @@ const Quiz = () => {
                 <button
                   key={type}
                   onClick={() => setSelectedType(type)}
-                  className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 cursor-pointer ${
+                  className={`px-3.5 py-2 rounded-full text-sm font-medium border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
                     selectedType === type
-                      ? 'bg-gray-800 text-white border-gray-800'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                      ? 'bg-accent text-primary border-accent shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
                   }`}
                 >
                   {getTypeLabel(type)}
@@ -574,21 +599,21 @@ const Quiz = () => {
           )}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+        <div className="mt-5 pt-5 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
           <button
             onClick={() => setSkipMastered(prev => !prev)}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-primary transition-colors cursor-pointer"
+            className="flex items-center gap-2.5 text-sm text-gray-600 hover:text-primary transition-colors cursor-pointer"
           >
             <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
               skipMastered
                 ? 'bg-primary border-primary'
                 : 'border-gray-300 bg-white'
             }`}>
-              {skipMastered && <Check size={14} className="text-white" />}
+              {skipMastered && <Check size={13} className="text-white" strokeWidth={3} />}
             </div>
-            跳过已答对题目
+            <span>跳过已答对题目</span>
           </button>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs font-mono text-gray-400 tabular-nums tracking-wide">
             已过滤 {availableQuestions.length - baseQuestions.length} 道已掌握题目
           </span>
         </div>
@@ -604,7 +629,7 @@ const Quiz = () => {
         />
       </div>
 
-      <div className="mt-10 stagger-4">
+      <div className="mt-8 stagger-4">
         <QuestionCard
           question={currentQuestion}
           questionNumber={currentIndex + 1}
@@ -629,7 +654,7 @@ const Quiz = () => {
         />
       </div>
 
-      <div className="mt-10 flex justify-end gap-3 stagger-5">
+      <div className="mt-8 flex justify-end gap-3 stagger-5">
         {!showResult && currentQuestion.type !== 'single' && currentQuestion.type !== 'truefalse' ? (
           <Button
             size="lg"

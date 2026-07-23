@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookX, BookOpen } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { sortByReviewPriority } from '../../utils/reviewSchedule';
 import { useStudyContext } from '../../context/StudyContext';
 import { useAgents } from '../../hooks/useAgents';
@@ -165,11 +165,69 @@ const WrongBook = () => {
     return sortByReviewPriority(sourceQuestions, sourceRecords);
   }, [state.wrongQuestions, state.answerRecords, prioritizeDue]);
 
+  // 统计数据：待复习数与已掌握数
+  // 依赖 state.wrongQuestions 而非派生的 wrongQuestions，避免每次渲染生成新数组引用
+  const dueCount = useMemo(
+    () => (state.wrongQuestions || []).filter(wq => !wq.mastered).length,
+    [state.wrongQuestions]
+  );
+  const masteredCount = useMemo(
+    () => (state.wrongQuestions || []).filter(wq => wq.mastered).length,
+    [state.wrongQuestions]
+  );
+
   return (
     <div ref={pageRef}>
+      {/* 页面标题区 - 衬线大字 + mono 标签 + 金色点缀 */}
       <div className="mb-14 stagger-item">
-        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">错题本</h1>
-        <p className="text-gray-500 text-sm">分析错题，查漏补缺</p>
+        <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+          Wrong Book · 错题档案
+        </p>
+        <div className="flex items-end justify-between flex-wrap gap-6">
+          <div>
+            <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+              错题本
+              <span className="text-accent-dark">.</span>
+            </h1>
+            <p className="text-gray-500 text-base max-w-xl leading-relaxed">
+              分析错题，查漏补缺 — 每一道错题都是一次精进的契机。
+            </p>
+          </div>
+          {/* 右侧数据指标 - 衬线大数字 + mono 标签 */}
+          {wrongQuestions.length > 0 && (
+            <div className="flex items-end gap-10 pb-1">
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-wider text-accent-dark mb-1">
+                  Pending
+                </p>
+                <div className="flex items-baseline gap-1.5">
+                  <span
+                    className="font-serif text-primary tabular-nums"
+                    style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1, fontSize: '2.5rem' }}
+                  >
+                    {dueCount}
+                  </span>
+                  <span className="text-xs text-gray-400 font-mono">待复习</span>
+                </div>
+              </div>
+              <div className="w-px h-10 bg-gray-200" />
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-wider text-gray-400 mb-1">
+                  Mastered
+                </p>
+                <div className="flex items-baseline gap-1.5">
+                  <span
+                    className="font-serif text-gray-400 tabular-nums"
+                    style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1, fontSize: '2.5rem' }}
+                  >
+                    {masteredCount}
+                  </span>
+                  <span className="text-xs text-gray-400 font-mono">已掌握</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10">
@@ -186,20 +244,30 @@ const WrongBook = () => {
 
         <div className="stagger-item">
           {!selectedQuestion ? (
-            <Card className="h-full min-h-[400px] flex flex-col">
+            <Card className="h-full min-h-[400px] flex flex-col p-8" elevated>
               <div className="mb-6">
                 {explainerAgent && (
                   <AgentMessage agent={explainerAgent} message="错题是最好的老师，让我来帮你分析这些题目吧！" />
                 )}
               </div>
               <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-200">
-                  <BookX className="text-gray-400" size={36} />
+                {/* 装饰性序号 - 衬线大号灰字 */}
+                <div className="relative mb-8">
+                  <span
+                    className="font-serif text-gray-200 block"
+                    style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1, fontSize: '5rem' }}
+                  >
+                    00
+                  </span>
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-px bg-accent" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-accent-dark mb-3">
+                  {wrongQuestions.length === 0 ? 'No Records' : 'Select a Question'}
+                </p>
+                <h3 className="text-2xl text-primary mb-3" style={{ fontWeight: 400 }}>
                   {wrongQuestions.length === 0 ? '暂无错题' : '选择一道错题'}
                 </h3>
-                <p className="text-sm text-gray-500 mb-6 max-w-xs mx-auto leading-relaxed">
+                <p className="text-sm text-gray-500 mb-8 max-w-xs mx-auto leading-relaxed">
                   {wrongQuestions.length === 0
                     ? '答错的题目会自动收录到这里，开始刷题来积累错题吧'
                     : '点击左侧任意一道错题，查看详细解析与相似题推荐'}
@@ -225,7 +293,7 @@ const WrongBook = () => {
                 onPracticeSimilar={handlePracticeSimilar}
               />
 
-              <Card className="p-6 stagger-item">
+              <Card className="p-6 stagger-item" elevated>
                 <WrongQuestionActions
                   mastered={selectedQuestion.mastered}
                   onPracticeAgain={handlePracticeAgain}

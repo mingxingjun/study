@@ -265,7 +265,8 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* 文件类型选择 - 编辑式 pills */}
       <div className="flex flex-wrap gap-2">
         {Object.entries(FILE_TYPES).map(([key, config]) => {
           const Icon = config.icon;
@@ -274,28 +275,29 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
             <button
               key={key}
               onClick={() => setSelectedType(key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition-colors duration-200 ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 isActive
-                  ? 'bg-primary text-gray-50'
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200/80'
+                  ? 'bg-primary text-accent-light shadow-sm'
+                  : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-primary border border-gray-200'
               }`}
             >
-              <Icon size={15} />
+              <Icon size={15} strokeWidth={1.8} />
               {config.label}
             </button>
           );
         })}
       </div>
 
+      {/* 拖拽上传区 - 编辑式留白 */}
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-2xl min-h-[180px] h-auto sm:h-48 flex items-center justify-center text-center cursor-pointer transition-colors duration-300 ${
+        className={`relative border border-dashed rounded-2xl min-h-[200px] h-auto sm:h-56 flex items-center justify-center text-center cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           isDragging
-            ? 'border-primary bg-gray-50'
-            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50/50'
+            ? 'border-accent bg-accent/5 shadow-gold'
+            : 'border-gray-300 hover:border-gray-900 hover:bg-gray-50/40'
         }`}
       >
         <input
@@ -307,27 +309,31 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
           className="hidden"
         />
         <div className="flex flex-col items-center gap-5">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-colors duration-300 border border-gray-200 ${
-            isDragging ? 'bg-primary' : 'bg-gray-100'
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-colors duration-300 border ${
+            isDragging
+              ? 'bg-accent border-accent shadow-gold'
+              : 'bg-gray-50 border-gray-200'
           }`}>
-            <Upload size={28} className={isDragging ? 'text-gray-50' : 'text-gray-500'} />
+            <Upload size={26} className={isDragging ? 'text-primary' : 'text-gray-500'} strokeWidth={1.6} />
           </div>
           <div>
-            <p className="text-base font-medium text-primary">
-              拖拽文件到这里，或点击选择
+            <p className="text-base font-serif text-primary" style={{ fontWeight: 400 }}>
+              拖拽文件到这里，或<span className="text-accent-dark gold-underline mx-1">点击选择</span>
             </p>
-            <p className="text-xs text-gray-500 mt-1.5 font-mono tracking-wide">
+            <p className="text-xs text-gray-500 mt-2 font-mono tracking-wide tabular-nums">
               支持 {FILE_TYPES[selectedType].description}
             </p>
           </div>
         </div>
       </div>
 
+      {/* 示例题库提示 - 编辑式横条 */}
       {selectedType === 'questionBank' && (
-        <div className="bg-gray-50 rounded-xl p-5 border border-gray-200/60">
+        <div className="bg-gray-50 rounded-xl p-5 border border-gray-200/80">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-900">没有题库文件？</p>
+              <p className="text-[11px] font-mono uppercase tracking-wider text-accent-dark mb-1">No File?</p>
+              <p className="text-sm font-serif text-gray-900" style={{ fontWeight: 500 }}>没有题库文件？</p>
               <p className="text-xs text-gray-500 mt-0.5">使用预设的电路分析示例题库</p>
             </div>
             <Button variant="secondary" size="sm" onClick={onUseSampleQuestions}>
@@ -337,53 +343,60 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
         </div>
       )}
 
+      {/* 已添加文件列表 - 编辑式编号 */}
       {files.length > 0 && (
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs text-gray-500 font-medium">已添加文件</span>
-            <span className="text-xs text-gray-400 font-mono">{files.length} 个</span>
+        <div className="space-y-3">
+          <div className="flex items-baseline justify-between px-1 pb-1">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-gray-500">Added Files</span>
+            <span className="text-xs text-gray-400 font-mono tabular-nums">{files.length} 个</span>
           </div>
-          {files.map((file) => {
+          {files.map((file, idx) => {
             const FileIcon = getFileIcon(file);
             const status = parseStatus[file.id];
             return (
-              <div key={file.id} className="bg-gray-50 rounded-xl p-3.5 border border-gray-200/60 hover:border-gray-300 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200/60">
-                    <FileIcon size={18} className="text-gray-500" />
+              <div key={file.id} className="bg-white rounded-xl p-4 border border-gray-200/80 hover:border-gray-300 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                <div className="flex items-center gap-4">
+                  {/* 大号衬线编号 */}
+                  <div className="flex-shrink-0 w-10 text-right">
+                    <span className="font-serif text-2xl text-gray-200 tabular-nums" style={{ fontWeight: 400, letterSpacing: '-0.04em' }}>
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+                  <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200/80">
+                    <FileIcon size={18} className="text-gray-500" strokeWidth={1.6} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                      <p className="text-sm font-serif text-gray-900 truncate" style={{ fontWeight: 500 }}>{file.name}</p>
                       <button
                         onClick={() => removeFile(file.id)}
                         className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-2 flex-shrink-0 cursor-pointer"
                         title="移除文件"
                       >
-                        <X size={15} className="text-gray-400" />
+                        <X size={15} className="text-gray-400 hover:text-red-600" />
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-500 font-mono">{formatFileSize(file.size)}</span>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-xs text-gray-500 font-mono tabular-nums">{formatFileSize(file.size)}</span>
                       <span className="text-gray-300">·</span>
-                      <span className="text-xs text-gray-500 font-mono">{getFileTypeLabel(file)}</span>
+                      <span className="text-[11px] font-mono uppercase tracking-wider text-accent-dark">{getFileTypeLabel(file)}</span>
                       <span className="text-gray-300">·</span>
                       <span className="text-xs text-gray-500">{FILE_TYPES[file.type].label}</span>
                     </div>
 
                     {/* 演示模式：上传进度条 */}
                     {mode === 'demo' && file.status === 'uploading' && (
-                      <div className="mt-2.5">
+                      <div className="mt-3">
                         <ProgressBar value={file.progress} size="sm" showLabel />
                       </div>
                     )}
 
                     {/* 正式模式：解析中状态 */}
                     {mode === 'formal' && status && status.status === 'parsing' && (
-                      <div className="mt-2.5 space-y-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <Loader2 size={12} className="text-gray-600 animate-spin" />
-                          <span className="text-xs text-gray-600">{status.message}</span>
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Loader2 size={12} className="text-accent-dark animate-spin" />
+                          <span className="text-xs text-gray-600 font-mono">{status.message}</span>
                         </div>
                         <ProgressBar value={status.progress} size="sm" />
                       </div>
@@ -391,17 +404,17 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
 
                     {/* 正式模式：解析错误 */}
                     {mode === 'formal' && status && status.status === 'error' && (
-                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         <AlertCircle size={12} className="text-red-500 flex-shrink-0" />
                         <span className="text-xs text-red-500">{status.error}</span>
                         {status.showLink && (
-                          <Link to="/settings" className="text-xs text-primary underline ml-1">
+                          <Link to="/settings" className="text-xs text-primary underline ml-1 underline-offset-2">
                             去配置
                           </Link>
                         )}
                         <button
                           onClick={() => retryFile(file)}
-                          className="flex items-center gap-1 text-xs text-primary hover:text-accent font-medium ml-1 cursor-pointer"
+                          className="flex items-center gap-1 text-xs text-primary hover:text-accent-dark font-medium ml-1 cursor-pointer transition-colors duration-200"
                         >
                           <RotateCcw size={12} />
                           重试
@@ -411,19 +424,19 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
 
                     {/* 完成状态 */}
                     {file.status === 'completed' && (
-                      <div className="mt-1.5 space-y-1">
+                      <div className="mt-2 space-y-1.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <Check size={12} className="text-gray-700 flex-shrink-0" />
-                          <span className="text-xs text-gray-600">
+                          <Check size={12} className="text-accent-dark flex-shrink-0" strokeWidth={2.2} />
+                          <span className="text-xs text-gray-600 font-mono">
                             {mode === 'formal' && status && status.status === 'completed'
                               ? `解析完成${status.questionCount ? ` · ${status.questionCount} 道题` : ''}`
                               : '上传完成'}
                           </span>
                           {/* 解析方式标签 */}
                           {mode === 'formal' && status?.method && (
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono tabular-nums ${
                               status.method === 'structured' || status.method === 'ai'
-                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                ? 'bg-accent/10 text-accent-dark border border-accent/30'
                                 : 'bg-amber-50 text-amber-700 border border-amber-200'
                             }`}>
                               {METHOD_LABELS[status.method] || status.method}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Play, Sparkles, RefreshCw } from 'lucide-react';
+import { Upload, Play, Sparkles, RefreshCw, ArrowRight } from 'lucide-react';
 import AgentsPanel from '../../components/agents/AgentsPanel';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
@@ -18,6 +18,10 @@ import OnboardingSteps from './OnboardingSteps';
 import MasteryCard from './MasteryCard';
 import DemoModeBanner from './DemoModeBanner';
 
+/**
+ * 仪表盘首页 - Refined Editorial Minimalism
+ * 衬线大标题 + 金色精致点缀 + 编辑式分区
+ */
 const Dashboard = () => {
   const navigate = useNavigate();
   const { state, loadDemoData, dueReviewQuestions } = useStudyContext();
@@ -122,37 +126,52 @@ const Dashboard = () => {
     return () => clearTimeout(timer);
   }, [thinkAndSay, isNewUser, isDemo]);
 
+  // 新用户引导视图
   if (showOnboarding) {
     return (
       <div ref={pageRef} className="max-w-5xl mx-auto">
-        <div className="mb-14 stagger-item">
-          <p className="text-sm text-gray-500 mb-2">{formatDate()}</p>
-          <h1 className="text-3xl md:text-4xl font-bold text-primary">
-            你好，欢迎使用复习搭子
+        {/* 标题区 - 衬线大字 + mono 日期 */}
+        <div className="mb-16 stagger-item">
+          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+            {formatDate()}
+          </p>
+          <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+            你好，欢迎使用
+            <span className="text-accent-dark">复习搭子</span>
           </h1>
+          <p className="text-gray-500 text-base max-w-xl leading-relaxed">
+            不只是通用题库 — 上传你的教材与笔记，AI 自动生成专属复习题库。
+          </p>
         </div>
 
-        <Card className="p-8 sm:p-12 mb-10 card-hover stagger-item">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Sparkles className="w-8 h-8 text-white" />
+        {/* 主 CTA 卡片 - 大留白 + 居中 */}
+        <Card className="p-10 sm:p-16 mb-12 stagger-item relative overflow-hidden" elevated>
+          {/* 装饰性金色光晕 */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/3 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="text-center max-w-2xl mx-auto relative">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-7 shadow-md">
+              <Sparkles className="w-7 h-7 text-accent" strokeWidth={1.5} />
             </div>
 
-            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-3">
-              不只是通用题库
+            <h2 className="text-3xl md:text-4xl text-primary mb-4" style={{ fontWeight: 400 }}>
+              让 AI 成为你的
+              <span className="gold-underline mx-1">私人助教</span>
             </h2>
-            <p className="text-gray-500 mb-10 leading-relaxed">
-              上传你的教材 / 笔记，AI 自动生成专属复习题库
+            <p className="text-gray-500 mb-10 leading-relaxed text-base">
+              上传教材 / 笔记，自动生成专属题库、智能批改、错题复习
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-12">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button size="lg" onClick={() => navigate('/upload')}>
-                <Upload className="w-5 h-5" />
+                <Upload className="w-4 h-4" />
                 上传我的资料
+                <ArrowRight className="w-4 h-4" />
               </Button>
               {state.mode === 'demo' && (
                 <Button variant="secondary" size="lg" onClick={handleLoadDemo}>
-                  <Play className="w-5 h-5" />
+                  <Play className="w-4 h-4" />
                   先看看演示
                 </Button>
               )}
@@ -166,7 +185,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="mb-10 stagger-item">
+        <div className="mb-12 stagger-item">
           <OnboardingSteps />
         </div>
 
@@ -177,64 +196,78 @@ const Dashboard = () => {
     );
   }
 
+  // 主仪表盘视图
   return (
     <div ref={pageRef}>
       {isDemo && (
-        <div className="mb-8 stagger-item">
+        <div className="mb-10 stagger-item">
           <DemoModeBanner />
         </div>
       )}
 
+      {/* 标题区 - 衬线大字 + mono 日期 + 金色下划线点缀 */}
       <div className="mb-14 stagger-item">
-        <p className="text-sm text-gray-500 mb-2">{formatDate()}</p>
-        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
+        <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+          {formatDate()}
+        </p>
+        <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
           {isDemo ? '演示模式' : '你好，欢迎回来'}
         </h1>
-        <p className="text-gray-500 max-w-2xl">
+        <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
           不只是通用题库，上传你的教材 / 笔记，AI 自动生成专属复习题库
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* 左侧主内容 */}
-        <div className="lg:col-span-8 space-y-10">
+        <div className="lg:col-span-8 space-y-12">
+          {/* 学习概览 */}
           <div className="stagger-item">
-            <div className="flex items-center gap-2 mb-4 px-1">
-              <h2 className="text-lg font-semibold text-primary">学习概览</h2>
-              <span className="font-mono text-xs text-gray-400">Overview</span>
-            </div>
+            <SectionTitle title="学习概览" subtitle="Overview" />
             <DashboardStats stats={stats} questionsCount={questions.length} />
           </div>
 
+          {/* 今日任务 */}
           <div className="stagger-item">
+            <SectionTitle title="今日任务" subtitle="Today's Tasks" />
             <TodayTasks todayTasks={todayTasks} hasMaterials={hasData || isDemo} />
           </div>
 
+          {/* 薄弱知识点 */}
           <div className="stagger-item">
+            <SectionTitle title="薄弱知识点" subtitle="Weak Points" />
             <WeakPointsChart weakPoints={weakPoints} />
           </div>
         </div>
 
         {/* 右侧边栏 */}
-        <div className="lg:col-span-4 space-y-10">
+        <div className="lg:col-span-4 space-y-8">
           <div className="stagger-item">
             <MasteryCard answerRecords={answerRecords} />
           </div>
 
+          {/* 今日待复习 - 金色强调卡片 */}
           <div className="stagger-item">
-            <Card className="card-hover">
-              <div className="flex items-start justify-between mb-4">
+            <Card className="card-hover bg-gradient-to-br from-accent/8 to-accent/3 border-accent/20" elevated>
+              <div className="flex items-start justify-between mb-5">
                 <div>
-                  <h3 className="text-base font-semibold text-primary">今日待复习</h3>
-                  <p className="text-xs text-gray-400 mt-1 font-mono">基于艾宾浩斯遗忘曲线</p>
+                  <p className="text-[11px] font-mono uppercase tracking-wider text-accent-dark mb-1">
+                    Due Today
+                  </p>
+                  <h3 className="text-base font-serif text-primary" style={{ fontWeight: 500 }}>
+                    今日待复习
+                  </h3>
+                  <p className="text-[11px] text-gray-500 mt-1 font-mono">艾宾浩斯遗忘曲线</p>
                 </div>
-                <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
-                  <RefreshCw className="w-5 h-5 text-primary" />
+                <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-gold">
+                  <RefreshCw className="w-4 h-4 text-primary" strokeWidth={2.2} />
                 </div>
               </div>
-              <div className="mb-5">
-                <span className="text-3xl font-bold text-gray-900">{dueReviewQuestions.length}</span>
-                <span className="text-sm text-gray-500 ml-1">道错题到期</span>
+              <div className="mb-6 flex items-baseline gap-2">
+                <span className="font-serif text-5xl text-primary tabular-nums" style={{ fontWeight: 400, letterSpacing: '-0.04em' }}>
+                  {dueReviewQuestions.length}
+                </span>
+                <span className="text-sm text-gray-500">道错题到期</span>
               </div>
               <Button
                 variant="secondary"
@@ -243,6 +276,7 @@ const Dashboard = () => {
                 disabled={dueReviewQuestions.length === 0}
               >
                 去错题本复习
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </Card>
           </div>
@@ -259,5 +293,20 @@ const Dashboard = () => {
     </div>
   );
 };
+
+/**
+ * 区块标题 - 衬线小标题 + mono 英文副标
+ */
+const SectionTitle = ({ title, subtitle }) => (
+  <div className="flex items-baseline gap-3 mb-6">
+    <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
+      {title}
+    </h2>
+    <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
+      {subtitle}
+    </span>
+    <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+  </div>
+);
 
 export default Dashboard;

@@ -17,28 +17,28 @@ import FormulaInput from '../../components/FormulaInput';
 import useStaggerAnimation from '../../hooks/useStaggerAnimation';
 
 /**
- * 题型配置
+ * 题型配置 - 统一金色徽章风格
  * @type {Object.<string, {label: string, badge: string}>}
  */
 const TYPE_CONFIG = {
-  single: { label: '单选题', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
-  multiple: { label: '多选题', badge: 'bg-purple-50 text-purple-700 border-purple-200' },
-  truefalse: { label: '判断题', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
-  fillblank: { label: '填空题', badge: 'bg-green-50 text-green-700 border-green-200' },
-  essay: { label: '简答题', badge: 'bg-gray-50 text-gray-700 border-gray-200' },
-  calculation: { label: '计算题', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
+  single: { label: '单选题', badge: 'bg-accent-light/40 text-accent-dark border-accent/30' },
+  multiple: { label: '多选题', badge: 'bg-primary/5 text-primary border-primary/20' },
+  truefalse: { label: '判断题', badge: 'bg-warm-100 text-gray-700 border-warm-300' },
+  fillblank: { label: '填空题', badge: 'bg-accent-light/30 text-accent-dark border-accent/25' },
+  essay: { label: '简答题', badge: 'bg-gray-100 text-gray-700 border-gray-200' },
+  calculation: { label: '计算题', badge: 'bg-accent/15 text-accent-dark border-accent/40' }
 };
 
 /** AI 出题协作步骤 */
 const GENERATION_STEPS = ['分析知识点', '生成题干与选项', '评估难度与科学性', '格式化校验'];
 
 /**
- * 难度配置
+ * 难度配置 - 编辑风灰阶 + 金色
  * @type {Object.<string, {label: string, badge: string}>}
  */
 const DIFFICULTY_CONFIG = {
   easy: { label: '易', badge: 'border-gray-200 text-gray-500 bg-gray-50' },
-  medium: { label: '中', badge: 'border-gray-300 text-gray-700 bg-gray-100' },
+  medium: { label: '中', badge: 'border-accent/30 text-accent-dark bg-accent-light/30' },
   hard: { label: '难', badge: 'border-primary text-white bg-primary' }
 };
 
@@ -104,6 +104,22 @@ const createEmptyForm = (materialId = 'manual') => ({
   image: '',
   materialId
 });
+
+/**
+ * 区块标题 - 衬线中文 + mono 英文 + 渐变细线
+ */
+const SectionTitle = ({ title, subtitle, action }) => (
+  <div className="flex items-baseline gap-3 mb-6">
+    <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
+      {title}
+    </h2>
+    <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
+      {subtitle}
+    </span>
+    <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+    {action}
+  </div>
+);
 
 /**
  * 题库管理页面
@@ -654,21 +670,28 @@ const QuestionBank = () => {
   const selectedBank = questionBanks.find((b) => b.id === selectedBankId) || questionBanks[0];
 
   return (
-    <div ref={pageRef}>
-      {/* 页面标题 */}
-      <div className="mb-14 stagger-item">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div ref={pageRef} className="page-fade-in">
+      {/* 页面标题 - 衬线大字 + mono 标签 */}
+      <div className="mb-12 stagger-item">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">题库管理</h1>
-            <p className="text-gray-500 text-sm">按文档管理题库，支持搜索、编辑、手动添加和 AI 出题</p>
+            <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+              Question Library
+            </p>
+            <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+              题库管理
+            </h1>
+            <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
+              按文档管理题库，支持搜索、编辑、手动添加和 AI 出题
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="secondary" onClick={handleGoToQuiz}>
-              <BookOpen size={18} />
+              <BookOpen size={16} strokeWidth={1.8} />
               刷当前题库
             </Button>
             <Button onClick={handleAdd}>
-              <Plus size={18} />
+              <Plus size={16} strokeWidth={1.8} />
               新增题目
             </Button>
           </div>
@@ -677,16 +700,22 @@ const QuestionBank = () => {
 
       {/* 批量操作栏 */}
       {selectedIds.size > 0 && (
-        <div className="mb-6 stagger-item">
-          <Card className="p-4">
+        <div className="mb-8 stagger-item">
+          <Card elevated className="p-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-gray-700">
-                  已选 <span className="text-primary font-bold">{selectedIds.size}</span> 题
-                </span>
+              <div className="flex items-center gap-5">
+                <div className="flex items-baseline gap-2">
+                  <span
+                    className="font-serif text-2xl text-primary tabular-nums"
+                    style={{ fontWeight: 400, letterSpacing: '-0.02em', lineHeight: 1 }}
+                  >
+                    {selectedIds.size}
+                  </span>
+                  <span className="text-sm text-gray-500">题已选</span>
+                </div>
                 <button
                   onClick={selectAllFiltered}
-                  className="text-sm text-primary hover:text-accent font-medium cursor-pointer"
+                  className="text-sm text-primary hover:text-accent-dark font-medium cursor-pointer border-b border-primary/20 hover:border-accent-dark/40 pb-0.5"
                 >
                   全选本页
                 </button>
@@ -701,9 +730,9 @@ const QuestionBank = () => {
               {!isBatchDeleting ? (
                 <button
                   onClick={() => setIsBatchDeleting(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} strokeWidth={1.8} />
                   批量删除
                 </button>
               ) : (
@@ -713,13 +742,13 @@ const QuestionBank = () => {
                   </span>
                   <button
                     onClick={() => setIsBatchDeleting(false)}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="px-3 py-1.5 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     取消
                   </button>
                   <button
                     onClick={confirmBatchDelete}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+                    className="px-3 py-1.5 rounded-full text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
                   >
                     确认删除
                   </button>
@@ -730,133 +759,158 @@ const QuestionBank = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8">
         {/* 左侧题库列表 */}
-        <Card className="p-4 h-fit stagger-item">
-          <div className="flex items-center gap-2 mb-4 px-2">
-            <Database size={18} className="text-primary" />
-            <h2 className="text-sm font-bold text-primary uppercase tracking-wider">题库列表</h2>
-          </div>
-          <div className="space-y-1">
-            {questionBanks.map((bank) => {
-              const isActive = bank.id === selectedBankId;
-              const isDeleting = deletingBankId === bank.id;
-              const Icon = bank.type === 'document' ? FileText : Layers;
-              return (
-                <div
-                  key={bank.id}
-                  className={`flex items-center gap-1 rounded-xl transition-colors duration-150 ${
-                    isActive ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <button
-                    onClick={() => setSelectedBankId(bank.id)}
-                    className="flex-1 flex items-center gap-3 px-3 py-3 text-left cursor-pointer min-w-0"
+        <div className="stagger-item">
+          <SectionTitle title="题库列表" subtitle="Libraries" />
+          <Card elevated className="p-4 h-fit">
+            <div className="space-y-1">
+              {questionBanks.map((bank, idx) => {
+                const isActive = bank.id === selectedBankId;
+                const isDeleting = deletingBankId === bank.id;
+                const Icon = bank.type === 'document' ? FileText : Layers;
+                return (
+                  <div
+                    key={bank.id}
+                    className={`flex items-center gap-1 rounded-xl transition-all duration-200 ${
+                      isActive ? 'bg-primary shadow-sm' : 'text-gray-700 hover:bg-warm-50'
+                    }`}
                   >
-                    <Icon size={18} className="flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${isActive ? 'text-white' : 'text-gray-900'}`}>
-                        {bank.name}
-                      </p>
-                      <p className={`text-xs mt-0.5 ${isActive ? 'text-white/80' : 'text-gray-500'}`}>
-                        {bank.questionCount} 道题目
-                      </p>
-                    </div>
-                  </button>
-
-                  {!isDeleting ? (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startDeleteBank(bank.id);
-                      }}
-                      className={`p-2 mr-2 rounded-lg transition-colors cursor-pointer ${
-                        isActive
-                          ? 'text-white/80 hover:bg-white/20'
-                          : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-                      }`}
-                      title={bank.type === 'manual' ? '清空手动题库' : '删除题库'}
+                      onClick={() => setSelectedBankId(bank.id)}
+                      className="flex-1 flex items-center gap-3 px-3 py-3 text-left cursor-pointer min-w-0"
                     >
-                      <Trash2 size={16} />
+                      {/* 编号 / 图标 */}
+                      <div className={`flex-shrink-0 flex items-center gap-2`}>
+                        <span
+                          className={`font-serif text-sm tabular-nums ${
+                            isActive ? 'text-accent' : 'text-gray-300'
+                          }`}
+                          style={{ fontWeight: 400, letterSpacing: '-0.02em' }}
+                        >
+                          {String(idx + 1).padStart(2, '0')}
+                        </span>
+                        <Icon
+                          size={16}
+                          strokeWidth={1.8}
+                          className={isActive ? 'text-accent' : 'text-gray-500'}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${isActive ? 'text-white font-serif' : 'text-gray-900'}`} style={isActive ? { fontWeight: 500 } : {}}>
+                          {bank.name}
+                        </p>
+                        <p className={`text-[11px] mt-0.5 font-mono tabular-nums ${isActive ? 'text-white/60' : 'text-gray-400'}`}>
+                          {bank.questionCount} 道
+                        </p>
+                      </div>
                     </button>
-                  ) : (
-                    <div className="flex items-center gap-1 mr-2 flex-shrink-0">
+
+                    {!isDeleting ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          cancelDeleteBank();
+                          startDeleteBank(bank.id);
                         }}
-                        className="px-2 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                        className={`p-2 mr-2 rounded-lg transition-colors cursor-pointer ${
+                          isActive
+                            ? 'text-white/60 hover:bg-white/20'
+                            : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                        }`}
+                        title={bank.type === 'manual' ? '清空手动题库' : '删除题库'}
                       >
-                        取消
+                        <Trash2 size={14} strokeWidth={1.8} />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          confirmDeleteBank(bank);
-                        }}
-                        className="px-2 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
-                      >
-                        删除
-                      </button>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex items-center gap-1 mr-2 flex-shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cancelDeleteBank();
+                          }}
+                          className="px-2 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                        >
+                          取消
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmDeleteBank(bank);
+                          }}
+                          className="px-2 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+                        >
+                          删除
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {questionBanks.length === 0 && (
+                <div className="px-3 py-10 text-center">
+                  <div className="w-14 h-14 bg-warm-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-200/60 shadow-xs">
+                    <Database className="w-6 h-6 text-gray-400" strokeWidth={1.5} />
+                  </div>
+                  <p className="font-serif text-base text-gray-700 mb-1.5" style={{ fontWeight: 500 }}>
+                    暂无题库
+                  </p>
+                  <p className="text-xs text-gray-400 font-mono tracking-wide mb-5">
+                    上传资料后将自动创建题库
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate('/upload')}
+                  >
+                    <Upload size={14} strokeWidth={1.8} />
+                    上传资料
+                  </Button>
                 </div>
-              );
-            })}
-            {questionBanks.length === 0 && (
-              <div className="px-3 py-10 text-center">
-                <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-200">
-                  <Database className="w-6 h-6 text-gray-400" />
-                </div>
-                <p className="text-sm text-gray-600 mb-2">暂无题库</p>
-                <p className="text-xs text-gray-400 mb-5">上传资料后将自动创建题库</p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => navigate('/upload')}
-                >
-                  <Upload size={16} />
-                  上传资料
-                </Button>
-              </div>
-            )}
-          </div>
-        </Card>
+              )}
+            </div>
+          </Card>
+        </div>
 
         {/* 右侧题目管理 */}
         <div>
           {/* 题库信息卡 */}
-          <Card className="p-5 mb-6 stagger-item">
+          <Card elevated className="p-6 mb-6 stagger-item">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-primary">{selectedBank?.name || '未选择题库'}</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  共 {selectedBank?.questionCount || 0} 道题目
+                <div className="flex items-baseline gap-3 mb-2">
+                  <h2 className="text-xl font-serif text-primary" style={{ fontWeight: 500 }}>
+                    {selectedBank?.name || '未选择题库'}
+                  </h2>
+                  <span className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em]">
+                    Bank
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500">
+                  共 <span className="font-mono text-primary tabular-nums font-medium">{selectedBank?.questionCount || 0}</span> 道题目
                 </p>
               </div>
               <Button variant="secondary" onClick={handleOpenAIGenerator}>
-                <Sparkles size={18} />
+                <Sparkles size={16} strokeWidth={1.8} />
                 AI 按知识点出题
               </Button>
             </div>
           </Card>
 
           {/* 搜索与筛选 */}
-          <Card className="p-5 mb-6 stagger-item">
+          <Card elevated className="p-5 mb-6 stagger-item">
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex items-center flex-1 px-3 py-2.5 border border-gray-200 rounded-xl bg-white focus-within:border-accent focus-within:ring-1 focus-within:ring-accent transition-colors">
-                <Search className="text-gray-400 flex-shrink-0 mr-2.5" size={18} />
+              <div className="flex items-center flex-1 px-4 py-2.5 border border-gray-200 rounded-xl bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-accent/30 transition-all">
+                <Search className="text-gray-400 flex-shrink-0 mr-2.5" size={16} strokeWidth={1.8} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜索题干或答案..."
-                  className="w-full bg-transparent text-sm focus:outline-none"
+                  className="w-full bg-transparent text-sm focus:outline-none placeholder:text-gray-400"
                 />
               </div>
               <div className="flex items-start gap-2 flex-wrap sm:flex-nowrap">
-                <Filter size={18} className="text-gray-400 flex-shrink-0 mt-2.5 sm:mt-2" />
+                <Filter size={16} className="text-gray-400 flex-shrink-0 mt-2.5 sm:mt-2" strokeWidth={1.8} />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 flex-1">
                   {FILTER_TYPES.map((type) => {
                     const isActive = typeFilter === type.value;
@@ -864,10 +918,10 @@ const QuestionBank = () => {
                       <button
                         key={type.value}
                         onClick={() => setTypeFilter(type.value)}
-                        className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 cursor-pointer min-h-[44px] touch-manipulation ${
+                        className={`px-3 py-2 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer min-h-[40px] touch-manipulation ${
                           isActive
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                            ? 'bg-primary text-white border-primary shadow-sm'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-warm-50'
                         }`}
                       >
                         {type.label}
@@ -880,13 +934,15 @@ const QuestionBank = () => {
           </Card>
 
           {/* 题目列表 */}
-          <div className="space-y-6">
+          <div className="space-y-5">
             {filteredQuestions.length === 0 ? (
-              <Card className="p-16 text-center stagger-item">
-                <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                  <Search className="text-gray-400" size={28} />
+              <Card elevated className="p-16 text-center stagger-item">
+                <div className="w-16 h-16 bg-warm-50 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-gray-200/60 shadow-xs">
+                  <Search className="text-gray-400" size={26} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">未找到匹配题目</h3>
+                <h3 className="font-serif text-xl text-gray-900 mb-2" style={{ fontWeight: 500 }}>
+                  未找到匹配题目
+                </h3>
                 <p className="text-sm text-gray-500 mb-6">
                   {selectedBank?.questionCount === 0
                     ? '当前题库为空，点击上方添加题目或使用 AI 出题'
@@ -895,11 +951,11 @@ const QuestionBank = () => {
                 {selectedBank?.questionCount === 0 && (
                   <div className="flex items-center justify-center gap-3">
                     <Button onClick={handleAdd}>
-                      <Plus size={18} />
+                      <Plus size={16} strokeWidth={1.8} />
                       新增题目
                     </Button>
                     <Button variant="secondary" onClick={handleOpenAIGenerator}>
-                      <Sparkles size={18} />
+                      <Sparkles size={16} strokeWidth={1.8} />
                       AI 出题
                     </Button>
                   </div>
@@ -910,43 +966,50 @@ const QuestionBank = () => {
                 const typeConfig = getTypeConfig(q.type || (q.options?.length > 0 ? 'single' : 'fillblank'));
                 const difficultyConfig = getDifficultyConfig(q.difficulty);
                 return (
-                  <Card key={q.id} className="p-6 hover:border-gray-300 transition-colors duration-150 stagger-item">
-                    <div className="flex items-start gap-4">
-                      <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                  <Card key={q.id} elevated className="p-6 lg:p-7 hover:border-gray-300 transition-colors duration-200 stagger-item">
+                    <div className="flex items-start gap-5">
+                      {/* 左侧：选择 + 大号衬线编号 */}
+                      <div className="flex items-center gap-3 flex-shrink-0 mt-1">
                         <button
                           onClick={() => toggleSelectQuestion(q.id)}
                           className="p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                           title={selectedIds.has(q.id) ? '取消选择' : '选择'}
                         >
                           {selectedIds.has(q.id) ? (
-                            <CheckSquare size={18} className="text-primary" />
+                            <CheckSquare size={18} className="text-accent-dark" strokeWidth={1.8} />
                           ) : (
-                            <Square size={18} className="text-gray-300" />
+                            <Square size={18} className="text-gray-300" strokeWidth={1.8} />
                           )}
                         </button>
-                        <span className="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-lg text-xs font-mono font-bold">
+                        <span
+                          className="font-serif text-3xl text-gray-200 tabular-nums"
+                          style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+                        >
                           {String(index + 1).padStart(2, '0')}
                         </span>
                       </div>
+
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${typeConfig.badge}`}>
+                        {/* 标签组 */}
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                          <span className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border tracking-wide ${typeConfig.badge}`}>
                             {typeConfig.label}
                           </span>
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${difficultyConfig.badge}`}>
+                          <span className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-medium border tracking-wide ${difficultyConfig.badge}`}>
                             {difficultyConfig.label}
                           </span>
-                          <span className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium border border-gray-200">
+                          <span className="px-2.5 py-1 bg-warm-50 text-gray-600 rounded-md text-[11px] font-mono border border-gray-200 tracking-wide">
                             {getKnowledgePointName(q.knowledgePointId)}
                           </span>
                           {q.difficultyRationale && (
-                            <span className="text-xs text-gray-400" title={q.difficultyRationale}>
-                              难度依据
+                            <span className="text-[11px] text-gray-400 font-mono" title={q.difficultyRationale}>
+                              · 难度依据
                             </span>
                           )}
                         </div>
 
-                        <h3 className="text-base font-medium text-gray-900 mb-4 leading-relaxed">
+                        {/* 题干 */}
+                        <h3 className="text-base text-gray-900 mb-4 leading-relaxed font-serif" style={{ fontWeight: 500 }}>
                           <MathRenderer text={q.question} />
                         </h3>
 
@@ -967,17 +1030,22 @@ const QuestionBank = () => {
                           </div>
                         )}
 
-                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
+                        {/* 答案 + 解析 */}
+                        <div className="bg-warm-50/70 rounded-xl p-4 border border-gray-200/80 space-y-2">
                           <div className="flex items-start gap-2 text-sm">
-                            <span className="font-medium text-primary whitespace-nowrap">答案：</span>
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-accent-dark whitespace-nowrap mt-0.5">
+                              Answer
+                            </span>
                             <span className="text-gray-700">
                               {q.type === 'truefalse' ? (q.answer === 'true' ? '正确' : '错误') : q.answer}
                             </span>
                           </div>
                           {q.explanation && (
                             <div className="flex items-start gap-2 text-sm">
-                              <span className="font-medium text-primary whitespace-nowrap">解析：</span>
-                              <span className="text-gray-600">
+                              <span className="font-mono text-[10px] uppercase tracking-wider text-accent-dark whitespace-nowrap mt-0.5">
+                                Explain
+                              </span>
+                              <span className="text-gray-600 leading-relaxed">
                                 <MathRenderer text={q.explanation} />
                               </span>
                             </div>
@@ -985,18 +1053,19 @@ const QuestionBank = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* 右侧操作 */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         {deletingId === q.id ? (
                           <div className="flex items-center gap-2">
                             <button
                               onClick={cancelSingleDelete}
-                              className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                              className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                             >
                               取消
                             </button>
                             <button
                               onClick={() => confirmSingleDelete(q.id)}
-                              className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors cursor-pointer"
+                              className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white hover:bg-red-700 rounded-full transition-colors cursor-pointer"
                             >
                               确认删除
                             </button>
@@ -1005,17 +1074,17 @@ const QuestionBank = () => {
                           <>
                             <button
                               onClick={() => handleEdit(q)}
-                              className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors duration-150 cursor-pointer"
+                              className="p-2 text-gray-400 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors duration-200 cursor-pointer"
                               title="编辑"
                             >
-                              <Pencil size={18} />
+                              <Pencil size={16} strokeWidth={1.8} />
                             </button>
                             <button
                               onClick={() => startSingleDelete(q.id)}
-                              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 cursor-pointer"
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 cursor-pointer"
                               title="删除"
                             >
-                              <Trash2 size={18} />
+                              <Trash2 size={16} strokeWidth={1.8} />
                             </button>
                           </>
                         )}
@@ -1033,26 +1102,32 @@ const QuestionBank = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
             onClick={handleCloseModal}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0">
-              <h2 className="text-xl font-bold text-primary">
-                {editingQuestion ? '编辑题目' : '新增题目'}
-              </h2>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* 弹窗头部 - 编辑风 */}
+            <div className="bg-white border-b border-gray-100 px-6 py-5 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0">
+              <div>
+                <p className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em] mb-1">
+                  {editingQuestion ? 'Edit Question' : 'New Question'}
+                </p>
+                <h2 className="font-serif text-xl text-primary" style={{ fontWeight: 500 }}>
+                  {editingQuestion ? '编辑题目' : '新增题目'}
+                </h2>
+              </div>
               <button
                 onClick={handleCloseModal}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-150 cursor-pointer"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200 cursor-pointer"
               >
-                <X size={20} />
+                <X size={20} strokeWidth={1.8} />
               </button>
             </div>
 
             <div className="p-6 space-y-5 overflow-y-auto flex-1">
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-2">
-                  <X size={16} />
+                  <X size={16} strokeWidth={1.8} />
                   {formError}
                 </div>
               )}
@@ -1079,18 +1154,18 @@ const QuestionBank = () => {
                       onClick={handleRemoveImage}
                       className="absolute -top-2 -right-2 p-1.5 bg-white border border-gray-200 rounded-full text-gray-500 hover:text-red-600 hover:border-red-200 shadow-sm transition-colors cursor-pointer"
                     >
-                      <X size={14} />
+                      <X size={14} strokeWidth={1.8} />
                     </button>
                   </div>
                 ) : (
-                  <label className="mt-3 flex items-center gap-2 px-4 py-3 border border-dashed border-gray-300 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-colors cursor-pointer w-fit">
+                  <label className="mt-3 flex items-center gap-2 px-4 py-3 border border-dashed border-gray-300 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-warm-50 transition-colors cursor-pointer w-fit">
                     <input
                       type="file"
                       accept="image/*"
                       className="hidden"
                       onChange={(e) => handleImageUpload(e.target.files)}
                     />
-                    <Image size={16} />
+                    <Image size={16} strokeWidth={1.8} />
                     <span>插入题目图片</span>
                   </label>
                 )}
@@ -1098,7 +1173,10 @@ const QuestionBank = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">题型</label>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">题型</label>
+                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Type</span>
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {[
                       { value: 'single', label: '单选' },
@@ -1112,10 +1190,10 @@ const QuestionBank = () => {
                         key={type.value}
                         type="button"
                         onClick={() => handleChange('type', type.value)}
-                        className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 cursor-pointer min-h-[44px] touch-manipulation ${
+                        className={`px-3 py-2 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer min-h-[40px] touch-manipulation ${
                           form.type === type.value
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                            ? 'bg-primary text-white border-primary shadow-sm'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-warm-50'
                         }`}
                       >
                         {type.label}
@@ -1125,11 +1203,14 @@ const QuestionBank = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">难度</label>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">难度</label>
+                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Level</span>
+                  </div>
                   <select
                     value={form.difficulty}
                     onChange={(e) => handleChange('difficulty', e.target.value)}
-                    className="custom-select w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent cursor-pointer"
+                    className="custom-select w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer"
                   >
                     <option value="easy">易</option>
                     <option value="medium">中</option>
@@ -1139,11 +1220,14 @@ const QuestionBank = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">知识点</label>
+                <div className="flex items-baseline justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">知识点</label>
+                  <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Knowledge</span>
+                </div>
                 <select
                   value={form.knowledgePointId}
                   onChange={(e) => handleChange('knowledgePointId', e.target.value)}
-                  className="custom-select w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent cursor-pointer"
+                  className="custom-select w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer"
                 >
                   <option value="">请选择知识点</option>
                   {knowledgePoints.map((kp) => (
@@ -1154,7 +1238,10 @@ const QuestionBank = () => {
 
               {(form.type === 'single' || form.type === 'multiple') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">选项</label>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">选项</label>
+                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Options</span>
+                  </div>
                   <div className="space-y-2">
                     {form.options.map((opt, index) => {
                       const letter = String.fromCharCode(65 + index);
@@ -1177,7 +1264,7 @@ const QuestionBank = () => {
                                 handleChange('answer', letter);
                               }
                             }}
-                            className="w-4 h-4 accent-primary cursor-pointer"
+                            className="w-4 h-4 accent-accent-dark cursor-pointer"
                           />
                           <span className="font-mono text-sm text-gray-500 w-5">
                             {letter}.
@@ -1192,9 +1279,9 @@ const QuestionBank = () => {
                           {form.options.length > 2 && (
                             <button
                               onClick={() => handleRemoveOption(index)}
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 cursor-pointer"
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 cursor-pointer"
                             >
-                              <X size={16} />
+                              <X size={16} strokeWidth={1.8} />
                             </button>
                           )}
                         </div>
@@ -1204,9 +1291,9 @@ const QuestionBank = () => {
                   {form.options.length < 6 && (
                     <button
                       onClick={handleAddOption}
-                      className="mt-3 text-sm text-primary hover:text-accent font-medium flex items-center gap-1 cursor-pointer"
+                      className="mt-3 text-sm text-primary hover:text-accent-dark font-medium flex items-center gap-1 cursor-pointer border-b border-primary/20 hover:border-accent-dark/40 pb-0.5"
                     >
-                      <Plus size={16} />
+                      <Plus size={14} strokeWidth={1.8} />
                       添加选项
                     </button>
                   )}
@@ -1215,7 +1302,10 @@ const QuestionBank = () => {
 
               {form.type === 'truefalse' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">正确答案</label>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">正确答案</label>
+                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Answer</span>
+                  </div>
                   <div className="flex gap-3">
                     {[
                       { value: 'true', label: '正确' },
@@ -1224,10 +1314,10 @@ const QuestionBank = () => {
                       <button
                         key={opt.value}
                         onClick={() => handleChange('answer', opt.value)}
-                        className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors duration-150 cursor-pointer ${
+                        className={`flex-1 py-2.5 rounded-full border text-sm font-medium transition-all duration-200 cursor-pointer ${
                           form.answer === opt.value
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                            ? 'bg-accent text-primary border-accent shadow-gold'
+                            : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-warm-50'
                         }`}
                       >
                         {opt.label}
@@ -1260,12 +1350,12 @@ const QuestionBank = () => {
               </div>
             </div>
 
-            <div className="bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3 rounded-b-2xl flex-shrink-0">
+            <div className="bg-white border-t border-gray-100 px-6 py-4 flex justify-end gap-3 rounded-b-2xl flex-shrink-0">
               <Button variant="secondary" onClick={handleCloseModal}>
                 取消
               </Button>
               <Button onClick={handleSubmit}>
-                <Check size={18} />
+                <Check size={16} strokeWidth={1.8} />
                 {editingQuestion ? '保存修改' : '添加题目'}
               </Button>
             </div>
@@ -1277,20 +1367,26 @@ const QuestionBank = () => {
       {isAIGeneratorOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
             onClick={handleCloseAIGenerator}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
-                <Sparkles size={20} className="text-accent" />
-                AI 按知识点出题
-              </h2>
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+            {/* 弹窗头部 */}
+            <div className="border-b border-gray-100 px-6 py-5 flex items-center justify-between rounded-t-2xl">
+              <div>
+                <p className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em] mb-1">
+                  AI Generator
+                </p>
+                <h2 className="font-serif text-xl text-primary flex items-center gap-2" style={{ fontWeight: 500 }}>
+                  <Sparkles size={18} className="text-accent-dark" strokeWidth={1.8} />
+                  AI 按知识点出题
+                </h2>
+              </div>
               <button
                 onClick={handleCloseAIGenerator}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-150 cursor-pointer"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200 cursor-pointer"
               >
-                <X size={20} />
+                <X size={20} strokeWidth={1.8} />
               </button>
             </div>
 
@@ -1304,26 +1400,27 @@ const QuestionBank = () => {
                     return (
                       <div key={label} className="flex items-center gap-3">
                         <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors duration-150 ${
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono transition-all duration-200 ${
                             isDone
-                              ? 'bg-green-500 text-white'
+                              ? 'bg-accent text-primary shadow-gold'
                               : isActive
-                                ? 'bg-accent text-primary'
+                                ? 'bg-accent text-primary shadow-gold'
                                 : 'bg-gray-100 text-gray-400'
                           }`}
                         >
                           {isDone ? (
-                            <Check size={14} />
+                            <Check size={13} strokeWidth={2.5} />
                           ) : isActive ? (
-                            <Loader2 size={14} className="animate-spin" />
+                            <Loader2 size={13} className="animate-spin" strokeWidth={2.5} />
                           ) : (
                             idx + 1
                           )}
                         </div>
                         <span
-                          className={`text-sm transition-colors duration-150 ${
-                            isActive ? 'text-primary font-medium' : isDone ? 'text-gray-700' : 'text-gray-400'
+                          className={`text-sm font-serif transition-colors duration-200 ${
+                            isActive ? 'text-primary' : isDone ? 'text-gray-700' : 'text-gray-400'
                           }`}
+                          style={{ fontWeight: 500 }}
                         >
                           {label}
                         </span>
@@ -1333,15 +1430,15 @@ const QuestionBank = () => {
                 </div>
 
                 {generationSuccess && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 flex items-center gap-2 animate-fade-in">
-                    <Check size={16} />
-                    AI 已生成 {generatedCount} 道题
+                  <div className="p-3 bg-accent-light/30 border border-accent/30 rounded-xl text-sm text-accent-dark flex items-center gap-2 animate-fade-in">
+                    <Check size={16} strokeWidth={2} />
+                    AI 已生成 <span className="font-serif font-medium tabular-nums">{generatedCount}</span> 道题
                   </div>
                 )}
 
                 {generatorError && !generationSuccess && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-2">
-                    <X size={16} />
+                    <X size={16} strokeWidth={1.8} />
                     {generatorError}
                   </div>
                 )}
@@ -1350,17 +1447,20 @@ const QuestionBank = () => {
               <div className="p-6 space-y-5">
                 {generatorError && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-2">
-                    <X size={16} />
+                    <X size={16} strokeWidth={1.8} />
                     {generatorError}
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">选择知识点</label>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">选择知识点</label>
+                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Topic</span>
+                  </div>
                   <select
                     value={selectedKnowledgePointId}
                     onChange={(e) => setSelectedKnowledgePointId(e.target.value)}
-                    className="custom-select w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent cursor-pointer"
+                    className="custom-select w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer"
                   >
                     {knowledgePoints.map((kp) => (
                       <option key={kp.id} value={kp.id}>{kp.name}</option>
@@ -1369,7 +1469,10 @@ const QuestionBank = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">选择题型</label>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <label className="text-sm font-medium text-gray-700">选择题型</label>
+                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Types</span>
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {[
                       { value: 'single', label: '单选题' },
@@ -1382,10 +1485,10 @@ const QuestionBank = () => {
                       <button
                         key={type.value}
                         onClick={() => toggleQuestionType(type.value)}
-                        className={`px-3 py-2 rounded-xl text-sm font-medium border transition-colors duration-150 cursor-pointer min-h-[44px] touch-manipulation ${
+                        className={`px-3 py-2 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer min-h-[40px] touch-manipulation ${
                           selectedTypes.includes(type.value)
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                            ? 'bg-accent text-primary border-accent shadow-gold'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-warm-50'
                         }`}
                       >
                         {type.label}
@@ -1395,18 +1498,21 @@ const QuestionBank = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    每种题型生成数量
-                  </label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-baseline justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      每种题型生成数量
+                    </label>
+                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">Count</span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     {[1, 2, 3, 5].map((n) => (
                       <button
                         key={n}
                         onClick={() => setQuestionsPerType(n)}
-                        className={`w-10 h-10 rounded-xl text-sm font-medium border transition-colors duration-150 cursor-pointer ${
+                        className={`w-10 h-10 rounded-full text-sm font-mono font-medium border transition-all duration-200 cursor-pointer ${
                           questionsPerType === n
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                            ? 'bg-primary text-white border-primary shadow-sm'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-warm-50'
                         }`}
                       >
                         {n}
@@ -1417,19 +1523,19 @@ const QuestionBank = () => {
               </div>
             )}
 
-            <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+            <div className="border-t border-gray-100 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
               <Button variant="secondary" onClick={handleCloseAIGenerator}>
                 取消
               </Button>
               <Button onClick={handleGenerateQuestions} disabled={isGenerating}>
                 {isGenerating ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={16} className="animate-spin" strokeWidth={1.8} />
                     生成中...
                   </>
                 ) : (
                   <>
-                    <Sparkles size={18} />
+                    <Sparkles size={16} strokeWidth={1.8} />
                     生成题目
                   </>
                 )}

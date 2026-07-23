@@ -34,42 +34,50 @@ const actions = [
 ];
 
 /**
- * 快捷操作组件
+ * 快捷入口 - 编辑式编号 + 衬线大字
  */
 const QuickActions = () => {
   const navigate = useNavigate();
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-6 px-1">
-        <h2 className="text-lg font-semibold text-primary">快捷入口</h2>
-        <span className="font-mono text-xs text-gray-400">Quick Actions</span>
+      <div className="flex items-baseline gap-3 mb-5">
+        <h2 className="text-xl font-serif text-primary" style={{ fontWeight: 500 }}>
+          快捷入口
+        </h2>
+        <span className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em]">
+          Quick Actions
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="grid grid-cols-2 gap-3">
         {actions.map((action, idx) => {
           const Icon = action.icon;
           return (
             <Card
               key={action.id}
               hover
-              className="p-6 relative group"
+              className="p-5 relative group"
               onClick={() => navigate(action.path)}
             >
-              <ArrowUpRight className="absolute top-4 right-4 w-4 h-4 text-gray-300 group-hover:text-secondary transition-colors duration-150" />
+              <ArrowUpRight className="absolute top-4 right-4 w-3.5 h-3.5 text-gray-300 group-hover:text-accent-dark transition-colors duration-200" />
 
-              <span className="font-mono text-[10px] text-gray-400 tracking-wider mb-3 block">
+              {/* 大号衬线编号 */}
+              <span
+                className="font-serif text-2xl text-gray-200 group-hover:text-accent/40 tabular-nums block mb-3 transition-colors duration-200"
+                style={{ fontWeight: 400, lineHeight: 1, letterSpacing: '-0.04em' }}
+              >
                 {String(idx + 1).padStart(2, '0')}
               </span>
 
-              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mb-3 border border-gray-200 group-hover:bg-primary transition-colors duration-150">
-                <Icon className="w-5 h-5 text-secondary group-hover:text-white transition-colors duration-150" />
+              <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center mb-3 border border-gray-200/60 group-hover:bg-primary group-hover:border-primary transition-all duration-200">
+                <Icon className="w-4 h-4 text-gray-600 group-hover:text-accent transition-colors duration-200" strokeWidth={2} />
               </div>
 
-              <h3 className="text-sm font-semibold text-primary mb-0.5">
+              <h3 className="text-sm font-medium text-primary mb-0.5">
                 {action.title}
               </h3>
-              <p className="text-xs text-gray-500">{action.description}</p>
+              <p className="text-[11px] text-gray-500">{action.description}</p>
             </Card>
           );
         })}

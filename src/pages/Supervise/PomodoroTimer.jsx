@@ -134,25 +134,29 @@ const PomodoroTimer = ({ onFocusComplete }) => {
     }
   };
 
-  // 暖灰阶配色：专注模式深墨色，休息模式温灰
-  const ringColor = isFocusMode ? '#1a1815' : '#837b71';
+  // 暖灰阶配色：专注模式金色进度环，休息模式温灰
+  const ringColor = isFocusMode ? '#c9a227' : '#837b71';
   const bgRingColor = isFocusMode ? '#f4f2ef' : '#e8e5e0';
 
   return (
-    <div className="flex flex-col items-center w-full">
-      {/* 模式标签 */}
-      <div className="flex items-center gap-2 mb-6">
+    <div className="flex flex-col items-center w-full relative">
+      {/* 模式标签 - 金色 / 灰色对比 */}
+      <div className="flex items-center gap-2.5 mb-8">
         <span
           className={`inline-block w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
-            isFocusMode ? 'bg-gray-900' : 'bg-gray-400'
+            isFocusMode ? 'bg-accent' : 'bg-gray-400'
           } ${isRunning ? 'animate-pulse' : ''}`}
         />
         <span
-          className={`text-xs font-mono tracking-[0.2em] uppercase transition-colors duration-300 ${
-            isFocusMode ? 'text-gray-700' : 'text-gray-500'
+          className={`text-[11px] font-mono tracking-[0.25em] uppercase transition-colors duration-300 ${
+            isFocusMode ? 'text-accent-dark' : 'text-gray-500'
           }`}
         >
-          {isFocusMode ? 'Focus' : 'Break'}
+          {isFocusMode ? 'Focus Mode' : 'Break Mode'}
+        </span>
+        <span className="text-gray-300">·</span>
+        <span className="text-[11px] font-mono text-gray-400 tracking-[0.2em] uppercase">
+          {isFocusMode ? '25 min' : '05 min'}
         </span>
       </div>
 
@@ -166,9 +170,9 @@ const PomodoroTimer = ({ onFocusComplete }) => {
             r="120"
             fill="none"
             stroke={bgRingColor}
-            strokeWidth="6"
+            strokeWidth="4"
           />
-          {/* 进度圆环 */}
+          {/* 进度圆环 - 专注时金色，休息时灰色 */}
           <circle
             ref={progressRef}
             cx="140"
@@ -176,65 +180,75 @@ const PomodoroTimer = ({ onFocusComplete }) => {
             r="120"
             fill="none"
             stroke={ringColor}
-            strokeWidth="6"
+            strokeWidth="4"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={targetOffset}
+            style={isFocusMode ? { filter: 'drop-shadow(0 0 8px rgba(201, 162, 39, 0.25))' } : {}}
           />
         </svg>
 
-        {/* 中心时间显示 */}
+        {/* 中心时间显示 - 大号衬线数字 */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
-            className="text-5xl sm:text-6xl lg:text-7xl font-mono font-light text-gray-900 tracking-tight leading-none tabular-nums"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
+            className="font-serif text-primary tabular-nums"
+            style={{
+              fontWeight: 400,
+              letterSpacing: '-0.04em',
+              lineHeight: 1,
+              fontSize: 'clamp(3.5rem, 8vw, 5rem)'
+            }}
           >
             {formatTime(timeLeft)}
           </span>
-          <span className="mt-3 text-xs text-gray-400 font-mono tracking-[0.25em] uppercase">
-            {isFocusMode ? '25 / 25 MIN' : '05 / 05 MIN'}
+          <span className="mt-4 text-[10px] text-gray-400 font-mono tracking-[0.3em] uppercase">
+            {isFocusMode ? 'Focus · 25 min' : 'Break · 05 min'}
           </span>
         </div>
       </div>
 
       {/* 控制按钮组 */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-6">
         <button
           onClick={handleReset}
           aria-label="重置"
-          className="w-11 h-11 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-100 transition-colors duration-200 active:scale-95 cursor-pointer"
+          className="w-11 h-11 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-100 transition-all duration-200 active:scale-95 cursor-pointer"
         >
-          <RotateCcw className="w-[18px] h-[18px]" />
+          <RotateCcw className="w-[18px] h-[18px]" strokeWidth={1.8} />
         </button>
 
         <button
           onClick={handleStartPause}
           aria-label={isRunning ? '暂停' : '开始'}
-          className="w-16 h-16 rounded-full bg-primary text-gray-50 flex items-center justify-center hover:bg-secondary transition-colors duration-200 active:scale-95 cursor-pointer"
+          className="w-16 h-16 rounded-full bg-primary text-accent flex items-center justify-center hover:bg-secondary transition-all duration-200 active:scale-95 cursor-pointer shadow-md hover:shadow-lg"
         >
           {isRunning ? (
-            <Pause className="w-6 h-6" fill="currentColor" />
+            <Pause className="w-6 h-6" fill="currentColor" strokeWidth={1.5} />
           ) : (
-            <Play className="w-6 h-6 ml-0.5" fill="currentColor" />
+            <Play className="w-6 h-6 ml-0.5" fill="currentColor" strokeWidth={1.5} />
           )}
         </button>
 
         <button
           onClick={handleSkip}
           aria-label="跳过"
-          className="w-11 h-11 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-100 transition-colors duration-200 active:scale-95 cursor-pointer"
+          className="w-11 h-11 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-gray-100 transition-all duration-200 active:scale-95 cursor-pointer"
         >
-          <SkipForward className="w-[18px] h-[18px]" />
+          <SkipForward className="w-[18px] h-[18px]" strokeWidth={1.8} />
         </button>
       </div>
 
       {/* 底部状态提示 */}
-      <div className="mt-6 flex items-center gap-2 text-xs text-gray-400">
-        <span className="font-mono tracking-wider">
-          {isRunning ? '进行中' : '已暂停'}
+      <div className="mt-7 flex items-center gap-2.5 text-xs">
+        <span
+          className={`font-mono tracking-[0.15em] uppercase ${
+            isRunning ? 'text-accent-dark' : 'text-gray-400'
+          }`}
+        >
+          {isRunning ? 'Running' : 'Paused'}
         </span>
         <span className="text-gray-300">·</span>
-        <span className="font-sans">
+        <span className="text-gray-500 font-serif" style={{ fontWeight: 500 }}>
           {isFocusMode ? '保持专注' : '稍作休息'}
         </span>
       </div>

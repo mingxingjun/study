@@ -102,23 +102,27 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
   return (
     <div className="overflow-x-auto">
       {!hasData && (
-        <div className="bg-gray-50 rounded-2xl p-10 text-center border border-dashed border-gray-200">
-          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 border border-gray-200/60">
-            <Calendar size={22} className="text-gray-400" />
+        <div className="bg-warm-50/60 rounded-xl p-12 text-center border border-dashed border-gray-200">
+          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-200/60 shadow-xs">
+            <Calendar size={22} className="text-gray-400" strokeWidth={1.5} />
           </div>
-          <p className="text-sm text-gray-500">暂无打卡记录</p>
-          <p className="text-xs text-gray-400 mt-1">每日打卡和专注学习后，热力图将逐渐点亮</p>
+          <p className="font-serif text-base text-gray-700 mb-1.5" style={{ fontWeight: 500 }}>
+            暂无打卡记录
+          </p>
+          <p className="text-xs text-gray-400 font-mono tracking-wide">
+            每日打卡和专注学习后，热力图将逐渐点亮
+          </p>
         </div>
       )}
 
       {hasData && (
         <div className="inline-block min-w-full">
-          {/* 月份标签 */}
-        <div className="flex items-end mb-2 ml-8">
+          {/* 月份标签 - mono 字体 */}
+        <div className="flex items-end mb-2.5 ml-8">
           {monthLabels.map((label, i) => (
             <div
               key={i}
-              className="text-[11px] text-gray-500 font-mono"
+              className="text-[11px] text-gray-500 font-mono tracking-wide"
               style={{
                 marginLeft: i === 0 ? 0 : '52px',
                 width: 'auto'
@@ -132,7 +136,7 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
         {/* 热力图主体 */}
         <div className="flex">
           {/* 星期标签 */}
-          <div className="flex flex-col gap-[3px] mr-2">
+          <div className="flex flex-col gap-[3px] mr-2.5">
             {WEEKDAYS.map((day, i) => (
               <div
                 key={i}
@@ -150,7 +154,7 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
                 {week.map((day, dayIndex) => (
                   <div
                     key={dayIndex}
-                    className="w-[13px] h-[13px] rounded-[3px] cursor-pointer transition-all duration-150 hover:ring-1 hover:ring-gray-400 hover:ring-offset-1 hover:ring-offset-white relative"
+                    className="w-[13px] h-[13px] rounded-[3px] cursor-pointer transition-all duration-150 hover:ring-1 hover:ring-accent hover:ring-offset-1 hover:ring-offset-white relative"
                     style={{
                       backgroundColor: day ? getColorByMinutes(day.minutes) : 'transparent',
                       opacity: day ? 1 : 0
@@ -158,11 +162,11 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
                     onMouseEnter={() => day && setHoveredDate(day)}
                     onMouseLeave={() => setHoveredDate(null)}
                   >
-                    {/* Tooltip */}
+                    {/* Tooltip - 编辑风深色卡片 */}
                     {hoveredDate === day && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-gray-50 text-[11px] rounded-md whitespace-nowrap z-20 shadow-lg font-mono">
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-primary text-white text-[11px] rounded-md whitespace-nowrap z-20 shadow-lg font-mono tracking-wide">
                         {formatTooltip(day)}
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-primary"></div>
                       </div>
                     )}
                   </div>
@@ -172,17 +176,19 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
           </div>
         </div>
 
-        {/* 图例 */}
-        <div className="flex items-center justify-end mt-4 gap-1.5">
-          <span className="text-[10px] text-gray-500 font-mono tracking-wider">少</span>
-          {COLORS.map((color, i) => (
-            <div
-              key={i}
-              className="w-[13px] h-[13px] rounded-[3px]"
-              style={{ backgroundColor: color }}
-            />
-          ))}
-          <span className="text-[10px] text-gray-500 font-mono tracking-wider">多</span>
+        {/* 图例 - mono 标签 + 渐变色阶 */}
+        <div className="flex items-center justify-end mt-5 gap-2">
+          <span className="text-[10px] text-gray-400 font-mono tracking-[0.15em] uppercase">Less</span>
+          <div className="flex gap-[3px]">
+            {COLORS.map((color, i) => (
+              <div
+                key={i}
+                className="w-[13px] h-[13px] rounded-[3px]"
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+          <span className="text-[10px] text-gray-400 font-mono tracking-[0.15em] uppercase">More</span>
         </div>
       </div>
       )}

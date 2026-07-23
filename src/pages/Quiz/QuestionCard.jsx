@@ -13,6 +13,7 @@ import useReducedMotion from '../../hooks/useReducedMotion';
 
 /**
  * 题目卡片组件
+ * 编辑式版心 + 大号衬线题号 + 精致选项卡片
  * @param {Object} props
  * @param {Object} props.question - 题目数据
  * @param {number} props.questionNumber - 当前题号
@@ -41,7 +42,7 @@ const QuestionCard = ({
 
   /**
    * 答题反馈动画
-   * 正确：绿色闪烁
+   * 正确：金色闪烁
    * 错误：水平抖动 + 红色闪烁
    */
   useGSAP(() => {
@@ -52,7 +53,7 @@ const QuestionCard = ({
     if (isCorrect) {
       gsap.fromTo(
         cardRef.current,
-        { backgroundColor: '#dcfce7' },
+        { backgroundColor: '#f5e6b3' },
         { backgroundColor: '#ffffff', duration: 0.6, ease: 'power2.out', clearProps: 'backgroundColor' }
       );
     } else {
@@ -80,7 +81,7 @@ const QuestionCard = ({
       case 'medium':
         return { label: '中', className: 'border-gray-300 text-gray-700 bg-gray-100' };
       case 'hard':
-        return { label: '难', className: 'border-primary text-white bg-primary' };
+        return { label: '难', className: 'border-accent/40 text-accent-dark bg-accent/5' };
       default:
         return { label: '易', className: 'border-gray-200 text-gray-500 bg-gray-50' };
     }
@@ -111,6 +112,24 @@ const QuestionCard = ({
   const questionType = getQuestionType();
   const difficultyConfig = getDifficultyConfig(question.difficulty);
 
+  /**
+   * 计算单选选项在结果展示态的样式
+   * 正确答案：金色描边；用户选错的选项：红色描边
+   * @param {string} optionLetter - 选项字母
+   * @returns {string} 结果态附加样式类
+   */
+  const getOptionResultStyle = (optionLetter) => {
+    if (!showResult) return '';
+    const correctLetter = String(question.answer || '').trim();
+    if (optionLetter === correctLetter) {
+      return 'border-accent bg-accent/5 shadow-sm';
+    }
+    if (optionLetter === selectedAnswer && !isCorrect) {
+      return 'border-red-500/50 bg-red-50/50';
+    }
+    return 'border-gray-200 opacity-60';
+  };
+
   const getStatusText = (status) => {
     switch (status) {
       case 'thinking':
@@ -126,10 +145,10 @@ const QuestionCard = ({
   };
 
   return (
-    <Card ref={cardRef}>
+    <Card ref={cardRef} className="p-6 sm:p-8" elevated>
       {activeAgent && (
-        <div className="flex items-center justify-end mb-4">
-          <div className="flex items-center bg-gray-50 rounded-full pl-1.5 pr-3 py-1.5 border border-gray-200">
+        <div className="flex items-center justify-end mb-5">
+          <div className="flex items-center bg-gray-50/80 rounded-full pl-1.5 pr-3 py-1.5 border border-gray-200">
             <span
               className="w-1 h-5 rounded-full mr-2 flex-shrink-0"
               style={{ backgroundColor: activeAgent.color }}
@@ -146,26 +165,36 @@ const QuestionCard = ({
         </div>
       )}
 
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <span className="flex items-center justify-center w-9 h-9 bg-primary text-white rounded-lg text-sm font-mono font-bold flex-shrink-0">
-          {String(questionNumber).padStart(2, '0')}
-        </span>
-        {knowledgePoint && (
-          <span className="px-3 py-1 bg-gray-100 text-secondary rounded-full text-xs font-medium border border-gray-200">
-            {knowledgePoint.name}
+      {/* 题号 + 元信息行 - 大号衬线编号作为视觉焦点 */}
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3 flex-wrap">
+          {knowledgePoint && (
+            <span className="px-3 py-1 bg-gray-50 text-secondary rounded-full text-xs font-medium border border-gray-200">
+              {knowledgePoint.name}
+            </span>
+          )}
+          <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${difficultyConfig.className}`}>
+            {difficultyConfig.label}
           </span>
-        )}
-        <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${difficultyConfig.className}`}>
-          {difficultyConfig.label}
+        </div>
+        {/* 大号衬线题号 - 编辑式装饰 */}
+        <span
+          className="font-serif text-3xl text-gray-200 tabular-nums flex-shrink-0 leading-none"
+          style={{ fontWeight: 400, letterSpacing: '-0.04em' }}
+        >
+          {String(questionNumber).padStart(2, '0')}
         </span>
       </div>
 
-      <h2 className="text-xl font-medium text-gray-900 mb-6 leading-relaxed">
+      <h2
+        className="font-serif text-xl md:text-2xl text-primary mb-7 leading-relaxed"
+        style={{ fontWeight: 400, letterSpacing: '-0.02em' }}
+      >
         <MathRenderer text={question.question} />
       </h2>
 
       {question.image && (
-        <div className="mb-6">
+        <div className="mb-7">
           <QuestionImage src={question.image} alt="题目图片" />
         </div>
       )}
@@ -175,24 +204,31 @@ const QuestionCard = ({
           {question.options.map((option, index) => {
             const optionLetter = option.charAt(0);
             const isSelected = selectedAnswer === optionLetter;
+            const resultStyle = getOptionResultStyle(optionLetter);
 
             return (
               <button
                 key={index}
                 onClick={() => !disabled && onAnswerSelect(optionLetter)}
                 disabled={disabled}
-                className={`w-full text-left p-4 rounded-xl border transition-all duration-150 active:scale-[0.99] ${
-                  isSelected
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                } ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] ${
+                  showResult
+                    ? resultStyle
+                    : isSelected
+                      ? 'bg-white border-primary shadow-sm'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                } ${disabled && !showResult ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <span
-                    className={`flex items-center justify-center w-11 h-11 rounded-lg text-sm font-mono font-bold flex-shrink-0 transition-colors ${
-                      isSelected
-                        ? 'bg-white text-gray-900'
-                        : 'bg-gray-100 text-gray-600'
+                    className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-mono font-bold flex-shrink-0 transition-colors ${
+                      showResult && optionLetter === String(question.answer || '').trim()
+                        ? 'bg-accent text-primary'
+                        : showResult && optionLetter === selectedAnswer && !isCorrect
+                          ? 'bg-red-500 text-white'
+                          : isSelected
+                            ? 'bg-primary text-white'
+                            : 'bg-gray-100 text-gray-600'
                     }`}
                   >
                     {optionLetter}
@@ -211,6 +247,14 @@ const QuestionCard = ({
             const optionLetter = option.charAt(0);
             const selectedLetters = new Set((selectedAnswer || '').split(''));
             const isSelected = selectedLetters.has(optionLetter);
+            const correctLetters = new Set(String(question.answer || '').split(''));
+            const resultStyle = showResult
+              ? (correctLetters.has(optionLetter)
+                  ? 'border-accent bg-accent/5 shadow-sm'
+                  : isSelected && !isCorrect
+                    ? 'border-red-500/50 bg-red-50/50'
+                    : 'border-gray-200 opacity-60')
+              : '';
 
             return (
               <button
@@ -226,18 +270,24 @@ const QuestionCard = ({
                   onAnswerSelect(Array.from(next).sort().join(''));
                 }}
                 disabled={disabled}
-                className={`w-full text-left p-4 rounded-xl border transition-all duration-150 active:scale-[0.99] ${
-                  isSelected
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                } ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] ${
+                  showResult
+                    ? resultStyle
+                    : isSelected
+                      ? 'bg-white border-primary shadow-sm'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                } ${disabled && !showResult ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <span
-                    className={`flex items-center justify-center w-11 h-11 rounded-lg text-sm font-mono font-bold flex-shrink-0 transition-colors ${
-                      isSelected
-                        ? 'bg-white text-gray-900'
-                        : 'bg-gray-100 text-gray-600'
+                    className={`flex items-center justify-center w-10 h-10 rounded-lg text-sm font-mono font-bold flex-shrink-0 transition-colors ${
+                      showResult && correctLetters.has(optionLetter)
+                        ? 'bg-accent text-primary'
+                        : showResult && isSelected && !isCorrect
+                          ? 'bg-red-500 text-white'
+                          : isSelected
+                            ? 'bg-primary text-white'
+                            : 'bg-gray-100 text-gray-600'
                     }`}
                   >
                     {isSelected ? <Check size={18} /> : optionLetter}
@@ -281,18 +331,29 @@ const QuestionCard = ({
             { value: 'false', label: '错误' }
           ].map((option) => {
             const isSelected = selectedAnswer === option.value;
+            const correctValue = String(question.answer || '').trim();
+            const resultStyle = showResult
+              ? (option.value === correctValue
+                  ? 'border-accent bg-accent/5 shadow-sm'
+                  : isSelected && !isCorrect
+                    ? 'border-red-500/50 bg-red-50/50'
+                    : 'border-gray-200 opacity-60')
+              : '';
+
             return (
               <button
                 key={option.value}
                 onClick={() => !disabled && onAnswerSelect(option.value)}
                 disabled={disabled}
-                className={`p-4 rounded-xl border transition-all duration-150 active:scale-[0.99] min-h-[44px] touch-manipulation ${
-                  isSelected
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                } ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                className={`p-5 rounded-xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] min-h-[44px] touch-manipulation ${
+                  showResult
+                    ? resultStyle
+                    : isSelected
+                      ? 'bg-white border-primary shadow-sm'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                } ${disabled && !showResult ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
               >
-                <span className="text-base font-medium">{option.label}</span>
+                <span className="text-base font-serif" style={{ fontWeight: 500 }}>{option.label}</span>
               </button>
             );
           })}
@@ -312,9 +373,9 @@ const QuestionCard = ({
       )}
 
       {isGrading && gradingStatus && ['fill', 'calculation', 'essay'].includes(questionType) && (
-        <div className="mt-4 flex items-center gap-2 w-fit px-3 py-2 rounded-full bg-accent-light/40 border border-accent/30 text-sm text-primary animate-fade-in">
-          <Loader2 size={14} className="animate-spin text-accent" />
-          <span>{gradingStatus}</span>
+        <div className="mt-4 flex items-center gap-2 w-fit px-3.5 py-2 rounded-full bg-accent/8 border border-accent/25 text-sm text-primary animate-fade-in">
+          <Loader2 size={14} className="animate-spin text-accent-dark" />
+          <span className="font-mono text-xs tracking-wide">{gradingStatus}</span>
         </div>
       )}
     </Card>

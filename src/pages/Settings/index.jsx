@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-    Settings as SettingsIcon,
     Key,
     ExternalLink,
     Check,
@@ -72,6 +71,22 @@ const getModelById = (provider, modelId) => {
  */
 const isConfigComplete = (config) =>
     !!config.providerId && !!config.modelId && !!config.apiKey;
+
+/**
+ * 区块标题 - 衬线中文 + mono 英文 + 渐变细线
+ */
+const SectionTitle = ({ title, subtitle, action }) => (
+    <div className="flex items-baseline gap-3 mb-6">
+        <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
+            {title}
+        </h2>
+        <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
+            {subtitle}
+        </span>
+        <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+        {action}
+    </div>
+);
 
 /**
  * AI 配置中心页面
@@ -163,401 +178,446 @@ const Settings = () => {
 
     return (
         <div className="page-fade-in max-w-4xl mx-auto">
-            {/* 页面标题 */}
-            <div className="mb-10 stagger-1">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                        <SettingsIcon className="w-5 h-5 text-white" strokeWidth={2} />
-                    </div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-primary">
-                        AI 配置中心
-                    </h1>
-                </div>
-                <p className="text-gray-500 leading-relaxed">
+            {/* 页面标题 - 衬线大字 + mono 标签 */}
+            <div className="mb-12 stagger-1">
+                <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+                    Configuration
+                </p>
+                <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+                    AI 配置中心
+                </h1>
+                <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
                     统一管理三位 AI 学习助手的运行模式与服务商配置，所有设置实时生效并自动保存到本地。
                 </p>
             </div>
 
             {/* 运行模式切换 */}
-            <Card className="mb-6 stagger-2">
-                <div className="flex items-center gap-2 mb-4">
-                    <h2 className="text-lg font-semibold text-primary">运行模式</h2>
-                    <span className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">
-                        Mode
-                    </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                    {Object.entries(MODE_META).map(([key, meta]) => {
-                        const isActive = mode === key;
-                        return (
-                            <button
-                                key={key}
-                                type="button"
-                                onClick={() => handleModeChange(key)}
-                                className={`text-left p-4 rounded-xl border transition-all duration-150 cursor-pointer ${
-                                    isActive
-                                        ? 'border-primary bg-gray-50'
-                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                                }`}
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span
-                                        className={`font-semibold ${
-                                            isActive ? 'text-primary' : 'text-gray-700'
-                                        }`}
-                                    >
-                                        {meta.name}
-                                    </span>
-                                    {isActive && (
-                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary">
-                                            <Check
-                                                className="w-3 h-3 text-white"
-                                                strokeWidth={3}
-                                            />
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-sm text-gray-500 leading-relaxed">
-                                    {meta.desc}
-                                </p>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {mode === 'demo' && (
-                    <div className="flex items-start gap-2 p-3 bg-accent-light/40 rounded-lg border border-accent/30">
-                        <Sparkles className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                            当前为演示模式：无需 API Key，上传、刷题、错题讲解、督学打卡均使用示例数据完整可体验。若想使用自己的复习资料并调用真实 AI，请切换到正式模式。
-                        </p>
-                    </div>
-                )}
-                {mode === 'formal' && (
-                    <div className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <Key className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                            正式模式已开启：系统将为出题官、讲解师、督学员分别调用真实 AI 接口。请确保每位助手都配置了有效的服务商、模型与 API Key，否则对应功能将不可用。
-                        </p>
-                    </div>
-                )}
-            </Card>
-
-            {/* 健壮性说明 */}
-            <Card className="mb-6 animate-fade-in">
-                <div className="flex items-start gap-3">
-                    <ShieldCheck className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                        <h2 className="text-sm font-semibold text-primary mb-1">健壮性说明</h2>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                            已内置 429 指数退避重试、JSON 截断自修复、空响应重试、PDF 版本兼容，确保在网络波动或模型异常时仍可正常学习。
-                        </p>
-                        {statusVisible && (
-                            <p className={`mt-2 text-xs font-medium animate-fade-in ${
-                                aiStatus.type === 'warning' ? 'text-amber-600' : 'text-green-600'
-                            }`}>
-                                {aiStatus.message}
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </Card>
-
-            {/* 预设组合方案 */}
-            <Card className="mb-6 stagger-3">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-semibold text-primary">预设组合</h2>
-                        <span className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">
-                            Presets
-                        </span>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleReset}
-                        className="text-gray-500"
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        重置
-                    </Button>
-                </div>
-
-                <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-                    一键应用推荐方案，自动填充三位 AI 助手的服务商与模型。API Key 需要自行前往对应服务商获取并填入下方输入框。
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {PRESET_META.map((preset) => {
-                        const Icon = preset.icon;
-                        const isActive = activePreset === preset.key;
-                        return (
-                            <button
-                                key={preset.key}
-                                type="button"
-                                onClick={() => handleApplyPreset(preset.key)}
-                                className={`text-left p-4 rounded-xl border transition-all duration-150 cursor-pointer ${
-                                    isActive
-                                        ? 'border-primary bg-gray-50'
-                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                                }`}
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <Icon
-                                            className={`w-4 h-4 ${
-                                                isActive ? 'text-primary' : 'text-gray-500'
-                                            }`}
-                                        />
-                                        <span
-                                            className={`font-semibold ${
-                                                isActive ? 'text-primary' : 'text-gray-700'
-                                            }`}
-                                        >
-                                            {preset.name}
-                                        </span>
-                                    </div>
-                                    {isActive && (
-                                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary">
-                                            <Check
-                                                className="w-3 h-3 text-white"
-                                                strokeWidth={3}
-                                            />
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-sm text-gray-500">{preset.desc}</p>
-                            </button>
-                        );
-                    })}
-                </div>
-            </Card>
-
-            {/* 三个 Agent 配置卡片 */}
-            {agentMeta.map((agent, idx) => {
-                const config = aiConfig[agent.id] || {
-                    providerId: '',
-                    modelId: '',
-                    apiKey: ''
-                };
-                const provider = getProviderById(config.providerId);
-                const model = getModelById(provider, config.modelId);
-                const complete = isConfigComplete(config);
-                const keyVisible = showKeys[agent.id];
-
-                return (
-                    <Card
-                        key={agent.id}
-                        className={`mb-6 stagger-${idx + 3}`}
-                    >
-                        {/* 卡片头部：Agent 信息 + 状态指示 */}
-                        <div className="flex items-start justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl border border-gray-200"
-                                    style={{ backgroundColor: `${agent.color}10` }}
-                                >
-                                    {agent.avatarEmoji}
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-lg font-semibold text-primary">
-                                            {agent.name}
-                                        </h3>
-                                        <span className="font-mono text-[10px] text-gray-400 uppercase tracking-widest">
-                                            {agent.id}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-500 mt-0.5">
-                                        {agent.description}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* 状态指示器 */}
-                            <div
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
-                                    complete
-                                        ? 'bg-green-50 text-green-700 border border-green-200'
-                                        : 'bg-gray-100 text-gray-500 border border-gray-200'
-                                }`}
-                                title={
-                                    complete
-                                        ? '配置完整'
-                                        : '需填写服务商、模型与 API Key'
-                                }
-                            >
-                                <span
-                                    className={`inline-flex items-center justify-center w-4 h-4 rounded-full ${
-                                        complete ? 'bg-green-500' : 'bg-gray-300'
+            <div className="mb-12 stagger-2">
+                <SectionTitle title="运行模式" subtitle="Mode" />
+                <Card elevated className="p-6 lg:p-7">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {Object.entries(MODE_META).map(([key, meta], idx) => {
+                            const isActive = mode === key;
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => handleModeChange(key)}
+                                    className={`text-left p-5 rounded-xl border transition-all duration-200 cursor-pointer relative overflow-hidden ${
+                                        isActive
+                                            ? 'border-primary bg-warm-50/60 shadow-sm'
+                                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/60'
                                     }`}
                                 >
-                                    {complete && (
-                                        <Check
-                                            className="w-2.5 h-2.5 text-white"
-                                            strokeWidth={3}
-                                        />
-                                    )}
-                                </span>
-                                {complete ? '已就绪' : '未配置'}
-                            </div>
-                        </div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <span
+                                                className="font-serif text-2xl text-gray-200 tabular-nums"
+                                                style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+                                            >
+                                                {String(idx + 1).padStart(2, '0')}
+                                            </span>
+                                            <span
+                                                className={`font-serif text-lg ${isActive ? 'text-primary' : 'text-gray-700'}`}
+                                                style={{ fontWeight: 500 }}
+                                            >
+                                                {meta.name}
+                                            </span>
+                                        </div>
+                                        {isActive && (
+                                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent shadow-gold">
+                                                <Check
+                                                    className="w-3 h-3 text-primary"
+                                                    strokeWidth={3}
+                                                />
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-gray-500 leading-relaxed">
+                                        {meta.desc}
+                                    </p>
+                                </button>
+                            );
+                        })}
+                    </div>
 
-                        {/* 服务商选择 */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                AI 服务商
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={config.providerId}
-                                    onChange={(e) =>
-                                        handleFieldChange(
-                                            agent.id,
-                                            'providerId',
-                                            e.target.value
-                                        )
-                                    }
-                                    className="custom-select w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent cursor-pointer"
-                                >
-                                    <option value="">选择 AI 提供商</option>
-                                    {aiProviders.map((p) => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.name}
-                                            {p.isFree ? '（含免费额度）' : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                    ▼
+                    {mode === 'demo' && (
+                        <div className="mt-5 flex items-start gap-3 p-4 bg-accent-light/30 rounded-xl border border-accent/25">
+                            <Sparkles className="w-4 h-4 text-accent-dark flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+                            <p className="text-sm text-gray-700 leading-relaxed">
+                                当前为演示模式：无需 API Key，上传、刷题、错题讲解、督学打卡均使用示例数据完整可体验。若想使用自己的复习资料并调用真实 AI，请切换到正式模式。
+                            </p>
+                        </div>
+                    )}
+                    {mode === 'formal' && (
+                        <div className="mt-5 flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                            <Key className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+                            <p className="text-sm text-gray-700 leading-relaxed">
+                                正式模式已开启：系统将为出题官、讲解师、督学员分别调用真实 AI 接口。请确保每位助手都配置了有效的服务商、模型与 API Key，否则对应功能将不可用。
+                            </p>
+                        </div>
+                    )}
+                </Card>
+            </div>
+
+            {/* 健壮性说明 */}
+            <div className="mb-12 stagger-2">
+                <Card elevated className="p-6 lg:p-7">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-accent-light/40 border border-accent/25 flex items-center justify-center flex-shrink-0">
+                            <ShieldCheck className="w-5 h-5 text-accent-dark" strokeWidth={1.8} />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-baseline gap-3 mb-2">
+                                <h3 className="text-base font-serif text-primary" style={{ fontWeight: 500 }}>
+                                    健壮性说明
+                                </h3>
+                                <span className="text-[11px] font-mono uppercase tracking-wider text-accent-dark">
+                                    Reliability
                                 </span>
                             </div>
-                            {provider && (
-                                <div className="mt-2 flex items-center gap-2 flex-wrap">
-                                    {provider.isFree && (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-light/40 text-secondary rounded text-xs font-medium border border-accent/30">
-                                            <Gift className="w-3 h-3" />
-                                            含免费额度
-                                        </span>
-                                    )}
-                                    <span className="text-xs text-gray-400 font-mono">
-                                        {provider.apiBaseUrl}
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                                已内置 429 指数退避重试、JSON 截断自修复、空响应重试、PDF 版本兼容，确保在网络波动或模型异常时仍可正常学习。
+                            </p>
+                            {statusVisible && (
+                                <p className={`mt-3 text-xs font-mono tracking-wide animate-fade-in ${
+                                    aiStatus.type === 'warning' ? 'text-amber-600' : 'text-accent-dark'
+                                }`}>
+                                    {aiStatus.message}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
+            {/* 预设组合方案 */}
+            <div className="mb-12 stagger-3">
+                <SectionTitle
+                    title="预设组合"
+                    subtitle="Presets"
+                    action={
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleReset}
+                            className="text-gray-500 hover:text-primary"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            重置
+                        </Button>
+                    }
+                />
+                <Card elevated className="p-6 lg:p-7">
+                    <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+                        一键应用推荐方案，自动填充三位 AI 助手的服务商与模型。API Key 需要自行前往对应服务商获取并填入下方输入框。
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {PRESET_META.map((preset, idx) => {
+                            const Icon = preset.icon;
+                            const isActive = activePreset === preset.key;
+                            return (
+                                <button
+                                    key={preset.key}
+                                    type="button"
+                                    onClick={() => handleApplyPreset(preset.key)}
+                                    className={`text-left p-5 rounded-xl border transition-all duration-200 cursor-pointer relative overflow-hidden group ${
+                                        isActive
+                                            ? 'border-accent bg-gradient-to-br from-accent/8 to-transparent shadow-gold'
+                                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/60'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2.5">
+                                            <div
+                                                className={`w-8 h-8 rounded-lg flex items-center justify-center border ${
+                                                    isActive
+                                                        ? 'bg-accent border-accent/40'
+                                                        : 'bg-gray-50 border-gray-200/60'
+                                                }`}
+                                            >
+                                                <Icon
+                                                    className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-gray-500'}`}
+                                                    strokeWidth={1.8}
+                                                />
+                                            </div>
+                                            <span
+                                                className={`font-serif text-base ${isActive ? 'text-primary' : 'text-gray-700'}`}
+                                                style={{ fontWeight: 500 }}
+                                            >
+                                                {preset.name}
+                                            </span>
+                                        </div>
+                                        {isActive ? (
+                                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent shadow-gold">
+                                                <Check
+                                                    className="w-3 h-3 text-primary"
+                                                    strokeWidth={3}
+                                                />
+                                            </span>
+                                        ) : (
+                                            <span className="font-mono text-[10px] text-gray-300 tabular-nums tracking-wider">
+                                                {String(idx + 1).padStart(2, '0')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-500 leading-relaxed">{preset.desc}</p>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </Card>
+            </div>
+
+            {/* 三个 Agent 配置卡片 */}
+            <div className="mb-8">
+                <div className="flex items-baseline gap-3 mb-6">
+                    <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
+                        助手配置
+                    </h2>
+                    <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
+                        Agents
+                    </span>
+                    <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+                </div>
+
+                {agentMeta.map((agent, idx) => {
+                    const config = aiConfig[agent.id] || {
+                        providerId: '',
+                        modelId: '',
+                        apiKey: ''
+                    };
+                    const provider = getProviderById(config.providerId);
+                    const model = getModelById(provider, config.modelId);
+                    const complete = isConfigComplete(config);
+                    const keyVisible = showKeys[agent.id];
+
+                    return (
+                        <Card
+                            key={agent.id}
+                            elevated
+                            className={`mb-6 p-6 lg:p-7 stagger-${idx + 3}`}
+                        >
+                            {/* 卡片头部：编号 + Agent 信息 + 状态指示 */}
+                            <div className="flex items-start justify-between mb-7 pb-6 border-b border-gray-100">
+                                <div className="flex items-center gap-5">
+                                    {/* 大号衬线编号 */}
+                                    <span
+                                        className="font-serif text-5xl text-gray-200 tabular-nums"
+                                        style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+                                    >
+                                        {String(idx + 1).padStart(2, '0')}
+                                    </span>
+                                    <div>
+                                        <div className="flex items-baseline gap-3 mb-1">
+                                            <h3 className="text-xl font-serif text-primary" style={{ fontWeight: 500 }}>
+                                                {agent.name}
+                                            </h3>
+                                            <span className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em]">
+                                                {agent.id}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-500 leading-relaxed max-w-md">
+                                            {agent.description}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* 状态指示器 */}
+                                <div
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono tracking-wide ${
+                                        complete
+                                            ? 'bg-accent-light/30 text-accent-dark border border-accent/30'
+                                            : 'bg-gray-100 text-gray-500 border border-gray-200'
+                                    }`}
+                                    title={
+                                        complete
+                                            ? '配置完整'
+                                            : '需填写服务商、模型与 API Key'
+                                    }
+                                >
+                                    <span
+                                        className={`inline-flex items-center justify-center w-1.5 h-1.5 rounded-full ${
+                                            complete ? 'bg-accent' : 'bg-gray-400'
+                                        }`}
+                                    />
+                                    {complete ? '已就绪' : '未配置'}
+                                </div>
+                            </div>
+
+                            {/* 服务商选择 */}
+                            <div className="mb-5">
+                                <div className="flex items-baseline justify-between mb-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        AI 服务商
+                                    </label>
+                                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
+                                        Provider
                                     </span>
                                 </div>
-                            )}
-                        </div>
-
-                        {/* 模型选择 */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                模型
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={config.modelId}
-                                    onChange={(e) =>
-                                        handleFieldChange(
-                                            agent.id,
-                                            'modelId',
-                                            e.target.value
-                                        )
-                                    }
-                                    disabled={!provider}
-                                    className="custom-select w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
-                                >
-                                    <option value="">选择模型</option>
-                                    {provider?.models.map((m) => (
-                                        <option key={m.id} value={m.id}>
-                                            {m.name}
-                                            {m.isFree ? '（免费）' : ''} - {m.description}
-                                        </option>
-                                    ))}
-                                </select>
-                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                    ▼
-                                </span>
-                            </div>
-                            {model && (
-                                <div className="mt-2 flex items-center gap-2 flex-wrap text-xs text-gray-500">
-                                    {model.isFree && (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-light/40 text-secondary rounded text-xs font-medium border border-accent/30">
-                                            <Gift className="w-3 h-3" />
-                                            免费模型
+                                <div className="relative">
+                                    <select
+                                        value={config.providerId}
+                                        onChange={(e) =>
+                                            handleFieldChange(
+                                                agent.id,
+                                                'providerId',
+                                                e.target.value
+                                            )
+                                        }
+                                        className="custom-select w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer"
+                                    >
+                                        <option value="">选择 AI 提供商</option>
+                                        {aiProviders.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name}
+                                                {p.isFree ? '（含免费额度）' : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                        ▼
+                                    </span>
+                                </div>
+                                {provider && (
+                                    <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                                        {provider.isFree && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-light/40 text-accent-dark rounded-md text-[11px] font-mono font-medium border border-accent/30 tracking-wide">
+                                                <Gift className="w-3 h-3" />
+                                                FREE TIER
+                                            </span>
+                                        )}
+                                        <span className="text-[11px] text-gray-400 font-mono tabular-nums">
+                                            {provider.apiBaseUrl}
                                         </span>
-                                    )}
-                                    <span>上下文 {model.contextLength.toLocaleString()} tokens</span>
-                                    <span className="text-gray-300">·</span>
-                                    <span>最大输出 {model.maxOutput.toLocaleString()} tokens</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 模型选择 */}
+                            <div className="mb-5">
+                                <div className="flex items-baseline justify-between mb-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        模型
+                                    </label>
+                                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
+                                        Model
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <select
+                                        value={config.modelId}
+                                        onChange={(e) =>
+                                            handleFieldChange(
+                                                agent.id,
+                                                'modelId',
+                                                e.target.value
+                                            )
+                                        }
+                                        disabled={!provider}
+                                        className="custom-select w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
+                                    >
+                                        <option value="">选择模型</option>
+                                        {provider?.models.map((m) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.name}
+                                                {m.isFree ? '（免费）' : ''} - {m.description}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                        ▼
+                                    </span>
+                                </div>
+                                {model && (
+                                    <div className="mt-2.5 flex items-center gap-2 flex-wrap text-[11px] text-gray-500 font-mono">
+                                        {model.isFree && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-light/40 text-accent-dark rounded-md text-[11px] font-medium border border-accent/30 tracking-wide">
+                                                <Gift className="w-3 h-3" />
+                                                FREE MODEL
+                                            </span>
+                                        )}
+                                        <span className="tabular-nums">CTX {model.contextLength.toLocaleString()}</span>
+                                        <span className="text-gray-300">·</span>
+                                        <span className="tabular-nums">OUT {model.maxOutput.toLocaleString()}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* API Key 输入 */}
+                            <div className="mb-5">
+                                <div className="flex items-baseline justify-between mb-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        API Key
+                                    </label>
+                                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
+                                        Secret
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type={keyVisible ? 'text' : 'password'}
+                                        value={config.apiKey}
+                                        onChange={(e) =>
+                                            handleFieldChange(
+                                                agent.id,
+                                                'apiKey',
+                                                e.target.value
+                                            )
+                                        }
+                                        placeholder="请输入 API Key（敏感信息仅保存在本地）"
+                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 font-mono"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleKeyVisible(agent.id)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary cursor-pointer"
+                                        title={keyVisible ? '隐藏' : '显示'}
+                                    >
+                                        {keyVisible ? (
+                                            <EyeOff className="w-4 h-4" />
+                                        ) : (
+                                            <Eye className="w-4 h-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* API Key 获取链接 */}
+                            {provider && (
+                                <div className="p-4 bg-warm-50/70 rounded-xl border border-gray-200/80">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Key className="w-3.5 h-3.5 text-accent-dark" strokeWidth={1.8} />
+                                        <span className="text-[11px] font-mono uppercase tracking-wider text-accent-dark">
+                                            How to get API Key
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+                                        {provider.apiKeyGuide}
+                                    </p>
+                                    <a
+                                        href={provider.apiKeyUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:text-accent-dark transition-colors border-b border-primary/20 hover:border-accent-dark/40 pb-0.5"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                        前往 {provider.name} 获取 API Key
+                                    </a>
                                 </div>
                             )}
-                        </div>
-
-                        {/* API Key 输入 */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                API Key
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={keyVisible ? 'text' : 'password'}
-                                    value={config.apiKey}
-                                    onChange={(e) =>
-                                        handleFieldChange(
-                                            agent.id,
-                                            'apiKey',
-                                            e.target.value
-                                        )
-                                    }
-                                    placeholder="请输入 API Key（敏感信息仅保存在本地）"
-                                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => toggleKeyVisible(agent.id)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary cursor-pointer"
-                                    title={keyVisible ? '隐藏' : '显示'}
-                                >
-                                    {keyVisible ? (
-                                        <EyeOff className="w-4 h-4" />
-                                    ) : (
-                                        <Eye className="w-4 h-4" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* API Key 获取链接 */}
-                        {provider && (
-                            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Key className="w-3.5 h-3.5 text-secondary" />
-                                    <span className="text-xs font-medium text-gray-700">如何获取 API Key</span>
-                                </div>
-                                <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-                                    {provider.apiKeyGuide}
-                                </p>
-                                <a
-                                    href={provider.apiKeyUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:text-accent transition-colors"
-                                >
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                    前往 {provider.name} 获取 API Key
-                                </a>
-                            </div>
-                        )}
-                    </Card>
-                );
-            })}
+                        </Card>
+                    );
+                })}
+            </div>
 
             {/* 底部说明 */}
-            <div className="mt-8 text-center text-xs text-gray-400 stagger-5 space-y-1">
-                <p>
+            <div className="mt-10 text-center stagger-5 space-y-1.5 pt-6 border-t border-gray-100">
+                <p className="text-xs text-gray-400 font-mono tracking-wide">
                     所有配置仅保存在本地浏览器，不会上传至服务器。请妥善保管 API Key。
                 </p>
-                <p>
+                <p className="text-xs text-gray-400 font-mono tracking-wide">
                     遇到模型无响应或返回异常时，可尝试切换服务商、检查 API Key 余额，或回到演示模式继续使用。
                 </p>
             </div>

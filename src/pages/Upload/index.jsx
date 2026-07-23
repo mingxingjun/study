@@ -4,11 +4,13 @@ import { ArrowRight, AlertCircle, Check, RotateCcw } from 'lucide-react';
 import { useStudyContext } from '../../context/StudyContext';
 import { useAgents } from '../../hooks/useAgents';
 import usePageTitle from '../../hooks/usePageTitle';
+import useStaggerAnimation from '../../hooks/useStaggerAnimation';
 import { generatePlan, isAIConfigured } from '../../services/aiService';
 import { parseQuestionBank } from '../../utils/questionParser';
 import { sampleKnowledgePoints } from '../../mock/sampleData';
 import { sampleQuestions } from '../../mock/questions';
 import Button from '../../components/ui/Button';
+import Card from '../../components/ui/Card';
 import FileUploader from './FileUploader';
 import ParsingProcess from './ParsingProcess';
 import KnowledgeTree from './KnowledgeTree';
@@ -54,11 +56,30 @@ const getDefaultExamDate = () => {
   return date.toISOString().split('T')[0];
 };
 
-const cardClass = "bg-white rounded-2xl border border-gray-200 card-hover p-6 sm:p-8";
+/**
+ * 区块标题 - 衬线小标题 + mono 英文副标 + 渐变细线
+ */
+const SectionTitle = ({ title, subtitle, count }) => (
+  <div className="flex items-baseline gap-3 mb-6">
+    <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
+      {title}
+    </h2>
+    <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
+      {subtitle}
+    </span>
+    {count !== undefined && (
+      <span className="text-[11px] font-mono text-accent-dark tabular-nums ml-1">
+        {count}
+      </span>
+    )}
+    <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+  </div>
+);
 
 const Upload = () => {
   const navigate = useNavigate();
   usePageTitle('上传资料');
+  const pageRef = useStaggerAnimation([], '.stagger-item');
   const {
     state,
     uploadMaterial,
@@ -338,35 +359,49 @@ const Upload = () => {
   const canStartParse = allUploaded;
 
   const stepLabels = ['上传资料', '解析中', '复习计划'];
+  const stepEnglish = ['UPLOAD', 'PARSING', 'PLAN'];
 
   return (
-    <div className="page-fade-in">
+    <div ref={pageRef} className="page-fade-in">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-14 stagger-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">上传资料</h1>
-          <p className="text-gray-500 text-sm">上传学习资料，AI 将为你生成专属复习计划</p>
+        {/* 标题区 - 衬线大字 + mono 日期 + 金色强调 */}
+        <div className="mb-14 stagger-item">
+          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+            上传与解析 · UPLOAD
+          </p>
+          <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+            上传资料，生成
+            <span className="text-accent-dark">专属题库</span>
+          </h1>
+          <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
+            上传学习资料，AI 将为你生成专属复习计划与智能题库。
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center mb-14 stagger-2">
+        {/* 步骤指示器 - 衬线编号 + 精致细线 */}
+        <div className="flex flex-wrap items-center justify-center mb-14 stagger-item">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center">
               <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-mono font-medium transition-colors duration-150 ${
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-serif text-sm transition-colors duration-300 ${
                   step >= s
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-400 border border-gray-200'
-                }`}>
+                    ? 'bg-primary text-accent-light shadow-sm'
+                    : 'bg-gray-50 text-gray-400 border border-gray-200'
+                }`} style={step >= s ? { fontWeight: 400, letterSpacing: '-0.02em' } : { fontWeight: 400 }}>
                   {s}
                 </div>
-                <span className={`text-sm transition-colors duration-150 ${
-                  step >= s ? 'text-primary font-medium' : 'text-gray-400'
-                }`}>
-                  {stepLabels[s - 1]}
-                </span>
+                <div className="flex flex-col">
+                  <span className={`text-sm transition-colors duration-300 font-serif ${step >= s ? 'text-primary' : 'text-gray-400'}`} style={{ fontWeight: 400 }}>
+                    {stepLabels[s - 1]}
+                  </span>
+                  <span className={`text-[10px] font-mono uppercase tracking-[0.2em] transition-colors duration-300 ${step >= s ? 'text-accent-dark' : 'text-gray-300'}`}>
+                    {stepEnglish[s - 1]}
+                  </span>
+                </div>
               </div>
               {s < 3 && (
-                <div className={`h-0.5 w-16 mx-4 rounded-full transition-colors duration-300 ${
-                  step > s ? 'bg-primary' : 'bg-gray-300'
+                <div className={`h-px w-16 mx-4 transition-colors duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  step > s ? 'bg-primary' : 'bg-gray-200'
                 }`} />
               )}
             </div>
@@ -374,44 +409,37 @@ const Upload = () => {
         </div>
 
         {step === 1 && (
-          <div className="space-y-8">
+          <div className="space-y-10">
             {state.mode === 'formal' && !isAIConfigured(state.aiConfig['supervisor']) && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 stagger-3">
+              <Card className="p-5 stagger-item bg-amber-50/60 border-amber-200/70">
                 <div className="flex items-center gap-3">
                   <AlertCircle size={20} className="text-amber-500 flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-amber-800">请先在设置页面配置 AI</p>
-                    <p className="text-xs text-amber-600 mt-0.5">未配置 AI 服务时将使用演示数据，无法进行真实文档解析</p>
+                    <p className="text-sm font-serif text-amber-800" style={{ fontWeight: 500 }}>请先在设置页面配置 AI</p>
+                    <p className="text-xs text-amber-600 mt-0.5 leading-relaxed">未配置 AI 服务时将使用演示数据，无法进行真实文档解析</p>
                   </div>
                   <Link
                     to="/settings"
-                    className="text-sm text-primary font-medium underline flex-shrink-0"
+                    className="text-sm text-primary font-medium underline flex-shrink-0 underline-offset-4"
                   >
                     去配置
                   </Link>
                 </div>
-              </div>
+              </Card>
             )}
 
-            <div className={`${cardClass} stagger-3`}>
-              <div className="flex items-baseline justify-between mb-5">
-                <h2 className="text-lg font-medium text-primary">上传文件</h2>
-                <span className="text-xs text-gray-400 font-mono">STEP 01</span>
-              </div>
+            <Card className="p-6 sm:p-10 stagger-item" elevated>
+              <SectionTitle title="上传文件" subtitle="Step 01" />
               <FileUploader
                 files={files}
                 setFiles={setFiles}
                 onUseSampleQuestions={handleUseSampleQuestions}
                 onParsed={handleParsed}
               />
-            </div>
+            </Card>
 
-            <div className={`${cardClass} stagger-4`}>
-              <div className="flex items-baseline justify-between mb-6">
-                <h2 className="text-lg font-medium text-primary">考试日期</h2>
-                <span className="text-xs text-gray-400 font-mono">STEP 02</span>
-              </div>
-
+            <Card className="p-6 sm:p-10 stagger-item" elevated>
+              <SectionTitle title="考试日期" subtitle="Step 02" />
               <ExamDatePicker
                 value={examDateInput}
                 onChange={(value) => {
@@ -421,9 +449,9 @@ const Upload = () => {
                   }
                 }}
               />
-            </div>
+            </Card>
 
-            <div className="flex justify-end stagger-5">
+            <div className="flex justify-end stagger-item">
               <Button
                 onClick={handleStartParse}
                 disabled={!canStartParse}
@@ -437,18 +465,19 @@ const Upload = () => {
         )}
 
         {step === 2 && (
-          <div className="space-y-6">
-            <div className={`${cardClass} stagger-3`}>
+          <div className="space-y-8">
+            <Card className="p-6 sm:p-10 stagger-item" elevated>
+              <SectionTitle title="解析过程" subtitle="Parsing" />
               <ParsingProcess
                 agents={agents}
                 progress={parseProgress}
                 parseResult={parseResult}
                 isComplete={!isParsing && parseResult !== null}
               />
-            </div>
+            </Card>
 
             {parseError && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 stagger-3">
+              <Card className="p-5 stagger-item bg-red-50/60 border-red-200/70">
                 <div className="flex items-start gap-3">
                   <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
@@ -456,72 +485,77 @@ const Upload = () => {
                   </div>
                   <button
                     onClick={() => setStep(1)}
-                    className="flex items-center gap-1 text-sm text-primary hover:text-accent font-medium cursor-pointer whitespace-nowrap"
+                    className="flex items-center gap-1 text-sm text-primary hover:text-accent-dark font-medium cursor-pointer whitespace-nowrap transition-colors duration-200"
                   >
                     <RotateCcw size={14} />
                     返回重试
                   </button>
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         )}
 
         {step === 3 && (
-          <div className="space-y-8">
+          <div className="space-y-10">
             {parseError && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 stagger-3">
+              <Card className="p-5 stagger-item bg-red-50/60 border-red-200/70">
                 <div className="flex items-start gap-3">
                   <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm text-red-700 leading-relaxed">{parseError}</p>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
 
-            {/* 刷题引导 */}
-            <div className={`${cardClass} stagger-3 border-2 border-primary/10 bg-gradient-to-r from-primary/[0.03] to-transparent`}>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center flex-shrink-0">
-                  <Check className="text-primary" size={24} />
+            {/* 刷题引导 - 金色强调卡片 */}
+            <Card className="p-6 sm:p-8 stagger-item bg-gradient-to-br from-accent/8 to-accent/3 border-accent/20" elevated>
+              <div className="flex items-start gap-5">
+                <div className="w-12 h-12 bg-accent rounded-2xl flex items-center justify-center flex-shrink-0 shadow-gold">
+                  <Check className="text-primary" size={24} strokeWidth={2.2} />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-lg font-bold text-primary mb-2">资料解析完成</h2>
+                  <p className="text-[11px] font-mono uppercase tracking-wider text-accent-dark mb-1">
+                    Parsing Complete
+                  </p>
+                  <h2 className="text-2xl text-primary font-serif mb-2" style={{ fontWeight: 400 }}>
+                    资料解析完成
+                  </h2>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    已为你生成 <span className="font-bold text-primary text-base">{state.questions?.length || 0}</span> 道题目。
-                    点击右下角「开始刷题」即可进入练习界面。
+                    已为你生成
+                    <span className="font-serif text-2xl text-primary mx-2 tabular-nums" style={{ fontWeight: 400, letterSpacing: '-0.04em' }}>
+                      {state.questions?.length || 0}
+                    </span>
+                    道题目。点击右下角「开始刷题」即可进入练习界面。
                   </p>
                 </div>
               </div>
-            </div>
+            </Card>
 
-            <div className={`${cardClass} stagger-4`}>
-              <div className="flex items-baseline justify-between mb-5">
-                <h2 className="text-lg font-medium text-primary">知识点结构</h2>
-                <span className="text-xs text-gray-400 font-mono">{knowledgePoints.length} 个知识点</span>
-              </div>
+            <Card className="p-6 sm:p-10 stagger-item" elevated>
+              <SectionTitle title="知识点结构" subtitle="Knowledge" count={`${knowledgePoints.length} 个`} />
               <KnowledgeTree knowledgePoints={knowledgePoints} />
-            </div>
+            </Card>
 
-            <div className={`${cardClass} stagger-5`}>
+            <Card className="p-6 sm:p-10 stagger-item" elevated>
               <ResourceLinks
                 resourceLinks={state.resourceLinks}
                 knowledgePoints={knowledgePoints}
                 onAdd={addResourceLink}
                 onDelete={deleteResourceLink}
               />
-            </div>
+            </Card>
 
-            <div className={`${cardClass} stagger-6`}>
+            <Card className="p-6 sm:p-10 stagger-item" elevated>
               <StudyPlan
                 plan={state.plan}
                 knowledgePoints={knowledgePoints}
                 dueReviewQuestions={dueReviewQuestions}
               />
-            </div>
+            </Card>
 
-            <div className="flex justify-end stagger-6">
+            <div className="flex justify-end stagger-item">
               <Button
                 onClick={() => navigate('/quiz')}
                 size="lg"

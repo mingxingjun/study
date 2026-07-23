@@ -5,6 +5,7 @@ import Card from '../../components/ui/Card';
 
 /**
  * 答题总结组件
+ * 衬线大号正确率 + 金色环形进度 + 编辑式数据栅格
  * @param {Object} props
  * @param {number} props.totalQuestions - 总题数
  * @param {number} props.correctCount - 正确数
@@ -48,16 +49,20 @@ const QuizSummary = ({
   const strokeDashoffset = circumference - (accuracy / 100) * circumference;
 
   return (
-    <Card className="p-8 sm:p-12 text-center card-hover">
-      <div className="mb-8 stagger-1">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-5">
-          <Trophy className="text-white" size={28} strokeWidth={2} />
-        </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-primary">练习完成</h1>
-        <p className="mt-2 text-sm text-gray-500">本次练习的表现如下</p>
+    <Card className="p-8 sm:p-12 card-hover" elevated>
+      {/* 标题区 - mono 标签 + 衬线大字 + 金色句点 */}
+      <div className="mb-10 stagger-1">
+        <p className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+          Quiz Completed · 练习结果
+        </p>
+        <h1 className="text-4xl md:text-5xl text-primary" style={{ fontWeight: 400, lineHeight: 1.1, letterSpacing: '-0.035em' }}>
+          练习完成<span className="text-accent-dark">.</span>
+        </h1>
+        <p className="mt-3 text-sm text-gray-500">本次练习的表现如下</p>
       </div>
 
-      <div className="relative inline-block mb-8 stagger-2">
+      {/* 环形正确率 - 衬线大数字 + 金色描边 */}
+      <div className="relative inline-block mb-10 stagger-2">
         <svg width="160" height="160" className="transform -rotate-90">
           <circle
             cx="80"
@@ -65,15 +70,15 @@ const QuizSummary = ({
             r={radius}
             fill="none"
             stroke="#f0f0f0"
-            strokeWidth="8"
+            strokeWidth="6"
           />
           <circle
             cx="80"
             cy="80"
             r={radius}
             fill="none"
-            stroke="#171717"
-            strokeWidth="8"
+            stroke="#c9a227"
+            strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
@@ -81,41 +86,63 @@ const QuizSummary = ({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-mono text-4xl font-bold text-gray-900 tabular-nums">
-            {accuracy}
-            <span className="text-2xl text-gray-400">%</span>
-          </span>
-          <span className="text-xs text-gray-500 mt-2 tracking-wider">正确率</span>
+          <div className="flex items-baseline">
+            <span
+              className="font-serif text-5xl text-primary tabular-nums"
+              style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+            >
+              {accuracy}
+            </span>
+            <span className="font-serif text-2xl text-gray-400 ml-0.5">%</span>
+          </div>
+          <span className="text-[11px] font-mono text-gray-500 mt-2 uppercase tracking-[0.2em]">正确率</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8 stagger-3">
-        <div className="p-5 bg-gray-50 rounded-xl border border-gray-200">
+      {/* 数据栅格 - 编辑式三栏 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-gray-200 rounded-xl overflow-hidden mb-8 stagger-3 border border-gray-200">
+        <div className="p-6 bg-white text-center">
           <div className="flex items-center justify-center gap-2 text-gray-400 mb-3">
-            <Target size={15} />
-            <span className="text-xs tracking-wide">总题数</span>
+            <Target size={14} strokeWidth={1.5} />
+            <span className="text-[11px] font-mono uppercase tracking-[0.2em]">总题数</span>
           </div>
-          <p className="font-mono text-2xl font-bold text-gray-900 tabular-nums">{totalQuestions}</p>
+          <p
+            className="font-serif text-3xl text-primary tabular-nums"
+            style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+          >
+            {totalQuestions}
+          </p>
         </div>
 
-        <div className="p-5 bg-primary rounded-xl">
+        <div className="p-6 bg-primary text-center">
           <div className="flex items-center justify-center gap-2 text-gray-400 mb-3">
-            <Trophy size={15} />
-            <span className="text-xs tracking-wide">正确数</span>
+            <Trophy size={14} strokeWidth={1.5} />
+            <span className="text-[11px] font-mono uppercase tracking-[0.2em]">正确数</span>
           </div>
-          <p className="font-mono text-2xl font-bold text-white tabular-nums">{correctCount}</p>
+          <p
+            className="font-serif text-3xl text-accent tabular-nums"
+            style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+          >
+            {correctCount}
+          </p>
         </div>
 
-        <div className="p-5 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="p-6 bg-white text-center">
           <div className="flex items-center justify-center gap-2 text-gray-400 mb-3">
-            <Clock size={15} />
-            <span className="text-xs tracking-wide">用时</span>
+            <Clock size={14} strokeWidth={1.5} />
+            <span className="text-[11px] font-mono uppercase tracking-[0.2em]">用时</span>
           </div>
-          <p className="font-mono text-2xl font-bold text-gray-900 tabular-nums">{formatTime(timeUsed)}</p>
+          <p
+            className="font-serif text-3xl text-primary tabular-nums"
+            style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+          >
+            {formatTime(timeUsed)}
+          </p>
         </div>
       </div>
 
-      <div className="p-5 bg-gray-50 rounded-xl mb-8 border border-gray-200 stagger-4">
+      {/* 鼓励语 - 编辑式引文 */}
+      <div className="p-5 bg-gray-50/60 rounded-xl mb-8 border border-gray-100 stagger-4">
         <p className="text-gray-700 leading-relaxed text-sm">{getEncouragement()}</p>
       </div>
 
@@ -140,7 +167,7 @@ const QuizSummary = ({
       {onRestart && (
         <button
           onClick={onRestart}
-          className="mt-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
+          className="mt-6 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary transition-colors cursor-pointer"
         >
           <RotateCcw size={14} />
           再练一次

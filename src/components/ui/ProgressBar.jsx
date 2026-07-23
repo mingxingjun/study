@@ -1,5 +1,6 @@
 /**
- * 进度条组件
+ * 进度条组件 - Refined Editorial Minimalism
+ * 细线 + 精致圆角 + 金色选项 + 平滑过渡
  * @param {Object} props
  * @param {number} [props.value=0] - 当前进度值 (0-100)
  * @param {number} [props.max=100] - 最大值
@@ -20,15 +21,15 @@ const ProgressBar = ({
 
   const sizes = {
     sm: 'h-1',
-    md: 'h-2',
-    lg: 'h-3'
+    md: 'h-1.5',
+    lg: 'h-2.5'
   };
 
   return (
     <div className={`w-full ${className}`}>
       <div className={`w-full bg-gray-100 rounded-full overflow-hidden ${sizes[size]}`}>
         <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
+          className="h-full rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{
             width: `${percentage}%`,
             backgroundColor: color
@@ -36,7 +37,7 @@ const ProgressBar = ({
         />
       </div>
       {showLabel && (
-        <span className="text-xs text-gray-500 mt-1.5 block">{Math.round(percentage)}%</span>
+        <span className="text-xs text-gray-500 mt-1.5 block numeric">{Math.round(percentage)}%</span>
       )}
     </div>
   );

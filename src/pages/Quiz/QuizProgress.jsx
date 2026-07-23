@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button';
 
 /**
  * 答题进度组件
+ * 衬线大号题号 + 精致细线进度条 + mono 时间
  * @param {Object} props
  * @param {number} props.currentQuestion - 当前题号（从1开始）
  * @param {number} props.totalQuestions - 总题数
@@ -43,38 +44,47 @@ const QuizProgress = ({
     : 0;
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-baseline gap-2">
-          <span className="font-mono text-2xl font-bold text-gray-900 tabular-nums">
+    <Card className="p-6 sm:p-7" elevated>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+        {/* 题号视觉焦点 - 衬线大号 01 / 20 */}
+        <div className="flex items-baseline gap-2.5">
+          <span
+            className="font-serif text-4xl text-primary tabular-nums"
+            style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+          >
             {String(currentQuestion).padStart(2, '0')}
           </span>
-          <span className="text-gray-300 font-mono text-sm">/</span>
-          <span className="font-mono text-sm text-gray-500 tabular-nums">
+          <span className="font-serif text-2xl text-gray-300">/</span>
+          <span
+            className="font-serif text-xl text-gray-400 tabular-nums"
+            style={{ fontWeight: 400, letterSpacing: '-0.03em' }}
+          >
             {String(totalQuestions).padStart(2, '0')}
           </span>
-          <span className="ml-2 font-mono text-xs text-gray-400 tabular-nums">
+          <span className="ml-3 text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em] tabular-nums">
             {Math.round(progressPercent)}%
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-gray-600">
-            <Clock size={15} className="text-gray-400" />
-            <span className="font-mono text-sm tabular-nums">{formatTime(elapsedTime)}</span>
+        <div className="flex items-center gap-4">
+          {/* 用时 - mono 数据风 */}
+          <div className="flex items-center gap-2 text-gray-500">
+            <Clock size={14} className="text-accent-dark" strokeWidth={1.5} />
+            <span className="font-mono text-sm tabular-nums tracking-tight">{formatTime(elapsedTime)}</span>
           </div>
           {showEndButton && onEndQuiz && (
             <Button variant="secondary" size="sm" onClick={onEndQuiz}>
-              <X size={15} />
+              <X size={14} strokeWidth={2} />
               结束练习
             </Button>
           )}
         </div>
       </div>
 
-      <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
+      {/* 精致细线进度条 - 缓动曲线 */}
+      <div className="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
         <div
-          className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-primary to-primary transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
