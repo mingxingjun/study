@@ -278,11 +278,12 @@ const callOpenAICompatible = async (provider, modelId, apiKey, messages, options
     // 非流式请求：对空响应也进行重试（429 恢复后可能返回空内容）
     if (!stream) {
         let lastError = null;
+        let currentMaxTokens = maxTokens; // 重试时可能动态增大配额
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
             const requestBody = {
                 model: modelId,
                 messages,
-                max_tokens: maxTokens,
+                max_tokens: currentMaxTokens,
                 temperature,
                 stream: false
             };
@@ -302,20 +303,36 @@ const callOpenAICompatible = async (provider, modelId, apiKey, messages, options
             }
 
             const data = await response.json();
-            const content = data.choices?.[0]?.message?.content || '';
+            const message = data.choices?.[0]?.message;
+            const content = message?.content || '';
+            // DeepSeek V4 系列默认开启思维链，思维链内容在 reasoning_content 字段
+            const reasoningContent = message?.reasoning_content || '';
 
             // 内容非空，直接返回
             if (content.trim()) {
                 return content;
             }
 
-            // 空响应重试（429 恢复后常见行为）
+            // 空响应重试
             if (attempt < MAX_RETRIES) {
                 const delay = calculateBackoffDelay(attempt);
-                console.warn(`AI 返回空内容，${delay / 1000}秒后第 ${attempt + 1}/${MAX_RETRIES} 次重试...`);
-                notifyAIStatus('AI 返回空内容，正在自动重试...', 'warning');
+                // 如果有 reasoning_content 但 content 为空，说明思维链占满了 max_tokens 配额
+                if (reasoningContent.trim()) {
+                    // 增大 max_tokens 配额后重试（翻倍，上限 65536）
+                    const newMaxTokens = Math.min(currentMaxTokens * 2, 65536);
+                    console.warn(
+                        `AI 思维链占满输出配额（reasoning ${reasoningContent.length} 字符），` +
+                        `max_tokens ${currentMaxTokens}→${newMaxTokens}，${delay / 1000}秒后第 ${attempt + 1}/${MAX_RETRIES} 次重试...`
+                    );
+                    notifyAIStatus('AI 思维链占用输出配额，已增大配额并重试...', 'warning');
+                    currentMaxTokens = newMaxTokens;
+                    lastError = new Error('AI 思维链占满输出配额，已自动增大 max_tokens 重试');
+                } else {
+                    console.warn(`AI 返回空内容，${delay / 1000}秒后第 ${attempt + 1}/${MAX_RETRIES} 次重试...`);
+                    notifyAIStatus('AI 返回空内容，正在自动重试...', 'warning');
+                    lastError = new Error('AI 返回内容为空，可能 API Key 无效、请求被拒绝或速率限制未完全恢复');
+                }
                 await sleep(delay);
-                lastError = new Error('AI 返回内容为空，可能 API Key 无效、请求被拒绝或速率限制未完全恢复');
                 continue;
             }
 
