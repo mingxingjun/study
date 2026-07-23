@@ -12,7 +12,8 @@ import {
     supervisorPrompt,
     documentParsePrompt,
     generateQuestionsPrompt,
-    gradeAnswerPrompt
+    gradeAnswerPrompt,
+    buildReParsePrompt
 } from '../config/agentPrompts';
 import { sampleKnowledgePoints } from '../mock/sampleData';
 import { sampleQuestions } from '../mock/questions';
@@ -813,6 +814,21 @@ const normalizeVisualizations = (visualizations) => {
     );
 };
 
+/**
+ * 为题目数组批量标注信心度
+ * 用于 AI 解析路径：AI 直接解析成功默认为 high
+ * 若题目已有 confidence 则保留（例如从 mergeParseResults 合并时已有标注）
+ * @param {Array} questions - 题目数组
+ * @param {string} [level='high'] - 信心度等级
+ * @returns {Array} 标注信心度后的题目数组
+ */
+const assignConfidence = (questions, level = 'high') => {
+    return (questions || []).map(q => ({
+        ...q,
+        confidence: q.confidence || level
+    }));
+};
+
 // ==================== 便捷业务函数 ====================
 
 /**
@@ -945,12 +961,14 @@ export const generateQuestionsByKnowledgePoint = async (
         const content = await callAI(agentConfig, messages, getAgentOptions('question-generator'));
         const parsed = parseJsonFromText(content);
         const questions = Array.isArray(parsed) ? parsed : (parsed.questions || []);
-        return questions.map((q, idx) => ({
-            ...q,
-            id: `q-${Date.now()}-${idx}`,
-            knowledgePointId: knowledgePoint.id,
-            materialId: q.materialId || materialId
-        }));
+        return assignConfidence(
+            questions.map((q, idx) => ({
+                ...q,
+                id: `q-${Date.now()}-${idx}`,
+                knowledgePointId: knowledgePoint.id,
+                materialId: q.materialId || materialId
+            }))
+        );
     } catch (error) {
         console.warn('按知识点生成题目失败:', error);
         return [];
@@ -1148,7 +1166,9 @@ const mergeParseResults = (results, materialId) => {
                 knowledgePointId: globalKpId,
                 materialId: q.materialId || materialId,
                 // 规范化 visualizations 字段，AI 未返回或格式错误时默认为空数组
-                visualizations: normalizeVisualizations(q.visualizations)
+                visualizations: normalizeVisualizations(q.visualizations),
+                // AI 分块解析结果，信心度默认 high（保留已有标注）
+                confidence: q.confidence || 'high'
             });
         });
     });
@@ -1210,11 +1230,13 @@ export const parseDocumentWithAI = async (agentConfig, text, documentType = 'tex
 
         const content = await callAI(agentConfig, messages, getAgentOptions('document-parser'));
         const parsed = parseJsonFromText(content);
-        // 规范化每个题目的 visualizations 字段，AI 未返回或格式错误时默认为空数组
-        const normalizedQuestions = (parsed.questions || []).map(q => ({
-            ...q,
-            visualizations: normalizeVisualizations(q.visualizations)
-        }));
+        // 规范化每个题目的 visualizations 字段，并标注 AI 解析信心度为 high
+        const normalizedQuestions = assignConfidence(
+            (parsed.questions || []).map(q => ({
+                ...q,
+                visualizations: normalizeVisualizations(q.visualizations)
+            }))
+        );
         return { ...parsed, questions: normalizedQuestions };
     }
 
@@ -1251,6 +1273,56 @@ export const parseDocumentWithAI = async (agentConfig, text, documentType = 'tex
         questions: merged.questions.length
     });
     return merged;
+};
+
+/**
+ * 带用户提示的重新解析文档
+ * 当用户对初次解析结果不满意时，可提供格式提示让 AI 重新解析同一文档。
+ * 使用增强后的 prompt（basePrompt + userHints），并以较低温度保证输出稳定。
+ * @param {Object} agentConfig - AI 配置 { providerId, modelId, apiKey }
+ * @param {string} text - 文档文本内容
+ * @param {string} ext - 文件扩展名（如 'pdf'、'docx'）
+ * @param {string} materialId - 素材 ID
+ * @param {string[]} userHints - 用户提供的格式提示数组
+ * @returns {Promise<Object>} 解析结果 { knowledgePoints, questions, _reParsed, _userHints }
+ */
+export const reParseDocument = async (agentConfig, text, ext, materialId, userHints) => {
+    const { providerId, apiKey } = agentConfig;
+    const provider = getProviderById(providerId);
+    if (!provider) {
+        throw new Error(`未知 AI 厂商: ${providerId}`);
+    }
+    if (!apiKey) {
+        throw new Error('API Key 未配置');
+    }
+
+    // 构建带用户提示的增强 prompt
+    const enhancedPrompt = buildReParsePrompt(documentParsePrompt, userHints);
+
+    // 增大 max_tokens，因为用户提示可能让 AI 解析更详细
+    const maxTokens = 16384;
+    const messages = [
+        { role: 'system', content: enhancedPrompt },
+        { role: 'user', content: `请重新解析以下文档内容：\n\n文档类型: ${ext}\n题目所属文档ID: ${materialId}\n\n${text}` }
+    ];
+
+    const content = await callAI(agentConfig, messages, {
+        maxTokens,
+        temperature: 0.1
+    });
+
+    const result = parseJsonFromText(content);
+    // 标注为重新解析，携带用户提示信息
+    result._reParsed = true;
+    result._userHints = userHints;
+    // 规范化每个题目的 visualizations 字段，并标注信心度
+    result.questions = assignConfidence(
+        (result.questions || []).map(q => ({
+            ...q,
+            visualizations: normalizeVisualizations(q.visualizations)
+        }))
+    );
+    return result;
 };
 
 // ==================== Mock 降级函数 ====================
@@ -1428,12 +1500,14 @@ export const parseImagesWithAI = async (agentConfig, images, materialId = 'image
         return { knowledgePoints: [], questions: [] };
     }
     if (parseResults.length === 1) {
-        // 规范化单批次结果中每个题目的 visualizations 字段
+        // 规范化单批次结果中每个题目的 visualizations 字段，并标注 AI 识别信心度
         const singleResult = parseResults[0];
-        const normalizedQuestions = (singleResult.questions || []).map(q => ({
-            ...q,
-            visualizations: normalizeVisualizations(q.visualizations)
-        }));
+        const normalizedQuestions = assignConfidence(
+            (singleResult.questions || []).map(q => ({
+                ...q,
+                visualizations: normalizeVisualizations(q.visualizations)
+            }))
+        );
         return { ...singleResult, questions: normalizedQuestions };
     }
     return mergeParseResults(parseResults, materialId);
@@ -1450,6 +1524,7 @@ export default {
     explainQuestion,
     getSuperviseMessage,
     parseDocumentWithAI,
+    reParseDocument,
     parseImagesWithAI,
     isAIConfigured,
     isMultimodalModel,

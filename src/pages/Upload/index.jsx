@@ -13,6 +13,7 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import FileUploader from './FileUploader';
 import ParsingProcess from './ParsingProcess';
+import ParseReview from './ParseReview';
 import KnowledgeTree from './KnowledgeTree';
 import ResourceLinks from './ResourceLinks';
 import StudyPlan from './StudyPlan';
@@ -102,6 +103,8 @@ const Upload = () => {
   const [knowledgePoints, setKnowledgePoints] = useState([]);
   // 正式模式下存储 FileUploader 解析返回的知识点和题目
   const [parsedResults, setParsedResults] = useState([]);
+  // 审核界面状态：正在审核的解析结果（正式模式）
+  const [reviewingFile, setReviewingFile] = useState(null);
 
   useEffect(() => {
     if (state.plan && state.plan.knowledgePoints) {
@@ -154,6 +157,19 @@ const Upload = () => {
       }
       return [...prev, parsedData];
     });
+
+    // 正式模式：解析完成后触发审核界面
+    if (state.mode === 'formal' && parsedData.result?.questions?.length > 0) {
+      setReviewingFile({
+        fileName: parsedData.file.name,
+        questions: parsedData.result.questions || [],
+        knowledgePoints: parsedData.result.knowledgePoints || [],
+        method: parsedData.method || 'rule',
+        duration: parsedData.result?.duration || 0,
+        retryCount: 0,
+        file: parsedData.file,
+      });
+    }
   };
 
   const handleUseSampleQuestions = () => {
@@ -166,6 +182,63 @@ const Upload = () => {
       status: 'completed'
     };
     setFiles(prev => [...prev, sampleFile]);
+  };
+
+  /**
+   * 审核确认回调：处理审核后的题目导入
+   * @param {Array} finalQuestions - 审核后的题目列表
+   * @param {Array} finalKnowledgePoints - 审核后的知识点列表
+   */
+  const handleReviewConfirm = (finalQuestions, finalKnowledgePoints) => {
+    // 为每道题分配 questionId 和 knowledgePointId
+    const questionsWithId = finalQuestions.map(q => ({
+      ...q,
+      questionId: q.id || `q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      knowledgePointId: q.knowledgePointIds?.[0] || q.knowledgePointId || '',
+    }));
+
+    setQuestions(questionsWithId);
+    setKnowledgePoints(finalKnowledgePoints);
+
+    // 上传资料记录
+    if (reviewingFile) {
+      uploadMaterial({
+        id: reviewingFile.file?.id || `material-${Date.now()}`,
+        name: reviewingFile.fileName || '上传的复习资料',
+        content: '上传的复习资料',
+        uploadedAt: new Date().toISOString()
+      });
+    }
+
+    navigate('/question-bank');
+  };
+
+  /**
+   * 重新解析回调：使用用户提示重新解析文件
+   * @param {File} file - 原始文件对象
+   * @param {Object} hints - 用户提供的解析提示
+   */
+  const handleReParse = async (file, hints) => {
+    const { reParseQuestionFile } = await import('../../utils/questionPipeline');
+    const agentConfig = state.aiConfig['quiz-master'];
+    try {
+      const result = await reParseQuestionFile(file, agentConfig, hints, (progress) => {
+        console.log('重新解析进度:', progress);
+      });
+      // 更新审核界面
+      setReviewingFile({
+        fileName: file.name,
+        questions: result.questions,
+        knowledgePoints: result.knowledgePoints,
+        method: result.method,
+        duration: result.duration || 0,
+        retryCount: (reviewingFile?.retryCount || 0) + 1,
+        file: file,
+      });
+    } catch (error) {
+      console.error('重新解析失败:', error);
+      alert('重新解析失败: ' + error.message);
+    }
   };
 
   const handleStartParse = async () => {
@@ -451,16 +524,36 @@ const Upload = () => {
               />
             </Card>
 
-            <div className="flex justify-end stagger-item">
-              <Button
-                onClick={handleStartParse}
-                disabled={!canStartParse}
-                size="lg"
-              >
-                开始刷题
-                <ArrowRight size={18} />
-              </Button>
-            </div>
+            {/* 审核界面：正式模式下解析完成后显示 */}
+            {reviewingFile && (
+              <div className="stagger-item">
+                <ParseReview
+                  parsedResult={reviewingFile}
+                  onConfirm={(finalQuestions, finalKnowledgePoints) => {
+                    handleReviewConfirm(finalQuestions, finalKnowledgePoints);
+                    setReviewingFile(null);
+                  }}
+                  onReParse={async (hints) => {
+                    await handleReParse(reviewingFile.file, hints);
+                  }}
+                  onClose={() => setReviewingFile(null)}
+                />
+              </div>
+            )}
+
+            {/* 原有确认导入按钮：无审核界面时显示 */}
+            {!reviewingFile && (
+              <div className="flex justify-end stagger-item">
+                <Button
+                  onClick={handleStartParse}
+                  disabled={!canStartParse}
+                  size="lg"
+                >
+                  开始刷题
+                  <ArrowRight size={18} />
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

@@ -26,9 +26,17 @@ import { parseStructured } from './structuredParser';
 import {
     parseDocumentWithAI,
     parseImagesWithAI,
+    reParseDocument,
     isAIConfigured,
     isMultimodalModel
 } from '../services/aiService';
+
+/** 信心度等级常量：标注每道题 AI 解析的可靠性 */
+export const CONFIDENCE = {
+    HIGH: 'high',
+    MEDIUM: 'medium',
+    LOW: 'low'
+};
 
 /** 结构化格式扩展名（纯文本，浏览器原生可解析） */
 const STRUCTURED_EXTENSIONS = ['json', 'csv', 'md', 'markdown'];
@@ -67,6 +75,27 @@ const buildResult = (parsed, method, warning = '') => ({
     method,
     warning
 });
+
+/**
+ * 根据解析成功率计算信心度等级
+ * @param {number} successRate - 成功率（0-1）
+ * @returns {string} 信心度等级：high / medium / low
+ */
+const getConfidenceFromSuccessRate = (successRate) => {
+    if (successRate >= 0.8) return CONFIDENCE.HIGH;
+    if (successRate >= 0.5) return CONFIDENCE.MEDIUM;
+    return CONFIDENCE.LOW;
+};
+
+/**
+ * 为题目数组批量添加 confidence 字段
+ * @param {Array} questions - 题目数组
+ * @param {string} level - 信心度等级
+ * @returns {Array} 添加信心度后的题目数组
+ */
+const addConfidence = (questions, level) => {
+    return (questions || []).map(q => ({ ...q, confidence: level }));
+};
 
 /**
  * 合并文本解析结果和图片识别结果
@@ -159,6 +188,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
     if (STRUCTURED_EXTENSIONS.includes(ext)) {
         try {
             const result = await parseStructured(file, onProgress);
+            // 结构化格式（JSON/CSV）解析准确，信心度为 high
+            result.questions = addConfidence(result.questions, CONFIDENCE.HIGH);
             return buildResult(result, 'structured');
         } catch (error) {
             // 结构化解析失败，尝试读取文本后用规则解析兜底
@@ -166,6 +197,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             try {
                 const text = await file.text();
                 const fallback = parseQuestionBank(text);
+                // 结构化解析失败的降级路径，信心度为 low
+                fallback.questions = addConfidence(fallback.questions, CONFIDENCE.LOW);
                 return buildResult(
                     fallback,
                     'rule-fallback',
@@ -248,6 +281,11 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                 `${ruleResult.invalidCount > 0 ? `，${ruleResult.invalidCount} 题因信息不完整被丢弃` : ''}。` +
                 '配置 AI 可识别更复杂的版式。';
         }
+        // 规则解析：根据成功率标注信心度
+        ruleResult.questions = addConfidence(
+            ruleResult.questions,
+            getConfidenceFromSuccessRate(ruleSuccessRate)
+        );
         return buildResult(ruleResult, 'rule', warning);
     }
 
@@ -256,6 +294,11 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
         // ========== 阶段 6.1：未配置 AI，直接返回规则结果 ==========
         if (onProgress) onProgress(100);
         if (ruleResult && ruleQuestions.length > 0) {
+            // 规则解析：根据成功率标注信心度
+            ruleResult.questions = addConfidence(
+                ruleResult.questions,
+                getConfidenceFromSuccessRate(ruleSuccessRate)
+            );
             return buildResult(
                 ruleResult,
                 'rule-only',
@@ -316,6 +359,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                 // AI 多模态也 0 题，用规则结果兜底
                 if (ruleResult && ruleQuestions.length > 0) {
                     console.warn('AI 多模态解析返回 0 道题目，用规则解析结果兜底');
+                    // AI 失败降级到规则，信心度为 low
+                    ruleResult.questions = addConfidence(ruleResult.questions, CONFIDENCE.LOW);
                     return buildResult(
                         ruleResult,
                         'rule-fallback',
@@ -337,6 +382,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             } else if (!imageResult) {
                 warning = '图片识别失败，仅使用文本解析结果';
             }
+            // AI 多模态解析成功，信心度为 high
+            merged.questions = addConfidence(merged.questions, CONFIDENCE.HIGH);
             return buildResult(merged, 'ai-multimodal', warning);
         }
 
@@ -351,6 +398,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             if (aiQuestions.length === 0) {
                 console.warn('AI 解析返回 0 道题目，用规则解析结果兜底');
                 if (ruleResult && ruleQuestions.length > 0) {
+                    // AI 失败降级到规则，信心度为 low
+                    ruleResult.questions = addConfidence(ruleResult.questions, CONFIDENCE.LOW);
                     return buildResult(
                         ruleResult,
                         'rule-fallback',
@@ -369,8 +418,9 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             }
 
             if (onProgress) onProgress(100);
+            // AI 解析成功，信心度为 high
             return buildResult(
-                { questions: aiQuestions, knowledgePoints: aiKnowledgePoints },
+                { questions: addConfidence(aiQuestions, CONFIDENCE.HIGH), knowledgePoints: aiKnowledgePoints },
                 'ai'
             );
         }
@@ -386,6 +436,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
         // AI 解析失败，用规则结果兜底
         console.warn('AI 解析失败，用规则解析结果兜底:', error);
         if (ruleResult && ruleQuestions.length > 0) {
+            // AI 异常降级到规则，信心度为 low
+            ruleResult.questions = addConfidence(ruleResult.questions, CONFIDENCE.LOW);
             return buildResult(
                 ruleResult,
                 'rule-fallback',
@@ -398,6 +450,45 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             '请检查 AI 配置、API Key 余额，或调整文档格式后重试。'
         );
     }
+};
+
+/**
+ * 带用户提示的重新解析
+ * 用户对初次解析结果不满意时，可提供格式提示让 AI 重新解析同一文档。
+ * 重新提取文本后，使用增强 prompt（含用户提示）调用 AI 解析。
+ * @param {File} file - 原始文件对象
+ * @param {Object} agentConfig - AI 配置 { providerId, modelId, apiKey }
+ * @param {string[]} userHints - 用户提供的格式提示数组
+ * @param {Function} [onProgress] - 进度回调 (0-100)
+ * @returns {Promise<Object>} 解析结果 { questions, knowledgePoints, method, warning }
+ */
+export const reParseQuestionFile = async (file, agentConfig, userHints, onProgress) => {
+    // 重新提取文本
+    const ext = getExtension(file.name);
+    const text = await parseDocument(file, (p) => {
+        if (onProgress) onProgress(Math.floor(p * 0.3));
+    });
+
+    if (onProgress) onProgress(30);
+
+    const materialId = file.name || `reparse-${Date.now()}`;
+
+    // 用带提示的 AI 重新解析
+    const aiResult = await reParseDocument(agentConfig, text, ext, materialId, userHints);
+
+    if (onProgress) onProgress(80);
+
+    // 为结果标注信心度（重新解析的 AI 结果默认为 high）
+    const questions = addConfidence(aiResult.questions || [], CONFIDENCE.HIGH);
+    const knowledgePoints = aiResult.knowledgePoints || [];
+
+    if (onProgress) onProgress(100);
+
+    return buildResult(
+        { questions, knowledgePoints },
+        'ai',
+        '重新解析完成（含用户提示）'
+    );
 };
 
 export default parseQuestionFile;
