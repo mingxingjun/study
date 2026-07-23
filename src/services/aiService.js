@@ -34,8 +34,8 @@ export const AGENT_GENERATION_CONFIG = {
     'quiz-master': { maxTokens: 4096, temperature: 0.7 },
     'explainer': { maxTokens: 4096, temperature: 0.3 },
     'supervisor': { maxTokens: 2048, temperature: 0.6 },
-    'document-parser': { maxTokens: 16384, temperature: 0.2 },
-    'question-generator': { maxTokens: 8192, temperature: 0.7 },
+    'document-parser': { maxTokens: 32768, temperature: 0.2 },
+    'question-generator': { maxTokens: 16384, temperature: 0.7 },
     'answer-grader': { maxTokens: 2048, temperature: 0.2 }
 };
 
@@ -627,6 +627,7 @@ const sanitizeJsonSyntax = (str) => {
  * 尝试修复截断的 JSON 字符串
  * AI 输出可能因 maxTokens 限制被截断，导致 JSON 不完整
  * 策略：找到最后一个完整的对象边界，截断后补全括号
+ * 增强：尝试从截断位置恢复部分完成的题目对象
  * @param {string} jsonStr - 可能被截断的 JSON 字符串
  * @returns {Object|null} 修复成功返回解析后的对象，失败返回 null
  */
@@ -652,7 +653,7 @@ const repairTruncatedJson = (jsonStr) => {
         // 继续尝试截断修复
     }
 
-    // 策略：从后往前找最后一个完整的 } 或 }，在其后截断
+    // 策略：从后往前找最后一个完整的 } 或 ]，在其后截断
     // 这样可以保留已完成的对象，丢弃不完整的部分
     let lastCompleteIdx = -1;
     let depth = 0;
@@ -714,13 +715,29 @@ const repairTruncatedJson = (jsonStr) => {
         for (let i = 0; i < openBrackets; i++) truncated += ']';
         for (let i = 0; i < openBraces; i++) truncated += '}';
 
+        // 尝试解析截断修复后的结果
+        let result = null;
         try {
-            const result = JSON.parse(sanitizeJsonSyntax(truncated));
-            console.warn('JSON 修复成功（截断到最后一个完整对象 + 语法清洗）');
-            notifyAIStatus('JSON 截断自修复成功', 'success');
-            return result;
+            result = JSON.parse(sanitizeJsonSyntax(truncated));
         } catch (e) {
             // 继续尝试其他方法
+        }
+
+        if (result) {
+            // 尝试从截断后的残留文本中恢复部分完成的题目
+            const remaining = str.substring(lastCompleteIdx + 1);
+            const partialQuestion = tryRecoverPartialQuestion(remaining);
+            if (partialQuestion && result.questions) {
+                result.questions.push(partialQuestion);
+                console.warn(
+                    'JSON 修复成功（截断到最后一个完整对象 + 语法清洗 + 恢复1道部分完成的题目）'
+                );
+                notifyAIStatus('JSON 截断自修复成功（含部分题目恢复）', 'success');
+            } else {
+                console.warn('JSON 修复成功（截断到最后一个完整对象 + 语法清洗）');
+                notifyAIStatus('JSON 截断自修复成功', 'success');
+            }
+            return result;
         }
     }
 
@@ -768,6 +785,46 @@ const repairTruncatedJson = (jsonStr) => {
         notifyAIStatus('JSON 截断自修复失败，已降级到本地数据', 'warning');
         return null;
     }
+};
+
+/**
+ * 尝试从截断的 JSON 残留文本中恢复部分完成的题目对象
+ * 扫描残留文本，如果能提取到问题题干和答案，构建一个简化题目对象
+ * @param {string} remaining - 截断后的残留文本（可能包含不完整的题目 JSON）
+ * @returns {Object|null} 恢复的题目对象，无法恢复时返回 null
+ */
+const tryRecoverPartialQuestion = (remaining) => {
+    if (!remaining || remaining.length < 50) return null;
+
+    // 尝试提取 "question" 字段的值
+    const questionMatch = remaining.match(/"question"\s*:\s*"((?:[^"\\]|\\.)*?)"/);
+    const questionText = questionMatch ? questionMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n') : '';
+
+    // 尝试提取 "answer" 字段的值
+    const answerMatch = remaining.match(/"answer"\s*:\s*"((?:[^"\\]|\\.)*?)"/);
+    const answerText = answerMatch ? answerMatch[1].replace(/\\"/g, '"') : '';
+
+    // 尝试提取 "type" 字段的值
+    const typeMatch = remaining.match(/"type"\s*:\s*"((?:[^"\\]|\\.)*?)"/);
+    const typeText = typeMatch ? typeMatch[1] : '';
+
+    // 至少需要题干和答案才能恢复
+    if (!questionText || !answerText) return null;
+
+    return {
+        id: 'q-recovered',
+        type: typeText || 'single',
+        question: questionText,
+        options: [],
+        answer: answerText,
+        explanation: '(题目从截断数据中恢复，部分信息可能不完整)',
+        difficulty: 'medium',
+        difficultyRationale: '截断恢复，无法准确判定',
+        knowledgePointId: '',
+        materialId: 'default',
+        visualizations: [],
+        confidence: 'low'
+    };
 };
 
 const parseJsonFromText = (text) => {
@@ -1050,7 +1107,9 @@ export const getSuperviseMessage = async (agentConfig, context = {}) => {
 };
 
 /** 每个分块的最大字符数（用于分块解析） */
-const DOC_CHUNK_SIZE = 10000;
+const DOC_CHUNK_SIZE = 12000;
+/** 分块之间的重叠字符数，避免题目跨越两个分块时被遗漏 */
+const DOC_CHUNK_OVERLAP = 500;
 
 /**
  * 题号边界正则：用于在固定长度切分时找到最近的题目起始位置
@@ -1083,7 +1142,7 @@ const splitDocumentIntoChunks = (text) => {
         }
         if (currentChunk.trim()) chunks.push(currentChunk.trim());
     } else {
-        // 无法按标题拆分时，按题目边界对齐切分
+        // 无法按标题拆分时，按题目边界对齐切分，并添加分块重叠
         let cursor = 0;
         while (cursor < text.length) {
             // 如果剩余文本不足一个 chunk，直接收尾
@@ -1122,12 +1181,14 @@ const splitDocumentIntoChunks = (text) => {
                 }
                 const chunk = text.substring(cursor, bestBoundary).trim();
                 if (chunk) chunks.push(chunk);
-                cursor = bestBoundary;
+                // 下一块从 bestBoundary 往前回退 DOC_CHUNK_OVERLAP 字符开始，
+                // 确保被切分的题目不会丢失上下文（但不会回退到当前 chunk 之前）
+                cursor = Math.max(bestBoundary - DOC_CHUNK_OVERLAP, cursor + 1);
             } else {
                 // 区域内未找到题目边界，回退到固定长度切分
                 const chunk = text.substring(cursor, cursor + DOC_CHUNK_SIZE).trim();
                 if (chunk) chunks.push(chunk);
-                cursor += DOC_CHUNK_SIZE;
+                cursor += DOC_CHUNK_SIZE - DOC_CHUNK_OVERLAP;
             }
         }
     }
@@ -1144,6 +1205,8 @@ const splitDocumentIntoChunks = (text) => {
 const mergeParseResults = (results, materialId) => {
     const knowledgePoints = [];
     const questions = [];
+    // 用于跨分块去重：记录已见过的题干（取前 80 字符做模糊匹配）
+    const seenQuestionStems = new Set();
 
     results.forEach((result) => {
         const chunkKnowledgePoints = result.knowledgePoints || [];
@@ -1160,6 +1223,14 @@ const mergeParseResults = (results, materialId) => {
 
         chunkQuestions.forEach((q, idx) => {
             const globalKpId = localToGlobalKpId.get(q.knowledgePointId) || knowledgePoints[0]?.id;
+            // 分块重叠去重：题干前 80 字符去空白后相同视为重复题
+            const stemKey = (q.question || '').replace(/\s+/g, '').substring(0, 80).toLowerCase();
+            if (stemKey && seenQuestionStems.has(stemKey)) {
+                return; // 跳过重复题
+            }
+            if (stemKey) {
+                seenQuestionStems.add(stemKey);
+            }
             questions.push({
                 ...q,
                 id: `q-${questions.length + idx + 1}`,
@@ -1300,7 +1371,7 @@ export const reParseDocument = async (agentConfig, text, ext, materialId, userHi
     const enhancedPrompt = buildReParsePrompt(documentParsePrompt, userHints);
 
     // 增大 max_tokens，因为用户提示可能让 AI 解析更详细
-    const maxTokens = 16384;
+    const maxTokens = 32768;
     const messages = [
         { role: 'system', content: enhancedPrompt },
         { role: 'user', content: `请重新解析以下文档内容：\n\n文档类型: ${ext}\n题目所属文档ID: ${materialId}\n\n${text}` }

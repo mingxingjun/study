@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
     Check, Square, CheckSquare, Trash2, Plus, FileText,
     RotateCcw, X, AlertTriangle
@@ -418,6 +418,128 @@ const SummaryBar = ({ questions, method, duration }) => {
 };
 
 /**
+ * 原文预览组件
+ * 展示解析时使用的原始文档文本，支持用户手动选取文本并创建题目
+ * @param {Object} props
+ * @param {string} props.rawText - 原始文档文本
+ * @param {Function} props.onAddFromSelection - 从选中文本创建题目回调 (selectedText) => void
+ */
+const RawTextPreview = ({ rawText, onAddFromSelection }) => {
+    const [selectionPos, setSelectionPos] = useState(null);
+    const [selectedText, setSelectedText] = useState('');
+    const previewRef = useRef(null);
+
+    /**
+     * 处理鼠标松开事件，检测文本选择
+     * 使用 setTimeout 确保浏览器完成选择渲染后再读取
+     */
+    const handleMouseUp = useCallback(() => {
+        setTimeout(() => {
+            const selection = window.getSelection();
+            const text = selection?.toString().trim();
+
+            // 没有选中文本或选中内容为空
+            if (!text || text.length === 0) {
+                setSelectionPos(null);
+                setSelectedText('');
+                return;
+            }
+
+            // 检查选中内容是否在预览区域内
+            if (previewRef.current && selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                if (previewRef.current.contains(range.commonAncestorContainer)) {
+                    const rect = range.getBoundingClientRect();
+                    const previewRect = previewRef.current.getBoundingClientRect();
+
+                    setSelectedText(text);
+                    // 浮动按钮定位在选中文本上方
+                    setSelectionPos({
+                        top: rect.top - previewRect.top - 44,
+                        left: rect.left - previewRect.left + rect.width / 2,
+                    });
+                } else {
+                    setSelectionPos(null);
+                    setSelectedText('');
+                }
+            }
+        }, 10);
+    }, []);
+
+    /**
+     * 点击"添加为题目"按钮，用选中文本创建新题目
+     */
+    const handleAddQuestion = useCallback(() => {
+        if (selectedText) {
+            onAddFromSelection(selectedText);
+            setSelectionPos(null);
+            setSelectedText('');
+            window.getSelection().removeAllRanges();
+        }
+    }, [selectedText, onAddFromSelection]);
+
+    // 点击预览区域外部时关闭浮动按钮
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (previewRef.current && !previewRef.current.contains(e.target)) {
+                setSelectionPos(null);
+                setSelectedText('');
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // 无原文数据时显示空状态
+    if (!rawText) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-gray-400">
+                <span className="text-5xl mb-4 opacity-30">&#x1F4C4;</span>
+                <p className="text-sm font-serif text-gray-500">暂无原文数据</p>
+                <p className="text-xs text-gray-400 mt-1">原文数据在文档解析时获取，请确保文档已成功解析</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative h-full overflow-hidden" ref={previewRef}>
+            {/* 原文展示区域 */}
+            <div
+                className="h-full overflow-y-auto p-5 bg-white rounded-xl border border-gray-200"
+                onMouseUp={handleMouseUp}
+            >
+                <pre
+                    className="font-mono text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words select-text"
+                    style={{ fontFamily: "'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace" }}
+                >
+                    {rawText}
+                </pre>
+            </div>
+
+            {/* 浮动"添加为题目"按钮 */}
+            {selectionPos && (
+                <div
+                    className="absolute z-20 transform -translate-x-1/2 pointer-events-none"
+                    style={{ top: selectionPos.top, left: selectionPos.left }}
+                >
+                    <button
+                        onClick={handleAddQuestion}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium
+                                   bg-[#c9a227] text-white rounded-lg shadow-lg
+                                   hover:bg-[#b08d1f] transition-all duration-200 cursor-pointer
+                                   whitespace-nowrap pointer-events-auto"
+                        title="将选中文本作为新题目添加"
+                    >
+                        <Plus size={14} />
+                        添加为题目
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+/**
  * ParseReview 审核界面主组件
  *
  * 左右分栏布局：左侧题目列表 + 右侧编辑器
@@ -635,6 +757,25 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
         setActiveTab('question');
     }, [knowledgePoints]);
 
+    /** 从原文选中文本创建题目 */
+    const handleAddFromSelection = useCallback((selectedText) => {
+        const newQuestion = {
+            id: `manual-${Date.now()}`,
+            question: selectedText,
+            options: ['', '', '', ''],
+            correctAnswer: '',
+            knowledgePointId: knowledgePoints.length > 0 ? knowledgePoints[0].id : '',
+            difficulty: 'medium',
+            type: 'single',
+            confidence: null,
+            _isManual: true
+        };
+        setQuestions((prev) => [...prev, newQuestion]);
+        setSelectedId(newQuestion.id);
+        // 自动切换到题目编辑 Tab 并选中新题目
+        setActiveTab('question');
+    }, [knowledgePoints]);
+
     // ========== 确认导入 ==========
 
     /** 确认导入：清理内部字段后回调 */
@@ -683,6 +824,37 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
                 counts={filterCounts}
             />
 
+            {/* 删除确认栏 — 内联显示，贴近操作区域 */}
+            {deleteConfirm && (
+                <div className="mx-4 mt-3 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <AlertTriangle size={18} className="text-red-500" />
+                        <p className="text-sm text-red-700">
+                            {deleteConfirm.type === 'single'
+                                ? '确定删除该题目？此操作不可撤销。'
+                                : `确定删除选中的 ${deleteConfirm.count} 道题目？此操作不可撤销。`
+                            }
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700
+                                       transition-colors duration-200 cursor-pointer"
+                        >
+                            取消
+                        </button>
+                        <button
+                            onClick={handleDeleteConfirm}
+                            className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg
+                                       hover:bg-red-600 transition-colors duration-200 cursor-pointer"
+                        >
+                            确认删除
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* 主内容区：左右分栏 */}
             <div className="flex-1 flex flex-col lg:flex-row min-h-0">
                 {/* 左侧：题目列表 */}
@@ -724,11 +896,22 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
                         >
                             知识点管理
                         </button>
+                        <button
+                            onClick={() => setActiveTab('preview')}
+                            className={`px-4 py-3 text-sm font-serif transition-all duration-200 cursor-pointer
+                                ${activeTab === 'preview'
+                                    ? 'text-primary border-b-2 border-accent'
+                                    : 'text-gray-400 hover:text-gray-600'
+                                }`}
+                            style={{ fontWeight: activeTab === 'preview' ? 500 : 400 }}
+                        >
+                            原文预览
+                        </button>
                     </div>
 
                     {/* 编辑器内容 */}
                     <div className="flex-1 overflow-y-auto min-h-0">
-                        {activeTab === 'question' ? (
+                        {activeTab === 'question' && (
                             <QuestionEditor
                                 question={selectedQuestion}
                                 knowledgePoints={knowledgePoints}
@@ -739,7 +922,8 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
                                     }
                                 }}
                             />
-                        ) : (
+                        )}
+                        {activeTab === 'knowledge' && (
                             <div className="p-5">
                                 <KnowledgePointEditor
                                     knowledgePoints={knowledgePoints}
@@ -748,6 +932,12 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
                                     onDelete={handleKnowledgePointDelete}
                                 />
                             </div>
+                        )}
+                        {activeTab === 'preview' && (
+                            <RawTextPreview
+                                rawText={parsedResult?.rawText || ''}
+                                onAddFromSelection={handleAddFromSelection}
+                            />
                         )}
                     </div>
                 </div>
@@ -768,39 +958,7 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
                 />
             )}
 
-            {/* 删除确认弹窗 */}
-            {deleteConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl border border-gray-200/80">
-                        <h3 className="text-base font-serif text-primary mb-2" style={{ fontWeight: 500 }}>
-                            确认删除
-                        </h3>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                            {deleteConfirm.type === 'single'
-                                ? '确定删除该题目？此操作不可撤销。'
-                                : `确定删除选中的 ${deleteConfirm.count} 道题目？此操作不可撤销。`
-                            }
-                        </p>
-                        <div className="flex items-center justify-end gap-3 mt-5">
-                            <button
-                                onClick={() => setDeleteConfirm(null)}
-                                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700
-                                           transition-colors duration-200 cursor-pointer"
-                            >
-                                取消
-                            </button>
-                            <button
-                                onClick={handleDeleteConfirm}
-                                className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg
-                                           hover:bg-red-600 transition-colors duration-200 cursor-pointer"
-                            >
-                                确认删除
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+            </div>
     );
 };
 

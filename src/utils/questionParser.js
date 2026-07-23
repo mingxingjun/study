@@ -83,6 +83,8 @@ const detectFormat = (lines) => {
         ansCNShort: /^\s*答[：:]/,
         // 正确答案：
         ansCNFull: /^\s*正确答案[：:]/,
+        // 正确选项：
+        ansCNCorrect: /^\s*正确选项[：:]/,
         // Ans: / Answer: / ans:
         ansEN: /^\s*(?:Ans|Answer|ans|answer)[：:]/i
     };
@@ -158,10 +160,12 @@ const detectFormat = (lines) => {
         answerRegex = /^\s*答[：:]\s*(.*)$/;
     } else if (bestA === aPatterns.ansCNFull) {
         answerRegex = /^\s*正确答案[：:]\s*(.*)$/;
+    } else if (bestA === aPatterns.ansCNCorrect) {
+        answerRegex = /^\s*正确选项[：:]\s*(.*)$/;
     } else if (bestA === aPatterns.ansEN) {
         answerRegex = /^\s*(?:Ans|Answer|ans|answer)[：:]\s*(.*)$/i;
     } else {
-        answerRegex = /^\s*(?:正确)?答案[：:]\s*(.*)$/;
+        answerRegex = /^\s*(?:正确)?(?:答案|选项)[：:]\s*(.*)$/;
     }
 
     // 解析正则（多种别名）
@@ -219,18 +223,18 @@ const detectAnswerKey = (lines) => {
     for (let i = startIdx; i < lines.length; i++) {
         const line = lines[i];
         // 移除"答案："前缀
-        const cleaned = line.replace(/^\s*(?:正确)?答案[：:]\s*/i, '').replace(/^\s*(?:Ans|Answer)[：:]\s*/i, '');
+        const cleaned = line.replace(/^\s*(?:正确)?(?:答案|选项)[：:]\s*/i, '').replace(/^\s*(?:Ans|Answer)[：:]\s*/i, '');
         // 匹配 "1.A" / "1、A" / "1. A" / "1、 A" 等
         const matches = cleaned.match(/(\d+)[.、．]\s*([A-Ha-h]+|正确|错误|对|错|√|×)/g);
-        if (matches && matches.length >= 3) {
-            // 至少匹配到 3 个才算答案表
+        if (matches && matches.length >= 2) {
+            // 至少匹配到 2 个才算答案表（降低阈值，提高检测率）
             for (const m of matches) {
                 const parts = m.match(/(\d+)[.、．]\s*([A-Ha-h]+|正确|错误|对|错|√|×)/);
                 if (parts) {
                     answerKey[parts[1]] = normalizeAnswer(parts[2]);
                 }
             }
-            if (Object.keys(answerKey).length >= 3) {
+            if (Object.keys(answerKey).length >= 2) {
                 return answerKey;
             }
         }
@@ -247,15 +251,15 @@ const detectAnswerKey = (lines) => {
             tempKey[match[1]] = normalizeAnswer(match[2]);
             consecutiveCount++;
         } else {
-            if (consecutiveCount >= 5) {
-                // 连续 5 行以上才算答案表
+            if (consecutiveCount >= 3) {
+                // 连续 3 行以上才算答案表（降低阈值，提高检测率）
                 Object.assign(answerKey, tempKey);
                 return answerKey;
             }
             consecutiveCount = 0;
         }
     }
-    if (consecutiveCount >= 5) {
+    if (consecutiveCount >= 3) {
         return answerKey;
     }
 
@@ -382,16 +386,25 @@ export const parseQuestionBank = (text) => {
             current = createQuestion(questionMatch[0].trim());
             const content = questionMatch[questionMatch.length - 1];
             // 处理题干与答案在同一行的情况：简述题常出现"正确答案："紧跟题干
-            const inlineAnswerMatch = content.match(/((?:正确)?答案[：:]|答[：:])|((?:Ans|Answer)[：:])/i);
+            const inlineAnswerMatch = content.match(/((?:正确)?(?:答案|选项)[：:]|答[：:])|((?:Ans|Answer)[：:])/i);
             if (inlineAnswerMatch) {
-                const idx = content.search(/(?:正确)?答案[：:]|答[：:]|(?:Ans|Answer)[：:]/i);
+                const idx = content.search(/(?:正确)?(?:答案|选项)[：:]|答[：:]|(?:Ans|Answer)[：:]/i);
                 current.question = content.slice(0, idx).trim();
-                const afterColon = content.slice(idx).replace(/^(?:正确)?答案[：:]|答[：:]|(?:Ans|Answer)[：:]/i, '').trim();
+                const afterColon = content.slice(idx).replace(/^(?:正确)?(?:答案|选项)[：:]|答[：:]|(?:Ans|Answer)[：:]/i, '').trim();
                 current.answer = normalizeAnswer(afterColon);
                 currentField = 'answer';
             } else {
-                current.question = content.trim();
-                currentField = 'question';
+                // 检测 "选A" / "选 A" / "应选A" 等隐形答案标识
+                const selectMatch = content.match(/[（(]?\s*(?:选|应选|选择)[：: ]?\s*([A-Ha-h]+)\s*[)）]?/);
+                if (selectMatch) {
+                    const answerIdx = content.indexOf(selectMatch[0]);
+                    current.question = content.slice(0, answerIdx).trim();
+                    current.answer = normalizeAnswer(selectMatch[1]);
+                    currentField = 'answer';
+                } else {
+                    current.question = content.trim();
+                    currentField = 'question';
+                }
             }
             continue;
         }
@@ -410,6 +423,14 @@ export const parseQuestionBank = (text) => {
         const answerMatch = patterns.answer.exec(line);
         if (answerMatch) {
             current.answer = normalizeAnswer(answerMatch[1]);
+            currentField = 'answer';
+            continue;
+        }
+
+        // 检测 "选A" / "选 A" / "应选A" 等隐形答案标识（独立行）
+        const selectMatch = line.match(/^\s*(?:选|应选|选择)[：: ]?\s*([A-Ha-h]+)\s*$/);
+        if (selectMatch && current && !current.answer) {
+            current.answer = normalizeAnswer(selectMatch[1]);
             currentField = 'answer';
             continue;
         }

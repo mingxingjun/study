@@ -130,6 +130,35 @@ const KnowledgePointEditor = ({ knowledgePoints, onUpdate, onAdd, onDelete }) =>
             </div>
 
             {/* 知识点列表 */}
+            {deleteTarget && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center justify-between">
+                    <p className="text-sm text-red-700">
+                        该知识点关联了{' '}
+                        <span className="font-mono font-medium text-red-800">
+                            {deleteTarget.questionCount}
+                        </span>{' '}
+                        道题目，删除后这些题目将失去知识点归属，确认删除？
+                    </p>
+                    <div className="flex items-center gap-2 shrink-0 ml-4">
+                        <button
+                            onClick={() => setDeleteTarget(null)}
+                            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700
+                                       transition-colors duration-200 cursor-pointer"
+                        >
+                            取消
+                        </button>
+                        <button
+                            onClick={handleDeleteConfirm}
+                            className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg
+                                       hover:bg-red-600 transition-colors duration-200 cursor-pointer"
+                        >
+                            确认删除
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* 知识点列表 */}
             {knowledgePoints.map((kp, idx) => {
                 const isEditing = editingId === kp.id;
                 const questionText = formatQuestionCount(kp.questionCount);
@@ -318,39 +347,6 @@ const KnowledgePointEditor = ({ knowledgePoints, onUpdate, onAdd, onDelete }) =>
                 </button>
             )}
 
-            {/* 删除确认弹窗 */}
-            {deleteTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl border border-gray-200/80">
-                        <h3 className="text-base font-serif text-primary mb-2" style={{ fontWeight: 500 }}>
-                            确认删除
-                        </h3>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                            该知识点关联了{' '}
-                            <span className="font-mono text-primary font-medium">
-                                {deleteTarget.questionCount}
-                            </span>{' '}
-                            道题目，删除后这些题目将失去知识点归属，确认删除？
-                        </p>
-                        <div className="flex items-center justify-end gap-3 mt-5">
-                            <button
-                                onClick={() => setDeleteTarget(null)}
-                                className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700
-                                           transition-colors duration-200 cursor-pointer"
-                            >
-                                取消
-                            </button>
-                            <button
-                                onClick={handleDeleteConfirm}
-                                className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg
-                                           hover:bg-red-600 transition-colors duration-200 cursor-pointer"
-                            >
-                                确认删除
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

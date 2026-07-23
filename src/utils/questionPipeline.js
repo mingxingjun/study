@@ -63,7 +63,7 @@ const getExtension = (fileName) => {
  * @param {string} warning - 警告信息
  * @returns {Object} 统一结构结果
  */
-const buildResult = (parsed, method, warning = '') => ({
+const buildResult = (parsed, method, warning = '', rawText = '') => ({
     questions: parsed.questions || [],
     knowledgePoints: parsed.knowledgePoints || [],
     invalidQuestions: parsed.invalidQuestions || [],
@@ -72,6 +72,7 @@ const buildResult = (parsed, method, warning = '') => ({
     totalCount: parsed.totalCount || (parsed.questions?.length || 0),
     invalidCount: parsed.invalidCount || 0,
     typeDistribution: parsed.typeDistribution || {},
+    rawText,
     method,
     warning
 });
@@ -187,10 +188,12 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
     // ========== 阶段 2：结构化格式直接精准解析 ==========
     if (STRUCTURED_EXTENSIONS.includes(ext)) {
         try {
+            // 读取文件原始文本用于原文预览
+            const fileText = await file.text();
             const result = await parseStructured(file, onProgress);
             // 结构化格式（JSON/CSV）解析准确，信心度为 high
             result.questions = addConfidence(result.questions, CONFIDENCE.HIGH);
-            return buildResult(result, 'structured');
+            return buildResult(result, 'structured', '', fileText);
         } catch (error) {
             // 结构化解析失败，尝试读取文本后用规则解析兜底
             console.warn('结构化解析失败，降级到规则解析:', error);
@@ -202,7 +205,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                 return buildResult(
                     fallback,
                     'rule-fallback',
-                    `结构化解析失败（${error.message}），已降级到规则解析，复杂版式可能识别不全`
+                    `结构化解析失败（${error.message}），已降级到规则解析，复杂版式可能识别不全`,
+                    text
                 );
             } catch (fallbackError) {
                 throw new Error(`结构化解析与规则兜底均失败: ${fallbackError.message}`);
@@ -286,7 +290,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             ruleResult.questions,
             getConfidenceFromSuccessRate(ruleSuccessRate)
         );
-        return buildResult(ruleResult, 'rule', warning);
+        return buildResult(ruleResult, 'rule', warning, text);
     }
 
     // ========== 阶段 6：规则解析不足，走 AI 补充 ==========
@@ -304,7 +308,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                 'rule-only',
                 `未配置 AI，规则解析成功率 ${Math.round(ruleSuccessRate * 100)}%` +
                 `（${ruleResult.successCount}/${ruleResult.totalCount}）。` +
-                '配置 AI 可识别更多版式与复杂格式。'
+                '配置 AI 可识别更多版式与复杂格式。',
+                text
             );
         }
         // 规则解析也无结果
@@ -315,7 +320,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             { questions: [], knowledgePoints: [] },
             'rule-only',
             '未配置 AI 且规则解析未识别到题目。建议配置 AI 后重新解析，' +
-            'AI 能识别多种版式、答案表、英文题库等复杂格式' + hasImagesHint
+            'AI 能识别多种版式、答案表、英文题库等复杂格式' + hasImagesHint,
+            text
         );
     }
 
@@ -364,13 +370,15 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                     return buildResult(
                         ruleResult,
                         'rule-fallback',
-                        'AI 未能从文档中识别题目，已用规则解析结果兜底（图片题未识别）'
+                        'AI 未能从文档中识别题目，已用规则解析结果兜底（图片题未识别）',
+                        text
                     );
                 }
                 return buildResult(
                     { questions: [], knowledgePoints: [] },
                     'ai-multimodal',
-                    'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置'
+                    'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置',
+                    text
                 );
             }
 
@@ -384,7 +392,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             }
             // AI 多模态解析成功，信心度为 high
             merged.questions = addConfidence(merged.questions, CONFIDENCE.HIGH);
-            return buildResult(merged, 'ai-multimodal', warning);
+            return buildResult(merged, 'ai-multimodal', warning, text);
         }
 
         // 情况 B：仅文本解析（模型不支持多模态或文档无图片）
@@ -403,7 +411,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                     return buildResult(
                         ruleResult,
                         'rule-fallback',
-                        'AI 未能从文档中识别题目，已用规则解析结果兜底'
+                        'AI 未能从文档中识别题目，已用规则解析结果兜底',
+                        text
                     );
                 }
                 // 文档有图片但模型不支持多模态，给出更明确的提示
@@ -413,7 +422,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                 return buildResult(
                     { questions: [], knowledgePoints: [] },
                     'ai',
-                    'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置' + multimodalHint
+                    'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置' + multimodalHint,
+                    text
                 );
             }
 
@@ -421,7 +431,9 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             // AI 解析成功，信心度为 high
             return buildResult(
                 { questions: addConfidence(aiQuestions, CONFIDENCE.HIGH), knowledgePoints: aiKnowledgePoints },
-                'ai'
+                'ai',
+                '',
+                text
             );
         }
 
@@ -441,7 +453,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             return buildResult(
                 ruleResult,
                 'rule-fallback',
-                `AI 解析失败（${error.message}），已用规则解析结果兜底，复杂版式可能识别不全`
+                `AI 解析失败（${error.message}），已用规则解析结果兜底，复杂版式可能识别不全`,
+                text
             );
         }
         // AI 失败且规则解析也无结果
@@ -487,7 +500,8 @@ export const reParseQuestionFile = async (file, agentConfig, userHints, onProgre
     return buildResult(
         { questions, knowledgePoints },
         'ai',
-        '重新解析完成（含用户提示）'
+        '重新解析完成（含用户提示）',
+        text
     );
 };
 
