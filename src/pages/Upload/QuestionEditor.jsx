@@ -602,6 +602,7 @@ const QuestionEditor = ({ question, knowledgePoints, onChange, onDelete }) => {
 
     // 兼容旧数据：knowledgePointId 转为 knowledgePointIds 数组
     const safeKnowledgePointIds = useMemo(() => {
+        if (!question) return [];
         if (question.knowledgePointIds && question.knowledgePointIds.length > 0) {
             return question.knowledgePointIds;
         }
@@ -609,13 +610,14 @@ const QuestionEditor = ({ question, knowledgePoints, onChange, onDelete }) => {
             return [question.knowledgePointId];
         }
         return [];
-    }, [question.knowledgePointIds, question.knowledgePointId]);
+    }, [question]);
 
     /**
      * 触发题目变更，自动附带 _isModified 标记
      * @param {Object} partial - 需要更新的字段
      */
     const emitChange = useCallback((partial) => {
+        if (!question) return;
         onChange({
             ...question,
             ...partial,
@@ -628,6 +630,7 @@ const QuestionEditor = ({ question, knowledgePoints, onChange, onDelete }) => {
      * @param {string} newType - 新题型
      */
     const handleTypeChange = useCallback((newType) => {
+        if (!question) return;
         const updates = { type: newType };
         const oldType = question.type;
 
@@ -650,8 +653,10 @@ const QuestionEditor = ({ question, knowledgePoints, onChange, onDelete }) => {
     // 如果 question 为 null/undefined，显示空状态
     if (!question) {
         return (
-            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-                <p className="text-gray-400 text-sm">请在左侧选择一道题目进行编辑</p>
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-gray-400">
+                <span className="text-5xl mb-4 opacity-30">&#x1F4DD;</span>
+                <p className="text-sm font-serif text-gray-500">请在左侧选择一道题目进行编辑</p>
+                <p className="text-xs text-gray-400 mt-1">或点击「添加题目」创建新题目</p>
             </div>
         );
     }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
     Check, Square, CheckSquare, Trash2, Plus, FileText,
     RotateCcw, X, AlertTriangle
@@ -459,6 +459,13 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
                 return questions;
         }
     }, [questions, activeFilter]);
+
+    // ========== 初始化自动选中第一题 ==========
+    useEffect(() => {
+        if (!selectedId && filteredQuestions.length > 0) {
+            setSelectedId(filteredQuestions[0].id);
+        }
+    }, [filteredQuestions, selectedId]);
 
     // ========== 各筛选 Tab 的题目数量 ==========
     const filterCounts = useMemo(() => ({
