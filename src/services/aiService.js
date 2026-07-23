@@ -579,6 +579,33 @@ const extractGeminiDelta = (line) => {
  * @throws {SyntaxError} 当文本无法解析为 JSON 时抛出
  */
 /**
+ * 清洗 JSON 语法错误
+ * 处理 AI 输出常见的格式问题：未加引号的属性名、单引号字符串、尾随逗号、JS 注释
+ * 注意：使用正则实现，无法完美区分字符串内外，作为兜底修复可接受
+ * @param {string} str - 原始 JSON 字符串
+ * @returns {string} 清洗后的 JSON 字符串
+ */
+const sanitizeJsonSyntax = (str) => {
+    let s = str;
+
+    // 1. 移除 JavaScript 风格注释（/* */ 块注释 和 // 行注释，行注释需避免误伤 URL 中的 ://）
+    s = s.replace(/\/\*[\s\S]*?\*\//g, '');
+    s = s.replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+
+    // 2. 修复未加引号的属性名：{name: → {"name":
+    s = s.replace(/([{,]\s*)([a-zA-Z_$][\w$]*)(\s*:)/g, '$1"$2"$3');
+
+    // 3. 修复单引号字符串：'value' → "value"
+    s = s.replace(/([{,]\s*)'([^']*)'(\s*:)/g, '$1"$2"$3');
+    s = s.replace(/:\s*'([^']*)'/g, ': "$1"');
+
+    // 4. 移除尾随逗号：,} → }  ,] → ]
+    s = s.replace(/,(\s*[}\]])/g, '$1');
+
+    return s;
+};
+
+/**
  * 尝试修复截断的 JSON 字符串
  * AI 输出可能因 maxTokens 限制被截断，导致 JSON 不完整
  * 策略：找到最后一个完整的对象边界，截断后补全括号
@@ -598,6 +625,13 @@ const repairTruncatedJson = (jsonStr) => {
         return JSON.parse(str);
     } catch (e) {
         // 继续修复
+    }
+
+    // 尝试语法清洗后解析（处理未加引号的属性名、单引号等 AI 常见错误）
+    try {
+        return JSON.parse(sanitizeJsonSyntax(str));
+    } catch (e) {
+        // 继续尝试截断修复
     }
 
     // 策略：从后往前找最后一个完整的 } 或 }，在其后截断
@@ -663,8 +697,8 @@ const repairTruncatedJson = (jsonStr) => {
         for (let i = 0; i < openBraces; i++) truncated += '}';
 
         try {
-            const result = JSON.parse(truncated);
-            console.warn('JSON 修复成功（截断到最后一个完整对象）');
+            const result = JSON.parse(sanitizeJsonSyntax(truncated));
+            console.warn('JSON 修复成功（截断到最后一个完整对象 + 语法清洗）');
             notifyAIStatus('JSON 截断自修复成功', 'success');
             return result;
         } catch (e) {
@@ -707,8 +741,8 @@ const repairTruncatedJson = (jsonStr) => {
     for (let i = 0; i < openBraces; i++) repaired += '}';
 
     try {
-        const result = JSON.parse(repaired);
-        console.warn('JSON 修复成功（暴力补全）');
+        const result = JSON.parse(sanitizeJsonSyntax(repaired));
+        console.warn('JSON 修复成功（暴力补全 + 语法清洗）');
         notifyAIStatus('JSON 截断自修复成功', 'success');
         return result;
     } catch (e) {
@@ -729,10 +763,16 @@ const parseJsonFromText = (text) => {
     try {
         return JSON.parse(jsonStr);
     } catch (parseError) {
-        // JSON 解析失败，尝试修复截断的 JSON
+        // JSON 解析失败，先尝试语法清洗（未加引号的属性名、单引号等 AI 常见错误）
+        try {
+            return JSON.parse(sanitizeJsonSyntax(jsonStr));
+        } catch (e) {
+            // 语法清洗无效，继续尝试截断修复
+        }
+        // 尝试修复截断的 JSON
         const repaired = repairTruncatedJson(jsonStr);
         if (repaired) {
-            console.warn('JSON 已自动修复（AI 输出可能被截断）');
+            console.warn('JSON 已自动修复（AI 输出可能被截断或存在语法错误）');
             return repaired;
         }
         throw new SyntaxError(`JSON 解析失败: ${parseError.message}`);
