@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Upload, X, FileText, FileSpreadsheet, Presentation, File, FileQuestion, Check, AlertCircle, Loader2, RotateCcw } from 'lucide-react';
+import { Upload, X, FileText, FileSpreadsheet, Presentation, File, FileQuestion, Check, AlertCircle, Loader2, RotateCcw, Info } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import ProgressBar from '../../components/ui/ProgressBar';
 import { useStudyContext } from '../../context/StudyContext';
 import { parseDocument } from '../../utils/documentParser';
-import { parseQuestionBank } from '../../utils/questionParser';
+import { parseQuestionFile } from '../../utils/questionPipeline';
 import { parseDocumentWithAI, isAIConfigured } from '../../services/aiService';
 
 const FILE_TYPES = {
@@ -17,9 +17,9 @@ const FILE_TYPES = {
   },
   questionBank: {
     label: '题库文档',
-    accept: '.pdf,.docx,.txt',
+    accept: '.pdf,.docx,.txt,.json,.csv,.md',
     icon: FileQuestion,
-    description: 'PDF/Word/TXT'
+    description: 'PDF/Word/TXT/JSON/CSV/MD'
   },
   answer: {
     label: '答案文件',
@@ -27,6 +27,15 @@ const FILE_TYPES = {
     icon: FileSpreadsheet,
     description: 'PDF/Word/TXT'
   }
+};
+
+/** 解析方式的显示标签映射 */
+const METHOD_LABELS = {
+  structured: '结构化解析',
+  ai: 'AI 解析',
+  'ai-multimodal': 'AI 多模态解析',
+  'rule-fallback': '规则解析（AI 降级）',
+  'rule-only': '规则解析'
 };
 
 const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
@@ -83,7 +92,7 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
     const agentConfig = state.aiConfig['quiz-master'];
     const isQuestionBank = fileEntry.type === 'questionBank';
 
-    // 非题库文件需要 AI 配置；题库文件使用本地规则解析，无需 AI
+    // 复习资料类型需要 AI 配置；题库类型支持规则兜底，无需强制 AI
     if (!isQuestionBank && !isAIConfigured(agentConfig)) {
       setParseStatus(prev => ({
         ...prev,
@@ -99,42 +108,71 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
     }
 
     try {
-      // 阶段一：提取文本
-      setParseStatus(prev => ({
-        ...prev,
-        [fileEntry.id]: { status: 'parsing', progress: 0, message: '正在提取文本...' }
-      }));
-
-      const text = await parseDocument(fileEntry.file, (progress) => {
-        setParseStatus(prev => ({
-          ...prev,
-          [fileEntry.id]: { status: 'parsing', progress, message: '正在提取文本...' }
-        }));
-      });
-
       let result;
+      let method = '';
+      let warning = '';
+
       if (isQuestionBank) {
-        // 题库文档：使用本地规则解析，完整保留原题
+        // 题库文档：走统一解析入口（AI 优先 + 规则兜底）
         setParseStatus(prev => ({
           ...prev,
-          [fileEntry.id]: { status: 'parsing', progress: 100, message: '正在识别题目...' }
+          [fileEntry.id]: { status: 'parsing', progress: 10, message: '正在解析题库...' }
         }));
-        const parsed = parseQuestionBank(text);
-        result = { knowledgePoints: [], questions: parsed.questions };
+
+        // 题库解析使用的 AI 配置：优先用 quiz-master，未配置则传 null 触发规则兜底
+        const questionAgentConfig = isAIConfigured(agentConfig) ? agentConfig : null;
+        const parsed = await parseQuestionFile(fileEntry.file, questionAgentConfig, (progress) => {
+          setParseStatus(prev => ({
+            ...prev,
+            [fileEntry.id]: { status: 'parsing', progress, message: '正在解析题库...' }
+          }));
+        });
+
+        result = {
+          knowledgePoints: parsed.knowledgePoints || [],
+          questions: parsed.questions || []
+        };
+        method = parsed.method || '';
+        warning = parsed.warning || '';
+
+        // 题库解析返回 0 道题目时，视为解析失败
+        if (result.questions.length === 0) {
+          throw new Error(warning || '未识别到任何题目，请检查文件格式或配置 AI 后重试');
+        }
       } else {
         // 复习资料：使用 AI 提取知识点与生成题目
+        setParseStatus(prev => ({
+          ...prev,
+          [fileEntry.id]: { status: 'parsing', progress: 0, message: '正在提取文本...' }
+        }));
+
+        const text = await parseDocument(fileEntry.file, (progress) => {
+          setParseStatus(prev => ({
+            ...prev,
+            [fileEntry.id]: { status: 'parsing', progress, message: '正在提取文本...' }
+          }));
+        });
+
         setParseStatus(prev => ({
           ...prev,
           [fileEntry.id]: { status: 'parsing', progress: 100, message: 'AI 分析中...' }
         }));
         const fileType = fileEntry.name.split('.').pop().toLowerCase();
         result = await parseDocumentWithAI(agentConfig, text, fileType, fileEntry.id);
+        method = 'ai';
       }
 
-      // 阶段三：解析完成
+      // 解析完成
       setParseStatus(prev => ({
         ...prev,
-        [fileEntry.id]: { status: 'completed', progress: 100, message: '解析完成' }
+        [fileEntry.id]: {
+          status: 'completed',
+          progress: 100,
+          message: '解析完成',
+          method,
+          warning,
+          questionCount: result.questions?.length || 0
+        }
       }));
 
       setFiles(prev => prev.map(f =>
@@ -143,7 +181,7 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
 
       // 回调通知父组件
       if (onParsed) {
-        onParsed({ file: fileEntry, result, text });
+        onParsed({ file: fileEntry, result, method, warning });
       }
     } catch (error) {
       console.error('文件解析失败:', error);
@@ -152,10 +190,9 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
         [fileEntry.id]: {
           status: 'error',
           message: '解析失败',
-          error: error.message || (isQuestionBank ? '题库解析失败，请检查文件格式' : 'AI 解析文档失败，请检查 API Key 是否正确')
+          error: error.message || (isQuestionBank ? '题库解析失败，请检查文件格式或配置 AI 后重试' : 'AI 解析文档失败，请检查 API Key 是否正确')
         }
       }));
-      // 正式模式下不再静默降级到演示数据，让用户看到明确的错误信息
       setFiles(prev => prev.map(f =>
         f.id === fileEntry.id ? { ...f, status: 'error' } : f
       ));
@@ -374,11 +411,32 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
 
                     {/* 完成状态 */}
                     {file.status === 'completed' && (
-                      <div className="flex items-center gap-1 mt-1.5">
-                        <Check size={12} className="text-gray-700" />
-                        <span className="text-xs text-gray-600">
-                          {mode === 'formal' && status && status.status === 'completed' ? '解析完成' : '上传完成'}
-                        </span>
+                      <div className="mt-1.5 space-y-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Check size={12} className="text-gray-700 flex-shrink-0" />
+                          <span className="text-xs text-gray-600">
+                            {mode === 'formal' && status && status.status === 'completed'
+                              ? `解析完成${status.questionCount ? ` · ${status.questionCount} 道题` : ''}`
+                              : '上传完成'}
+                          </span>
+                          {/* 解析方式标签 */}
+                          {mode === 'formal' && status?.method && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                              status.method === 'structured' || status.method === 'ai'
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}>
+                              {METHOD_LABELS[status.method] || status.method}
+                            </span>
+                          )}
+                        </div>
+                        {/* 降级/警告提示 */}
+                        {mode === 'formal' && status?.warning && (
+                          <div className="flex items-start gap-1.5 text-xs text-amber-600 leading-relaxed">
+                            <Info size={11} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                            <span className="flex-1">{status.warning}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

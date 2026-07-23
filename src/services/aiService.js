@@ -462,7 +462,10 @@ const callGemini = async (provider, modelId, apiKey, messages, options) => {
 
 /**
  * 将 OpenAI 格式的消息数组转换为 Gemini 格式
- * @param {Array<{role: string, content: string}>} messages - OpenAI 格式消息
+ * 支持：
+ *   - 纯文本消息 content: string
+ *   - 多模态消息 content: [{ type: 'text', text }, { type: 'image_url', image_url: { url: 'data:...' } }]
+ * @param {Array<{role: string, content: string|Array}>} messages - OpenAI 格式消息
  * @returns {{systemInstruction: Object|null, contents: Array}} Gemini 格式消息
  */
 const convertMessagesToGeminiFormat = (messages) => {
@@ -471,15 +474,43 @@ const convertMessagesToGeminiFormat = (messages) => {
 
     for (const message of messages) {
         if (message.role === 'system') {
-            // Gemini 使用 systemInstruction 字段单独处理系统提示
-            systemInstruction = { parts: [{ text: message.content }] };
+            // system 消息一般不含图片，统一拼接为文本
+            const text = Array.isArray(message.content)
+                ? message.content.filter(i => i.type === 'text').map(i => i.text).join('\n')
+                : message.content;
+            systemInstruction = { parts: [{ text }] };
         } else {
             // OpenAI 的 assistant 角色对应 Gemini 的 model 角色
             const role = message.role === 'assistant' ? 'model' : 'user';
-            contents.push({
-                role,
-                parts: [{ text: message.content }]
-            });
+
+            if (Array.isArray(message.content)) {
+                // 多模态消息：将 OpenAI 的 content 数组转换为 Gemini 的 parts 数组
+                const parts = [];
+                for (const item of message.content) {
+                    if (item.type === 'text') {
+                        parts.push({ text: item.text });
+                    } else if (item.type === 'image_url' && item.image_url?.url) {
+                        // 从 data URL 解析 mime_type 和 base64 data
+                        // Gemini 使用 inline_data 字段，而非 OpenAI 的 image_url
+                        const dataUrlMatch = item.image_url.url.match(/^data:([^;]+);base64,(.+)$/);
+                        if (dataUrlMatch) {
+                            parts.push({
+                                inline_data: {
+                                    mime_type: dataUrlMatch[1],
+                                    data: dataUrlMatch[2]
+                                }
+                            });
+                        }
+                    }
+                }
+                contents.push({ role, parts });
+            } else {
+                // 纯文本消息（向后兼容）
+                contents.push({
+                    role,
+                    parts: [{ text: message.content }]
+                });
+            }
         }
     }
 
@@ -925,8 +956,14 @@ export const getSuperviseMessage = async (agentConfig, context = {}) => {
 const DOC_CHUNK_SIZE = 10000;
 
 /**
+ * 题号边界正则：用于在固定长度切分时找到最近的题目起始位置
+ * 支持 1. / 1、 / (1) / Q1. / ① / 一、 等多种格式
+ */
+const QUESTION_BOUNDARY_REGEX = /(?:\n|^)\s*(?:\d+|[一二三四五六七八九十]{1,3}|[（(]\d+[)）]|[Qq]\d+|[①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳])[.、．：:)]\s/g;
+
+/**
  * 按标题/模块拆分文档文本为多个 chunk
- * 优先按 Markdown 标题或数字标题（如"模块一"、"1."）拆分
+ * 优先按 Markdown 标题或数字标题拆分，固定长度切分时按题目边界对齐
  * @param {string} text - 文档全文
  * @returns {string[]} 文本块数组
  */
@@ -949,9 +986,52 @@ const splitDocumentIntoChunks = (text) => {
         }
         if (currentChunk.trim()) chunks.push(currentChunk.trim());
     } else {
-        // 无法按标题拆分时，按固定长度切分
-        for (let i = 0; i < text.length; i += DOC_CHUNK_SIZE) {
-            chunks.push(text.substring(i, i + DOC_CHUNK_SIZE));
+        // 无法按标题拆分时，按题目边界对齐切分
+        let cursor = 0;
+        while (cursor < text.length) {
+            // 如果剩余文本不足一个 chunk，直接收尾
+            if (cursor + DOC_CHUNK_SIZE >= text.length) {
+                const tail = text.substring(cursor).trim();
+                if (tail) chunks.push(tail);
+                break;
+            }
+
+            // 在 [cursor + DOC_CHUNK_SIZE*0.6, cursor + DOC_CHUNK_SIZE*1.2] 范围内
+            // 寻找最近的题目边界，避免切断题目
+            const searchStart = cursor + Math.floor(DOC_CHUNK_SIZE * 0.6);
+            const searchEnd = Math.min(cursor + Math.floor(DOC_CHUNK_SIZE * 1.2), text.length);
+            const searchRegion = text.substring(searchStart, searchEnd);
+
+            // 查找该区域内所有的题目边界
+            const boundaryIndices = [];
+            let m;
+            const regex = new RegExp(QUESTION_BOUNDARY_REGEX.source, 'g');
+            while ((m = regex.exec(searchRegion)) !== null) {
+                // 边界在原文中的绝对位置
+                boundaryIndices.push(searchStart + m.index + (m[0].length - m[0].trimStart().length));
+            }
+
+            if (boundaryIndices.length > 0) {
+                // 优先选择接近 DOC_CHUNK_SIZE 的边界
+                const targetEnd = cursor + DOC_CHUNK_SIZE;
+                let bestBoundary = boundaryIndices[0];
+                let bestDist = Math.abs(boundaryIndices[0] - targetEnd);
+                for (const idx of boundaryIndices) {
+                    const dist = Math.abs(idx - targetEnd);
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestBoundary = idx;
+                    }
+                }
+                const chunk = text.substring(cursor, bestBoundary).trim();
+                if (chunk) chunks.push(chunk);
+                cursor = bestBoundary;
+            } else {
+                // 区域内未找到题目边界，回退到固定长度切分
+                const chunk = text.substring(cursor, cursor + DOC_CHUNK_SIZE).trim();
+                if (chunk) chunks.push(chunk);
+                cursor += DOC_CHUNK_SIZE;
+            }
         }
     }
 
@@ -1160,6 +1240,110 @@ export const mockGetSuperviseMessage = (_context = {}) => {
     return messages[Math.floor(Math.random() * messages.length)];
 };
 
+// ==================== 多模态 AI（视觉识别题目）====================
+
+/**
+ * 检查 Agent 配置的模型是否支持多模态视觉输入
+ * 通过查询 aiProviders 中的模型 supportsVision 字段判断
+ * @param {Object} agentConfig - Agent 配置 { providerId, modelId, apiKey }
+ * @returns {boolean} 是否支持视觉输入
+ */
+export const isMultimodalModel = (agentConfig) => {
+    if (!agentConfig || !agentConfig.providerId || !agentConfig.modelId) {
+        return false;
+    }
+    const provider = getProviderById(agentConfig.providerId);
+    if (!provider) return false;
+    const model = provider.models.find(m => m.id === agentConfig.modelId);
+    return Boolean(model?.supportsVision);
+};
+
+/** 视觉 AI 单次最多处理的图片数量（避免单次请求图片过多导致超时或超限） */
+const MAX_IMAGES_PER_REQUEST = 5;
+
+/**
+ * 将图片数组转换为 OpenAI 多模态消息 content 数组
+ * @param {string[]} images - base64 data URL 数组
+ * @param {string} textPrompt - 文本提示
+ * @returns {Array} OpenAI content 数组
+ */
+const buildMultimodalContent = (images, textPrompt) => {
+    const content = [{ type: 'text', text: textPrompt }];
+    for (const img of images) {
+        content.push({
+            type: 'image_url',
+            image_url: { url: img }
+        });
+    }
+    return content;
+};
+
+/**
+ * 使用多模态 AI 识别图片中的题目
+ * 将图片分批发送给视觉 AI（每批最多 MAX_IMAGES_PER_REQUEST 张），合并所有批次的识别结果
+ * @param {Object} agentConfig - Agent 配置（必须支持多模态）
+ * @param {string[]} images - base64 data URL 数组
+ * @param {string} materialId - 题目所属文档 ID
+ * @returns {Promise<Object>} 识别结果 { knowledgePoints, questions }
+ */
+export const parseImagesWithAI = async (agentConfig, images, materialId = 'image-source') => {
+    if (!images || images.length === 0) {
+        return { knowledgePoints: [], questions: [] };
+    }
+
+    if (!isMultimodalModel(agentConfig)) {
+        throw new Error('当前 AI 模型不支持多模态视觉输入，无法识别图片题目');
+    }
+
+    // 分批处理图片，避免单次请求图片过多导致超时或超限
+    const batches = [];
+    for (let i = 0; i < images.length; i += MAX_IMAGES_PER_REQUEST) {
+        batches.push(images.slice(i, i + MAX_IMAGES_PER_REQUEST));
+    }
+
+    console.log(`图片题识别：共 ${images.length} 张图片，分 ${batches.length} 批处理`);
+
+    const parseResults = [];
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    for (let i = 0; i < batches.length; i++) {
+        if (i > 0) {
+            // 批次间延迟 500ms，避免触发速率限制
+            await delay(500);
+        }
+
+        const batch = batches[i];
+        const textPrompt = `这是文档中的第 ${i + 1}/${batches.length} 批图片（共 ${batch.length} 张）。\n` +
+            `题目所属文档ID: ${materialId}\n` +
+            '请识别图片中的所有题目（包括题干、选项、答案、解析），并按 JSON Schema 输出。\n' +
+            '注意：图片可能包含电路图、公式、表格等，请尽量识别并描述。';
+
+        const messages = [
+            { role: 'system', content: documentParsePrompt },
+            { role: 'user', content: buildMultimodalContent(batch, textPrompt) }
+        ];
+
+        try {
+            const content = await callAI(agentConfig, messages, getAgentOptions('document-parser'));
+            console.log(`图片批次 ${i + 1}/${batches.length} 返回长度: ${content.length}`);
+            const result = parseJsonFromText(content);
+            parseResults.push(result);
+        } catch (error) {
+            console.warn(`图片批次 ${i + 1}/${batches.length} 识别失败:`, error);
+            // 单批失败不影响其他批次
+        }
+    }
+
+    // 合并各批次结果
+    if (parseResults.length === 0) {
+        return { knowledgePoints: [], questions: [] };
+    }
+    if (parseResults.length === 1) {
+        return parseResults[0];
+    }
+    return mergeParseResults(parseResults, materialId);
+};
+
 // ==================== 默认导出 ====================
 
 export default {
@@ -1171,7 +1355,9 @@ export default {
     explainQuestion,
     getSuperviseMessage,
     parseDocumentWithAI,
+    parseImagesWithAI,
     isAIConfigured,
+    isMultimodalModel,
     getProviderById,
     mockGeneratePlan,
     mockGenerateQuestions,

@@ -136,7 +136,8 @@ export const aiProviders = [
                 description: '长上下文旗舰，支持视觉理解，适合复杂任务',
                 isFree: false,
                 contextLength: 128000,
-                maxOutput: 4096
+                maxOutput: 4096,
+                supportsVision: true
             },
             {
                 id: 'glm-5.1',
@@ -171,7 +172,8 @@ export const aiProviders = [
                 description: '多模态智能体模型，支持文图视频输入，性价比优选',
                 isFree: false,
                 contextLength: 256000,
-                maxOutput: 8192
+                maxOutput: 8192,
+                supportsVision: true
             },
             {
                 id: 'qwen3.7-max',
@@ -198,7 +200,8 @@ export const aiProviders = [
                 description: '多模态旗舰，支持视觉输入与思维链，256K 上下文',
                 isFree: false,
                 contextLength: 256000,
-                maxOutput: 8192
+                maxOutput: 8192,
+                supportsVision: true
             },
             {
                 id: 'kimi-k2.6',
@@ -233,7 +236,8 @@ export const aiProviders = [
                 description: '2026 年 6 月最新旗舰，多模态推理，每日 200 万免费 Token',
                 isFree: true,
                 contextLength: 256000,
-                maxOutput: 8192
+                maxOutput: 8192,
+                supportsVision: true
             },
             {
                 id: 'doubao-1.5-pro-32k',
@@ -268,7 +272,8 @@ export const aiProviders = [
                 description: '免费高速模型，100 万上下文，支持多模态，每日免费额度充足',
                 isFree: true,
                 contextLength: 1000000,
-                maxOutput: 8192
+                maxOutput: 8192,
+                supportsVision: true
             },
             {
                 id: 'gemini-2.5-pro',
@@ -276,7 +281,8 @@ export const aiProviders = [
                 description: 'Google 旗舰推理模型，100 万上下文，深度思考能力强',
                 isFree: false,
                 contextLength: 1000000,
-                maxOutput: 8192
+                maxOutput: 8192,
+                supportsVision: true
             }
         ]
     },
@@ -295,7 +301,8 @@ export const aiProviders = [
                 description: '经济之选，输入$0.15/M，输出$0.60/M tokens，速度快',
                 isFree: false,
                 contextLength: 128000,
-                maxOutput: 16384
+                maxOutput: 16384,
+                supportsVision: true
             },
             {
                 id: 'gpt-4o',
@@ -303,7 +310,8 @@ export const aiProviders = [
                 description: '多模态旗舰模型，输入$2.5/M，输出$10/M tokens',
                 isFree: false,
                 contextLength: 128000,
-                maxOutput: 16384
+                maxOutput: 16384,
+                supportsVision: true
             },
             {
                 id: 'gpt-4.1',
