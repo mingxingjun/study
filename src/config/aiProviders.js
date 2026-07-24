@@ -2,8 +2,8 @@
  * @file AI 服务商配置文件
  * @description 定义 Study Buddy 应用支持的所有 AI 服务商、可用模型、
  *              预设组合方案及默认 Agent 配置。所有服务商均提供 OpenAI 兼容接口，
- *              便于统一调用。数据更新于 2026 年 7 月，源自各平台官方文档。
- *              共包含 17 个服务商：11 个直营平台 + 6 个聚合平台。
+ *              便于统一调用。数据更新于 2026 年 7 月 24 日，源自各平台官方文档与搜索核实。
+ *              共包含 18 个服务商：12 个直营平台 + 6 个聚合平台。
  */
 
 /**
@@ -216,10 +216,19 @@ export const aiProviders = [
         name: 'Moonshot Kimi',
         apiBaseUrl: 'https://api.moonshot.cn/v1',
         apiKeyUrl: 'https://platform.moonshot.cn/',
-        apiKeyGuide: '注册 Moonshot 开放平台 → 左侧 API Key 管理 → 创建。Kimi K2.5 支持视觉理解，K2.6 命中缓存输入仅¥1.10/M。',
+        apiKeyGuide: '注册 Moonshot 开放平台 → 左侧 API Key 管理 → 创建。K3 为 2026/7/17 发布的最新旗舰（2.8万亿参数），缓存命中输入仅¥2/M。',
         isFree: false,
         isOpenAICompatible: true,
         models: [
+            {
+                id: 'kimi-k3',
+                name: 'Kimi K3',
+                description: '2026/7/17 发布，2.8万亿参数开源旗舰，100万上下文，编程榜单登顶；缓存命中输入¥2/M，未命中¥20/M，输出¥100/M',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
             {
                 id: 'kimi-k2.5',
                 name: 'Kimi K2.5',
@@ -268,10 +277,27 @@ export const aiProviders = [
         name: '火山豆包',
         apiBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
         apiKeyUrl: 'https://console.volcengine.com/ark',
-        apiKeyGuide: '火山引擎控制台 → 方舟 → 创建推理接入点（选择模型）→ API Key 管理 → 创建密钥。Seed-2.0-Lite 每月 100 万 Token 永久免费！注意：需先创建"推理接入点"获得 endpoint ID，将其作为模型 ID 使用。',
+        apiKeyGuide: '火山引擎控制台 → 方舟 → 创建推理接入点（选择模型）→ API Key 管理 → 创建密钥。Seed-Evolving 为持续迭代模型（每月2-4次升级，统一 Model ID 免迁移），Seed-2.0-Lite 每月 100 万 Token 永久免费！注意：需先创建"推理接入点"获得 endpoint ID，将其作为模型 ID 使用。',
         isFree: true,
         isOpenAICompatible: true,
         models: [
+            {
+                id: 'doubao-seed-evolving',
+                name: 'Doubao Seed Evolving',
+                description: '永远最新的模型卡片，聚焦 Coding/Agent，每月2-4次高频迭代，统一 Model ID 零迁移成本，1M 上下文',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
+            {
+                id: 'doubao-seed-2.1-turbo',
+                name: 'Doubao Seed 2.1 Turbo',
+                description: '2026/6 轻量版，响应快，适合高并发场景',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
             {
                 id: 'doubao-seed-2.1-pro',
                 name: 'Doubao Seed 2.1 Pro',
@@ -396,10 +422,19 @@ export const aiProviders = [
         name: 'MiniMax',
         apiBaseUrl: 'https://api.minimaxi.com/v1',
         apiKeyUrl: 'https://platform.minimaxi.com/',
-        apiKeyGuide: '注册 MiniMax 开放平台 → API Keys → 创建。MoE 架构，语音合成与视频生成业界领先。部分模型限时免费。',
+        apiKeyGuide: '注册 MiniMax 开放平台 → API Keys → 创建。M3 为 2026/7/17 WAIC 首发全模态旗舰，混合 API 定价仅 $0.22/M token。',
         isFree: false,
         isOpenAICompatible: true,
         models: [
+            {
+                id: 'MiniMax-M3',
+                name: 'MiniMax M3',
+                description: '2026/7/17 WAIC 首发全模态旗舰，混合 API 定价 $0.22/M token，长上下文性价比极高',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
             {
                 id: 'MiniMax-M2.7',
                 name: 'MiniMax M2.7',
@@ -523,35 +558,83 @@ export const aiProviders = [
         name: 'OpenAI',
         apiBaseUrl: 'https://api.openai.com/v1',
         apiKeyUrl: 'https://platform.openai.com/api-keys',
-        apiKeyGuide: '登录 OpenAI Platform → API Keys → Create new secret key。需海外网络环境与付费。',
+        apiKeyGuide: '登录 OpenAI Platform → API Keys → Create new secret key。GPT-5.6 为 2026/7/9 最新发布（Sol/Terra/Luna 三档），需海外网络环境与付费。',
         isFree: false,
         isOpenAICompatible: true,
         models: [
             {
-                id: 'gpt-4o-mini',
-                name: 'GPT-4o Mini',
-                description: '经济之选，输入$0.15/M，输出$0.60/M tokens，速度快',
+                id: 'gpt-5.6-sol',
+                name: 'GPT-5.6 Sol',
+                description: '2026/7/9 旗舰版，复杂推理与深度编程，150万上下文；输入$5/M，输出$30/M tokens',
                 isFree: false,
-                contextLength: 128000,
+                contextLength: 1500000,
+                maxOutput: 32768,
+                supportsVision: true
+            },
+            {
+                id: 'gpt-5.6-terra',
+                name: 'GPT-5.6 Terra',
+                description: '2026/7/9 均衡版，能力与成本平衡，适合大多数场景',
+                isFree: false,
+                contextLength: 1500000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
+            {
+                id: 'gpt-5.6-luna',
+                name: 'GPT-5.6 Luna',
+                description: '2026/7/9 性价比版，低成本高吞吐，适合简单任务',
+                isFree: false,
+                contextLength: 1500000,
                 maxOutput: 16384,
                 supportsVision: true
             },
             {
                 id: 'gpt-4o',
                 name: 'GPT-4o',
-                description: '多模态旗舰模型，输入$2.5/M，输出$10/M tokens',
+                description: '上一代多模态旗舰，输入$2.5/M，输出$10/M tokens',
                 isFree: false,
                 contextLength: 128000,
                 maxOutput: 16384,
                 supportsVision: true
+            }
+        ]
+    },
+    {
+        id: 'anthropic',
+        name: 'Anthropic Claude',
+        apiBaseUrl: 'https://api.anthropic.com/v1',
+        apiKeyUrl: 'https://console.anthropic.com/',
+        apiKeyGuide: '登录 Anthropic Console → API Keys → Create Key。Claude 4 系列连续工作能力达 7 小时，推理与编程能力顶尖。需海外网络环境。注意：Anthropic 使用专属协议，本系统通过 OpenAI 兼容模式调用，模型 ID 以 claude- 开头。',
+        isFree: false,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'claude-fable-5',
+                name: 'Claude Fable 5',
+                description: 'Anthropic 最高端旗舰，API 价格最高，适合不差钱追求极致效果的场景',
+                isFree: false,
+                contextLength: 200000,
+                maxOutput: 32768,
+                supportsVision: true
             },
             {
-                id: 'gpt-4.1',
-                name: 'GPT-4.1',
-                description: '2026 年代号 GPT-4.1，指令遵循与代码能力大幅提升',
+                id: 'claude-opus-4-8',
+                name: 'Claude Opus 4.8',
+                description: 'Claude 4 系列旗舰，连续工作 7 小时，深度推理与长任务；输出$75/M tokens',
                 isFree: false,
-                contextLength: 256000,
-                maxOutput: 32768
+                contextLength: 200000,
+                maxOutput: 32768,
+                supportsVision: true
+            },
+            {
+                id: 'claude-sonnet-5',
+                name: 'Claude Sonnet 5',
+                description: '性价比主力选型，综合能力强；优惠价输入¥22/M，输出¥109/M tokens（9月1日起标准价）',
+                isFree: false,
+                contextLength: 200000,
+                maxOutput: 16384,
+                supportsVision: true
             }
         ]
     },
@@ -563,10 +646,27 @@ export const aiProviders = [
         name: '硅基流动',
         apiBaseUrl: 'https://api.siliconflow.cn/v1',
         apiKeyUrl: 'https://cloud.siliconflow.cn/',
-        apiKeyGuide: '注册硅基流动 → 新用户赠送 2000 万 Token → 左侧 API 密钥 → 创建密钥。聚合 100+ 开源模型，DeepSeek 推理加速 10 倍+。',
+        apiKeyGuide: '注册硅基流动 → 新用户赠送 2000 万 Token → 左侧 API 密钥 → 创建密钥。聚合 100+ 开源模型，DeepSeek 推理加速 10 倍+，已上架 Kimi K3 / GLM-5.2 等最新开源模型。',
         isFree: true,
         isOpenAICompatible: true,
         models: [
+            {
+                id: 'moonshot/Kimi-K3',
+                name: 'Kimi K3 (硅基流动)',
+                description: '2026/7/27 开源权重，2.8万亿参数，硅基流动加速部署',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
+            {
+                id: 'zhipuai/GLM-5.2',
+                name: 'GLM-5.2 (硅基流动)',
+                description: '智谱 2026/6/15 全量开放旗舰，SWE-bench 第一梯队',
+                isFree: false,
+                contextLength: 200000,
+                maxOutput: 8192
+            },
             {
                 id: 'Qwen/Qwen2.5-7B-Instruct',
                 name: 'Qwen2.5-7B-Instruct',
@@ -614,10 +714,37 @@ export const aiProviders = [
         name: 'OpenRouter',
         apiBaseUrl: 'https://openrouter.ai/api/v1',
         apiKeyUrl: 'https://openrouter.ai/',
-        apiKeyGuide: '注册 OpenRouter → Keys → Create Key（格式 sk-or-...）。聚合 300+ 全球模型，自动路由，信用点计费。有 27 个免费模型可用。',
+        apiKeyGuide: '注册 OpenRouter → Keys → Create Key（格式 sk-or-...）。聚合 300+ 全球模型，自动路由，信用点计费。有 27 个免费模型可用，已上架 GPT-5.6 / Claude 4 / Kimi K3 等最新模型。',
         isFree: true,
         isOpenAICompatible: true,
         models: [
+            {
+                id: 'openai/gpt-5.6-sol',
+                name: 'GPT-5.6 Sol (via OpenRouter)',
+                description: '2026/7/9 OpenAI 旗舰，150万上下文，复杂推理',
+                isFree: false,
+                contextLength: 1500000,
+                maxOutput: 32768,
+                supportsVision: true
+            },
+            {
+                id: 'anthropic/claude-opus-4-8',
+                name: 'Claude Opus 4.8 (via OpenRouter)',
+                description: 'Anthropic 旗舰，连续工作 7 小时，深度推理',
+                isFree: false,
+                contextLength: 200000,
+                maxOutput: 32768,
+                supportsVision: true
+            },
+            {
+                id: 'moonshot/kimi-k3',
+                name: 'Kimi K3 (via OpenRouter)',
+                description: '2026/7/17 发布，2.8万亿参数开源旗舰',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
             {
                 id: 'google/gemini-2.5-flash',
                 name: 'Gemini 2.5 Flash (via OpenRouter)',
