@@ -314,25 +314,62 @@ const callOpenAICompatible = async (provider, modelId, apiKey, messages, options
                 return content;
             }
 
-            // 空响应重试
-            if (attempt < MAX_RETRIES) {
-                const delay = calculateBackoffDelay(attempt);
-                // 如果有 reasoning_content 但 content 为空，说明思维链占满了 max_tokens 配额
-                if (reasoningContent.trim()) {
-                    // 增大 max_tokens 配额后重试（翻倍，上限 65536）
+            // content 为空但有思维链：优先尝试从思维链中恢复答案
+            if (reasoningContent.trim()) {
+                // 第一层：正则提取（零成本，思维链中可能已包含 JSON）
+                const extractedJson = extractJsonFromReasoning(reasoningContent);
+                if (extractedJson) {
+                    console.warn(
+                        `AI 思维链占满输出配额（reasoning ${reasoningContent.length} 字符），` +
+                        `已从思维链中正则恢复 JSON 答案`
+                    );
+                    notifyAIStatus('AI 思维链占满输出配额，已从思维链中恢复答案', 'success');
+                    return extractedJson;
+                }
+
+                // 第二层：调用 AI 将思维链转化为标准 JSON（仅在首次重试时触发，避免重复调用消耗配额）
+                if (attempt === 0) {
+                    notifyAIStatus('AI 思维链占满输出配额，正在调用 AI 转化格式...', 'warning');
+                    const convertedJson = await convertReasoningToJson(
+                        provider, modelId, apiKey, reasoningContent
+                    );
+                    if (convertedJson) {
+                        // 转化成功，再用正则提取一次（确保返回纯 JSON）
+                        const finalJson = extractJsonFromReasoning(convertedJson) || convertedJson;
+                        console.warn('AI 思维链占满输出配额，已通过 AI 转化恢复 JSON 答案');
+                        notifyAIStatus('AI 思维链占满输出配额，已通过 AI 转化恢复答案', 'success');
+                        return finalJson;
+                    }
+                }
+
+                // 第三层：增大 max_tokens 重试（翻倍，上限 65536）
+                if (attempt < MAX_RETRIES) {
+                    const delay = calculateBackoffDelay(attempt);
                     const newMaxTokens = Math.min(currentMaxTokens * 2, 65536);
                     console.warn(
                         `AI 思维链占满输出配额（reasoning ${reasoningContent.length} 字符），` +
-                        `max_tokens ${currentMaxTokens}→${newMaxTokens}，${delay / 1000}秒后第 ${attempt + 1}/${MAX_RETRIES} 次重试...`
+                        `正则提取和 AI 转化均失败，max_tokens ${currentMaxTokens}→${newMaxTokens}，` +
+                        `${delay / 1000}秒后第 ${attempt + 1}/${MAX_RETRIES} 次重试...`
                     );
-                    notifyAIStatus('AI 思维链占用输出配额，已增大配额并重试...', 'warning');
+                    notifyAIStatus('AI 思维链占满输出配额，正增大配额重试...', 'warning');
                     currentMaxTokens = newMaxTokens;
                     lastError = new Error('AI 思维链占满输出配额，已自动增大 max_tokens 重试');
-                } else {
-                    console.warn(`AI 返回空内容，${delay / 1000}秒后第 ${attempt + 1}/${MAX_RETRIES} 次重试...`);
-                    notifyAIStatus('AI 返回空内容，正在自动重试...', 'warning');
-                    lastError = new Error('AI 返回内容为空，可能 API Key 无效、请求被拒绝或速率限制未完全恢复');
+                    await sleep(delay);
+                    continue;
                 }
+
+                // 重试次数用尽，返回思维链原文（上层 parseJsonFromText 会尝试解析，失败则降级 Mock）
+                console.warn('AI 思维链占满输出配额，已达最大重试次数，返回思维链原文供上层处理');
+                notifyAIStatus('AI 思维链占满输出配额，返回思维链内容供参考', 'warning');
+                return reasoningContent.trim();
+            }
+
+            // content 和 reasoning 都为空，重试
+            if (attempt < MAX_RETRIES) {
+                const delay = calculateBackoffDelay(attempt);
+                console.warn(`AI 返回空内容，${delay / 1000}秒后第 ${attempt + 1}/${MAX_RETRIES} 次重试...`);
+                notifyAIStatus('AI 返回空内容，正在自动重试...', 'warning');
+                lastError = new Error('AI 返回内容为空，可能 API Key 无效、请求被拒绝或速率限制未完全恢复');
                 await sleep(delay);
                 continue;
             }
@@ -851,6 +888,129 @@ const parseJsonFromText = (text) => {
             return repaired;
         }
         throw new SyntaxError(`JSON 解析失败: ${parseError.message}`);
+    }
+};
+
+/**
+ * 从思维链内容中尝试提取结构化 JSON 答案
+ * DeepSeek V4 等模型默认开启思维链，思维链可能占满 max_tokens 配额导致 content 为空。
+ * 思维链虽然不是正式答案，但通常包含推理过程和最终结论，可以尝试从中恢复 JSON。
+ * 提取策略（按优先级）：
+ *   1. 提取所有 ```json ... ``` 代码块（可能有多段）
+ *   2. 提取裸 JSON 对象 { ... }
+ *   3. 提取裸 JSON 数组 [ ... ]
+ * 每个候选片段会先尝试直接解析，失败再尝试语法清洗后解析。
+ * @param {string} reasoningContent - 思维链内容
+ * @returns {string|null} 提取到的 JSON 字符串，无法提取时返回 null
+ */
+const extractJsonFromReasoning = (reasoningContent) => {
+    if (!reasoningContent || !reasoningContent.trim()) return null;
+
+    // 候选 JSON 片段列表，按优先级排序
+    const candidates = [];
+
+    // 1. 提取所有 ```json ... ``` 代码块（可能有多段）
+    const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)```/g;
+    let blockMatch;
+    while ((blockMatch = codeBlockRegex.exec(reasoningContent)) !== null) {
+        candidates.push(blockMatch[1].trim());
+    }
+
+    // 2. 提取裸 JSON 对象 { ... }（贪婪匹配最后一个 }）
+    const jsonObjectMatch = reasoningContent.match(/\{[\s\S]*\}/);
+    if (jsonObjectMatch) {
+        candidates.push(jsonObjectMatch[0].trim());
+    }
+
+    // 3. 提取裸 JSON 数组 [ ... ]
+    const jsonArrayMatch = reasoningContent.match(/\[[\s\S]*\]/);
+    if (jsonArrayMatch) {
+        candidates.push(jsonArrayMatch[0].trim());
+    }
+
+    // 逐个尝试解析候选片段
+    for (const candidate of candidates) {
+        // 直接解析
+        try {
+            JSON.parse(candidate);
+            return candidate;
+        } catch (e) {
+            // 继续尝试语法清洗
+        }
+        // 语法清洗后解析（处理未加引号的属性名、单引号等 AI 常见错误）
+        try {
+            JSON.parse(sanitizeJsonSyntax(candidate));
+            return candidate;
+        } catch (e) {
+            // 继续尝试下一个候选
+        }
+    }
+
+    return null;
+};
+
+/**
+ * 调用 AI 将思维链内容转化为标准 JSON 格式
+ * 当思维链占满输出配额且正则无法提取 JSON 时使用。
+ * 策略：将思维链作为输入，要求 AI 直接输出标准 JSON。
+ * 注意：DeepSeek V4 转化时仍会开启思维链，需设置较大 max_tokens（8192）保证输出空间。
+ * @param {Object} provider - 服务商配置对象
+ * @param {string} modelId - 模型 ID
+ * @param {string} apiKey - API 密钥
+ * @param {string} reasoningContent - 思维链内容
+ * @returns {Promise<string|null>} 转化后的 JSON 字符串，失败返回 null
+ */
+const convertReasoningToJson = async (provider, modelId, apiKey, reasoningContent) => {
+    const systemPrompt = '你是一个格式转化助手。请将以下思维链内容转化为标准 JSON 格式。' +
+        '要求：\n' +
+        '1. 直接输出 JSON，用 ```json``` 代码块包裹\n' +
+        '2. 保留原文中的所有关键字段（如 question、answer、options、explanation、isCorrect 等）\n' +
+        '3. 如果思维链中包含多个题目，输出 JSON 数组\n' +
+        '4. 如果思维链是题目解析，输出包含 isCorrect、correctAnswer、explanation 等字段的对象\n' +
+        '5. 不要添加任何解释或额外说明';
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: reasoningContent }
+    ];
+
+    const url = `${provider.apiBaseUrl}/chat/completions`;
+    const requestBody = {
+        model: modelId,
+        messages,
+        max_tokens: 8192,
+        temperature: 0.1,
+        stream: false
+    };
+
+    try {
+        const response = await fetchWithRetry(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(requestBody)
+        }, provider.id);
+
+        if (!response.ok) {
+            console.warn('AI 转化思维链失败:', response.status);
+            return null;
+        }
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || '';
+
+        if (content.trim()) {
+            return content.trim();
+        }
+
+        // 转化后 content 仍为空（思维链再次占满配额）
+        console.warn('AI 转化思维链时思维链再次占满配额');
+        return null;
+    } catch (error) {
+        console.warn('AI 转化思维链异常:', error.message);
+        return null;
     }
 };
 
