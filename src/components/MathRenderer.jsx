@@ -9,6 +9,8 @@ import 'katex/dist/katex.min.css';
  * @returns {string} 转换后的文本
  */
 const convertSubSupToMath = (text) => {
+    // 防御：AI 返回的字段可能是数字/布尔/对象（如 answer: 2），强制转字符串
+    if (typeof text !== 'string') return String(text ?? '');
     return text.replace(
         /([)\]}]|\([^)]+\)|\[[^\]]+\]|\{[^}]+\}|[a-zA-Z0-9])([\^_])([-+]?\d+|[a-zA-Z])/g,
         (match, base, mark, index) => `$${base}${mark}{${index}}$`
@@ -97,9 +99,10 @@ const parseInlineMath = (textContent, result) => {
  * @returns {Array<{type: string, content?: string, html?: string}>} 解析后的片段数组
  */
 const parseTextToSegments = (text) => {
-    if (text == null || text === '') {
-        return [];
-    }
+    // 防御：AI 返回的字段可能是数字/布尔/对象，强制转字符串；null/undefined 返回空
+    if (text == null) return [];
+    if (typeof text !== 'string') text = String(text);
+    if (text === '') return [];
 
     const blockRegex = /\$\$([\s\S]+?)\$\$/g;
     const result = [];
