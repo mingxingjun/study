@@ -822,11 +822,14 @@ export const presetCombinations = {
 /**
  * 默认 Agent 配置
  * @type {Object.<string, AgentConfig>}
- * @description 初始状态下三个 Agent 的空配置，等待用户在设置界面填写。
+ * @description 初始状态下三个 Agent 的空配置 + 独立的多模态视觉 AI 配置，等待用户在设置界面填写。
  *              apiKey 字段保持为空字符串，由用户自行输入，禁止硬编码敏感信息。
+ *              vision 字段为独立的多模态视觉 AI，当主 AI（quiz-master）不支持多模态时，
+ *              文档图片解析将自动使用此配置，避免主 AI 必须选多模态模型的限制。
  */
 export const defaultConfig = {
     'quiz-master': { providerId: '', modelId: '', apiKey: '' },
     'explainer': { providerId: '', modelId: '', apiKey: '' },
-    'supervisor': { providerId: '', modelId: '', apiKey: '' }
+    'supervisor': { providerId: '', modelId: '', apiKey: '' },
+    'vision': { providerId: '', modelId: '', apiKey: '' }
 };

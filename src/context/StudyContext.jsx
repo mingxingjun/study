@@ -144,11 +144,13 @@ const initialState = {
   isDemo: false,
   /** 运行模式：'demo' 演示模式（使用 mock 数据）/ 'formal' 正式模式（使用真实 AI） */
   mode: 'demo',
-  /** 各 Agent 的 AI 服务商配置，初始为空配置，由用户在设置页填写 */
+  /** 各 Agent 的 AI 服务商配置，初始为空配置，由用户在设置页填写。
+   *  vision 为独立的多模态视觉 AI，当主 AI 不支持多模态时用于文档图片解析 */
   aiConfig: {
     'quiz-master': { providerId: '', modelId: '', apiKey: '' },
     'explainer': { providerId: '', modelId: '', apiKey: '' },
-    'supervisor': { providerId: '', modelId: '', apiKey: '' }
+    'supervisor': { providerId: '', modelId: '', apiKey: '' },
+    'vision': { providerId: '', modelId: '', apiKey: '' }
   },
   /** 待审核的解析结果（持久化，防止页面切换时丢失） */
   pendingReview: null
@@ -462,7 +464,14 @@ const studyReducer = (state, action) => {
       return {
         ...initialState,
         ...action.payload,
-        aiConfig: { ...initialState.aiConfig, ...(action.payload.aiConfig || {}) }
+        // 深合并 aiConfig，确保旧数据缺少 vision 字段时补上默认空配置
+        aiConfig: {
+          ...initialState.aiConfig,
+          ...(action.payload.aiConfig || {}),
+          // 兼容旧数据：若无 vision 字段则补默认空配置
+          'vision': (action.payload.aiConfig && action.payload.aiConfig.vision) ||
+            { providerId: '', modelId: '', apiKey: '' }
+        }
       };
 
     case 'LOAD_DEMO_DATA': {

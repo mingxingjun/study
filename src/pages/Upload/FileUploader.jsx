@@ -122,12 +122,14 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
 
         // 题库解析使用的 AI 配置：优先用 quiz-master，未配置则传 null 触发规则兜底
         const questionAgentConfig = isAIConfigured(agentConfig) ? agentConfig : null;
+        // 独立多模态视觉 AI 配置：当主 AI 不支持多模态时用于文档图片解析
+        const visionAgentConfig = state.aiConfig['vision'];
         const parsed = await parseQuestionFile(fileEntry.file, questionAgentConfig, (progress) => {
           setParseStatus(prev => ({
             ...prev,
             [fileEntry.id]: { status: 'parsing', progress, message: '正在解析题库...' }
           }));
-        });
+        }, isAIConfigured(visionAgentConfig) ? visionAgentConfig : null);
 
         result = {
           knowledgePoints: parsed.knowledgePoints || [],

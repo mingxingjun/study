@@ -234,10 +234,11 @@ const Upload = () => {
   const handleReParse = async (file, hints) => {
     const { reParseQuestionFile } = await import('../../utils/questionPipeline');
     const agentConfig = state.aiConfig['quiz-master'];
+    const visionAgentConfig = state.aiConfig['vision'];
     try {
       const result = await reParseQuestionFile(file, agentConfig, hints, (progress) => {
         console.log('重新解析进度:', progress);
-      });
+      }, isAIConfigured(visionAgentConfig) ? visionAgentConfig : null);
       // 更新审核界面
       setReviewingFile({
         fileName: file.name,

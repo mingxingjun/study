@@ -104,7 +104,8 @@ const Settings = () => {
     const [showKeys, setShowKeys] = useState({
         'quiz-master': false,
         explainer: false,
-        supervisor: false
+        supervisor: false,
+        vision: false
     });
 
     /** 当前选中的预设方案 key，用于高亮显示 */
@@ -610,6 +611,256 @@ const Settings = () => {
                         </Card>
                     );
                 })}
+            </div>
+
+            {/* 多模态视觉 AI 配置（独立配置，当主 AI 不支持多模态时自动启用） */}
+            <div className="mb-8">
+                <div className="flex items-baseline gap-3 mb-6">
+                    <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
+                        多模态视觉 AI
+                    </h2>
+                    <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
+                        Vision
+                    </span>
+                    <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+                </div>
+
+                {(() => {
+                    const visionId = 'vision';
+                    const config = aiConfig[visionId] || {
+                        providerId: '',
+                        modelId: '',
+                        apiKey: ''
+                    };
+                    const provider = getProviderById(config.providerId);
+                    const model = getModelById(provider, config.modelId);
+                    const complete = isConfigComplete(config);
+                    const keyVisible = showKeys[visionId];
+                    // 主 AI（quiz-master）是否支持多模态
+                    const mainConfig = aiConfig['quiz-master'];
+                    const mainProvider = getProviderById(mainConfig?.providerId);
+                    const mainModel = getModelById(mainProvider, mainConfig?.modelId);
+                    const mainSupportsVision = Boolean(mainModel?.supportsVision);
+
+                    return (
+                        <Card elevated className="mb-6 p-6 lg:p-7 stagger-6">
+                            {/* 卡片头部 */}
+                            <div className="flex items-start justify-between mb-7 pb-6 border-b border-gray-100">
+                                <div className="flex items-center gap-5">
+                                    <span
+                                        className="font-serif text-5xl text-gray-200 tabular-nums"
+                                        style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
+                                    >
+                                        04
+                                    </span>
+                                    <div>
+                                        <div className="flex items-baseline gap-3 mb-1">
+                                            <h3 className="text-xl font-serif text-primary" style={{ fontWeight: 500 }}>
+                                                视觉解析助手
+                                            </h3>
+                                            <span className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em]">
+                                                vision
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-500 leading-relaxed max-w-md">
+                                            专用于文档图片解析的多模态 AI。当主 AI（出题官）不支持多模态时，
+                                            上传 PDF/图片时将自动使用此配置进行看图识别，完美保留数学公式与版式。
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* 状态指示器 */}
+                                <div
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono tracking-wide ${
+                                        complete
+                                            ? 'bg-accent-light/30 text-accent-dark border border-accent/30'
+                                            : 'bg-gray-100 text-gray-500 border border-gray-200'
+                                    }`}
+                                    title={
+                                        complete
+                                            ? '配置完整'
+                                            : mainSupportsVision
+                                                ? '主 AI 已支持多模态，此项可选'
+                                                : '主 AI 不支持多模态，建议配置此项以启用看图解析'
+                                    }
+                                >
+                                    <span
+                                        className={`inline-flex items-center justify-center w-1.5 h-1.5 rounded-full ${
+                                            complete ? 'bg-accent' : 'bg-gray-400'
+                                        }`}
+                                    />
+                                    {complete ? '已就绪' : mainSupportsVision ? '可选' : '建议配置'}
+                                </div>
+                            </div>
+
+                            {/* 主 AI 多模态状态提示 */}
+                            {mainSupportsVision && (
+                                <div className="mb-5 p-3 bg-accent-light/20 rounded-lg border border-accent/20 flex items-start gap-2">
+                                    <Sparkles className="w-4 h-4 text-accent-dark mt-0.5 flex-shrink-0" />
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                        当前主 AI（{mainProvider?.name} / {mainModel?.name}）已支持多模态视觉，
+                                        文档解析将直接使用主 AI。此视觉 AI 配置为备用，当主 AI 切换为纯文本模型时自动启用。
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* 服务商选择 */}
+                            <div className="mb-5">
+                                <div className="flex items-baseline justify-between mb-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        AI 服务商
+                                    </label>
+                                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
+                                        Provider
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <select
+                                        value={config.providerId}
+                                        onChange={(e) =>
+                                            handleFieldChange(visionId, 'providerId', e.target.value)
+                                        }
+                                        className="custom-select w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer"
+                                    >
+                                        <option value="">选择 AI 提供商</option>
+                                        {aiProviders.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name}
+                                                {p.isFree ? '（含免费额度）' : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                        ▼
+                                    </span>
+                                </div>
+                                {provider && (
+                                    <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                                        {provider.isFree && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-light/40 text-accent-dark rounded-md text-[11px] font-mono font-medium border border-accent/30 tracking-wide">
+                                                <Gift className="w-3 h-3" />
+                                                FREE TIER
+                                            </span>
+                                        )}
+                                        <span className="text-[11px] text-gray-400 font-mono tabular-nums">
+                                            {provider.apiBaseUrl}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 模型选择（仅显示支持视觉的模型） */}
+                            <div className="mb-5">
+                                <div className="flex items-baseline justify-between mb-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        模型
+                                    </label>
+                                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
+                                        Model
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <select
+                                        value={config.modelId}
+                                        onChange={(e) =>
+                                            handleFieldChange(visionId, 'modelId', e.target.value)
+                                        }
+                                        disabled={!provider}
+                                        className="custom-select w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
+                                    >
+                                        <option value="">选择模型</option>
+                                        {provider?.models.filter(m => m.supportsVision).map((m) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.name}
+                                                {m.isFree ? '（免费）' : ''} - {m.description}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                        ▼
+                                    </span>
+                                </div>
+                                {provider && provider.models.filter(m => m.supportsVision).length === 0 && (
+                                    <p className="mt-2 text-xs text-amber-600">
+                                        该服务商暂无支持多模态视觉的模型，请选择其他服务商
+                                    </p>
+                                )}
+                                {model && (
+                                    <div className="mt-2.5 flex items-center gap-2 flex-wrap text-[11px] text-gray-500 font-mono">
+                                        {model.isFree && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-light/40 text-accent-dark rounded-md text-[11px] font-medium border border-accent/30 tracking-wide">
+                                                <Gift className="w-3 h-3" />
+                                                FREE MODEL
+                                            </span>
+                                        )}
+                                        <span className="tabular-nums">CTX {model.contextLength.toLocaleString()}</span>
+                                        <span className="text-gray-300">·</span>
+                                        <span className="tabular-nums">OUT {model.maxOutput.toLocaleString()}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* API Key 输入 */}
+                            <div className="mb-5">
+                                <div className="flex items-baseline justify-between mb-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        API Key
+                                    </label>
+                                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
+                                        Secret
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type={keyVisible ? 'text' : 'password'}
+                                        value={config.apiKey}
+                                        onChange={(e) =>
+                                            handleFieldChange(visionId, 'apiKey', e.target.value)
+                                        }
+                                        placeholder="请输入 API Key（敏感信息仅保存在本地）"
+                                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 font-mono"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleKeyVisible(visionId)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary cursor-pointer"
+                                        title={keyVisible ? '隐藏' : '显示'}
+                                    >
+                                        {keyVisible ? (
+                                            <EyeOff className="w-4 h-4" />
+                                        ) : (
+                                            <Eye className="w-4 h-4" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* API Key 获取链接 */}
+                            {provider && (
+                                <div className="p-4 bg-warm-50/70 rounded-xl border border-gray-200/80">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Key className="w-3.5 h-3.5 text-accent-dark" strokeWidth={1.8} />
+                                        <span className="text-[11px] font-mono uppercase tracking-wider text-accent-dark">
+                                            How to get API Key
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+                                        {provider.apiKeyGuide}
+                                    </p>
+                                    <a
+                                        href={provider.apiKeyUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:text-accent-dark transition-colors border-b border-primary/20 hover:border-accent-dark/40 pb-0.5"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                        前往 {provider.name} 获取 API Key
+                                    </a>
+                                </div>
+                            )}
+                        </Card>
+                    );
+                })()}
             </div>
 
             {/* 底部说明 */}

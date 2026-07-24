@@ -166,6 +166,8 @@ const mergeTextAndImageResults = (textResult, imageResult, materialId) => {
  * @param {File} file - 文件对象
  * @param {Object} agentConfig - AI Agent 配置 { providerId, modelId, apiKey }
  * @param {Function} [onProgress] - 进度回调 (0-100)
+ * @param {Object} [visionAgentConfig] - 独立的多模态视觉 AI 配置 { providerId, modelId, apiKey }，
+ *        当主 AI（agentConfig）不支持多模态时，文档图片解析将使用此配置
  * @returns {Promise<Object>} 解析结果（含 method 和 warning 字段）
  *
  * @example
@@ -178,7 +180,7 @@ const mergeTextAndImageResults = (textResult, imageResult, materialId) => {
  * const result = await parseQuestionFile(file, null);
  * // result.method === 'rule-only'
  */
-export const parseQuestionFile = async (file, agentConfig, onProgress) => {
+export const parseQuestionFile = async (file, agentConfig, onProgress, visionAgentConfig) => {
     const ext = getExtension(file.name);
 
     // ========== 阶段 1：Excel 格式提示转换 ==========
@@ -226,9 +228,16 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
 
     // 根据是否需要图片提取，选择不同的解析函数
     const supportsMultimodal = isAIConfigured(agentConfig) && isMultimodalModel(agentConfig);
+    // 独立视觉 AI：当主 AI 不支持多模态时，检查是否配置了独立的视觉 AI
+    const visionConfigured = isAIConfigured(visionAgentConfig) && isMultimodalModel(visionAgentConfig);
+    // 是否有任何可用的多模态能力（主 AI 或独立视觉 AI）
+    const hasMultimodalCapability = supportsMultimodal || visionConfigured;
     const isPdf = ext === 'pdf';
     // PDF + 多模态 AI：优先走整页渲染看图解析（解决 getTextContent 无法提取公式的问题）
-    const usePdfPageRendering = isPdf && supportsMultimodal;
+    // 主 AI 支持多模态用主 AI，否则用独立视觉 AI
+    const usePdfPageRendering = isPdf && hasMultimodalCapability;
+    // 图片解析使用的 AI 配置：主 AI 优先（若支持多模态），否则用独立视觉 AI
+    const imageAgentConfig = supportsMultimodal ? agentConfig : visionAgentConfig;
     let text = '';
     let images = [];
     let pageImages = [];
@@ -357,7 +366,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
     }
 
     // ========== 阶段 6.2：已配置 AI，走 AI 补充解析 ==========
-    // supportsMultimodal 已在阶段 3 定义
+    // hasMultimodalCapability 已在阶段 3 定义（主 AI 或独立视觉 AI 任一支持多模态）
     const hasImages = images.length > 0;
     const hasPageImages = pageImages.length > 0;
     const materialId = file.name || `upload-${Date.now()}`;
@@ -365,13 +374,15 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
     try {
         // 情况 0（最高优先级）：PDF 整页渲染图片 + 多模态 AI 看图解析
         // 直接让 AI 看每页图片识别题目，完美保留公式、版式、图表
-        if (supportsMultimodal && hasPageImages) {
+        // 使用 imageAgentConfig：主 AI 支持多模态用主 AI，否则用独立视觉 AI
+        if (hasMultimodalCapability && hasPageImages) {
             if (onProgress) onProgress(50);
-            console.log(`走多模态整页图片解析：${pageImages.length} 页图片`);
+            const usedVisionAI = !supportsMultimodal;
+            console.log(`走多模态整页图片解析：${pageImages.length} 页图片${usedVisionAI ? '（使用独立视觉 AI）' : ''}`);
 
             // 将整页图片交给多模态 AI 识别
             const pageImageUrls = pageImages.map(p => p.imageData);
-            const imageResult = await parseImagesWithAI(agentConfig, pageImageUrls, materialId);
+            const imageResult = await parseImagesWithAI(imageAgentConfig, pageImageUrls, materialId);
 
             const totalQuestions = imageResult?.questions?.length || 0;
 
@@ -404,17 +415,18 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
         }
 
         // 情况 A：模型支持多模态且文档有内嵌图片 → 文本+图片并行处理
-        if (supportsMultimodal && hasImages) {
+        if (hasMultimodalCapability && hasImages) {
             if (onProgress) onProgress(55);
 
             // 并行启动文本解析和图片识别
             // 使用 allSettled 确保一路失败不影响另一路
+            // 图片识别使用 imageAgentConfig（主 AI 优先，否则独立视觉 AI）
             const [textSettled, imageSettled] = await Promise.allSettled([
                 // 文本解析（如果文本为空，跳过此步）
                 text.trim()
                     ? parseDocumentWithAI(agentConfig, text, ext, materialId)
                     : Promise.resolve({ knowledgePoints: [], questions: [] }),
-                parseImagesWithAI(agentConfig, images, materialId)
+                parseImagesWithAI(imageAgentConfig, images, materialId)
             ]);
 
             const textResult = textSettled.status === 'fulfilled'
@@ -604,9 +616,10 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
  * @param {Object} agentConfig - AI 配置 { providerId, modelId, apiKey }
  * @param {string[]} userHints - 用户提供的格式提示数组
  * @param {Function} [onProgress] - 进度回调 (0-100)
+ * @param {Object} [visionAgentConfig] - 独立多模态视觉 AI 配置（透传，当前未使用，预留扩展）
  * @returns {Promise<Object>} 解析结果 { questions, knowledgePoints, method, warning }
  */
-export const reParseQuestionFile = async (file, agentConfig, userHints, onProgress) => {
+export const reParseQuestionFile = async (file, agentConfig, userHints, onProgress, _visionAgentConfig) => {
     // 重新提取文本
     const ext = getExtension(file.name);
     const text = await parseDocument(file, (p) => {
