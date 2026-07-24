@@ -892,6 +892,39 @@ const parseJsonFromText = (text) => {
 };
 
 /**
+ * 验证解析后的 JSON 是否包含有意义的内容
+ * 避免从思维链中提取到空对象 {} 或只有空字符串值的残缺 JSON 直接返回。
+ * 验证规则：
+ *   - 空对象 {} 或空数组 [] 视为无意义
+ *   - 对象至少有一个字段值是非空字符串、非空数组或非空对象
+ *   - 数组至少有一个元素，且元素本身有有意义的内容
+ * @param {*} parsed - JSON.parse 后的值
+ * @returns {boolean} 是否包含有意义内容
+ */
+const hasMeaningfulContent = (parsed) => {
+    if (parsed === null || parsed === undefined) return false;
+    if (Array.isArray(parsed)) {
+        if (parsed.length === 0) return false;
+        return parsed.some(item => hasMeaningfulContent(item));
+    }
+    if (typeof parsed === 'object') {
+        const keys = Object.keys(parsed);
+        if (keys.length === 0) return false;
+        return keys.some(key => {
+            const val = parsed[key];
+            if (typeof val === 'string' && val.trim().length > 0) return true;
+            if (Array.isArray(val) && val.length > 0) return true;
+            if (typeof val === 'object' && val !== null && Object.keys(val).length > 0) return true;
+            if (typeof val === 'number' && val !== 0) return true;
+            if (typeof val === 'boolean') return true;
+            return false;
+        });
+    }
+    if (typeof parsed === 'string') return parsed.trim().length > 0;
+    return true;
+};
+
+/**
  * 从思维链内容中尝试提取结构化 JSON 答案
  * DeepSeek V4 等模型默认开启思维链，思维链可能占满 max_tokens 配额导致 content 为空。
  * 思维链虽然不是正式答案，但通常包含推理过程和最终结论，可以尝试从中恢复 JSON。
@@ -900,8 +933,9 @@ const parseJsonFromText = (text) => {
  *   2. 提取裸 JSON 对象 { ... }
  *   3. 提取裸 JSON 数组 [ ... ]
  * 每个候选片段会先尝试直接解析，失败再尝试语法清洗后解析。
+ * 解析成功后还会验证字段完整性，空对象/空数组/只有空值的残缺 JSON 不会被返回。
  * @param {string} reasoningContent - 思维链内容
- * @returns {string|null} 提取到的 JSON 字符串，无法提取时返回 null
+ * @returns {string|null} 提取到的 JSON 字符串，无法提取或内容无意义时返回 null
  */
 const extractJsonFromReasoning = (reasoningContent) => {
     if (!reasoningContent || !reasoningContent.trim()) return null;
@@ -928,21 +962,28 @@ const extractJsonFromReasoning = (reasoningContent) => {
         candidates.push(jsonArrayMatch[0].trim());
     }
 
-    // 逐个尝试解析候选片段
+    // 逐个尝试解析候选片段，并验证字段完整性
     for (const candidate of candidates) {
+        let parsed = null;
+        let validStr = candidate;
+
         // 直接解析
         try {
-            JSON.parse(candidate);
-            return candidate;
+            parsed = JSON.parse(candidate);
         } catch (e) {
-            // 继续尝试语法清洗
+            // 语法清洗后解析（处理未加引号的属性名、单引号等 AI 常见错误）
+            try {
+                const sanitized = sanitizeJsonSyntax(candidate);
+                parsed = JSON.parse(sanitized);
+                validStr = sanitized;
+            } catch (e2) {
+                continue;
+            }
         }
-        // 语法清洗后解析（处理未加引号的属性名、单引号等 AI 常见错误）
-        try {
-            JSON.parse(sanitizeJsonSyntax(candidate));
-            return candidate;
-        } catch (e) {
-            // 继续尝试下一个候选
+
+        // 验证解析结果是否包含有意义的内容
+        if (parsed !== null && hasMeaningfulContent(parsed)) {
+            return validStr;
         }
     }
 
@@ -963,11 +1004,14 @@ const extractJsonFromReasoning = (reasoningContent) => {
 const convertReasoningToJson = async (provider, modelId, apiKey, reasoningContent) => {
     const systemPrompt = '你是一个格式转化助手。请将以下思维链内容转化为标准 JSON 格式。' +
         '要求：\n' +
-        '1. 直接输出 JSON，用 ```json``` 代码块包裹\n' +
-        '2. 保留原文中的所有关键字段（如 question、answer、options、explanation、isCorrect 等）\n' +
-        '3. 如果思维链中包含多个题目，输出 JSON 数组\n' +
-        '4. 如果思维链是题目解析，输出包含 isCorrect、correctAnswer、explanation 等字段的对象\n' +
-        '5. 不要添加任何解释或额外说明';
+        '1. 直接输出 JSON，用 ```json``` 代码块包裹，不要添加任何解释或额外说明\n' +
+        '2. 必须保留原文中的所有字段，禁止省略、概括或截断任何内容\n' +
+        '3. 题目对象必须包含完整字段：question（完整题干）、options（所有选项数组）、answer（答案）、explanation（完整解析）、type（题型）、difficulty（难度）\n' +
+        '4. 如果思维链中包含多个题目，输出 JSON 数组，每道题都必须完整包含上述字段\n' +
+        '5. 如果思维链是题目解析，输出包含 isCorrect、correctAnswer、explanation、tips 等字段的对象\n' +
+        '6. 如果思维链是文档结构信息，输出包含 questionRanges、totalQuestions 等字段的对象\n' +
+        '7. 题干和选项必须保留原文全文，包括数学公式、标点符号，禁止缩写\n' +
+        '8. 如果某个字段在思维链中确实不存在，用空字符串""或空数组[]填充，不要省略字段名';
 
     const messages = [
         { role: 'system', content: systemPrompt },
@@ -978,7 +1022,8 @@ const convertReasoningToJson = async (provider, modelId, apiKey, reasoningConten
     const requestBody = {
         model: modelId,
         messages,
-        max_tokens: 8192,
+        // 转化时思维链仍会消耗配额，16384 token 保证思维链+完整 JSON 输出空间
+        max_tokens: 16384,
         temperature: 0.1,
         stream: false
     };
@@ -1765,7 +1810,9 @@ export const extractDocumentStructure = async (agentConfig, text) => {
 
     const { structureExtractionPrompt } = await import('../config/agentPrompts.js');
 
-    const maxTokens = 4096;
+    // DeepSeek V4 等模型默认开启思维链，思维链会消耗 max_tokens 配额，
+    // 4096 token 易被思维链占满导致 content 为空，提高到 8192 保证输出空间
+    const maxTokens = 8192;
     const temperature = 0.1;
 
     const messages = [
@@ -1808,7 +1855,9 @@ export const parseSingleQuestion = async (agentConfig, questionText) => {
 
     const { perQuestionParsePrompt } = await import('../config/agentPrompts.js');
 
-    const maxTokens = 2048;
+    // DeepSeek V4 等模型默认开启思维链，思维链动辄 3000-4000 字符（约 1500-2000 token），
+    // 原 2048 token 会被思维链完全占满导致 content 为空，提高到 8192 保证思维链+答案输出空间
+    const maxTokens = 8192;
     const temperature = 0.1;
 
     const messages = [
