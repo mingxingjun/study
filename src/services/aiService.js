@@ -11,6 +11,7 @@ import {
     explainerPrompt,
     supervisorPrompt,
     documentParsePrompt,
+    imageToMarkdownPrompt,
     generateQuestionsPrompt,
     gradeAnswerPrompt,
     buildReParsePrompt
@@ -905,9 +906,17 @@ const parseJsonFromText = (text) => {
     if (!text || !text.trim()) {
         throw new SyntaxError('AI 返回内容为空，可能 API Key 无效或请求被拒绝');
     }
-    // 优先尝试提取 ```json ... ``` 代码块
+    // 优先尝试提取闭合的 ```json ... ``` 代码块
+    let jsonStr;
     const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    const jsonStr = jsonBlockMatch ? jsonBlockMatch[1].trim() : text.trim();
+    if (jsonBlockMatch) {
+        jsonStr = jsonBlockMatch[1].trim();
+    } else {
+        // 闭合代码块未匹配到，尝试提取未闭合的代码块
+        // 场景：max_tokens 截断导致 ```json 后面没有结尾 ```，正则 fallback 到文本末尾
+        const unclosedBlockMatch = text.match(/```(?:json)?\s*([\s\S]*)/);
+        jsonStr = unclosedBlockMatch ? unclosedBlockMatch[1].trim() : text.trim();
+    }
 
     try {
         return JSON.parse(jsonStr);
@@ -1754,14 +1763,76 @@ const buildMultimodalContent = (images, textPrompt) => {
 };
 
 /**
- * 使用多模态 AI 识别图片中的题目
- * 将图片分批发送给视觉 AI（每批最多 MAX_IMAGES_PER_REQUEST 张），合并所有批次的识别结果
- * @param {Object} agentConfig - Agent 配置（必须支持多模态）
+ * 阶段 1：视觉 AI 将图片转写为 Markdown 文本（OCR 转写）
+ * 逐页调用多模态 AI，把每页图片转成紧凑的 Markdown 文本（纯文本+LaTeX 公式）
+ * 设计目标：输出紧凑，适配小配额视觉模型（如 GLM-4V-Flash 1024 token）
+ * 不做结构化解析，只做纯文本转写，后续由主 AI（大配额）做结构化解析
+ * @param {Object} agentConfig - 视觉 AI 配置（必须支持多模态）
+ * @param {string[]} images - base64 data URL 数组（每张为文档一页）
+ * @param {string} materialId - 题目所属文档 ID（仅用于日志）
+ * @returns {Promise<string>} 合并后的 Markdown 文本（各页用 --- 分隔）
+ */
+export const parseImagesToMarkdown = async (agentConfig, images, _materialId = 'image-source') => {
+    if (!images || images.length === 0) {
+        return '';
+    }
+
+    if (!isMultimodalModel(agentConfig)) {
+        throw new Error('当前 AI 模型不支持多模态视觉输入，无法识别图片');
+    }
+
+    console.log(`图片 OCR 转写：共 ${images.length} 页，逐页转写为 Markdown`);
+
+    const markdownParts = [];
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    for (let i = 0; i < images.length; i++) {
+        if (i > 0) {
+            // 逐页延迟 500ms，避免触发速率限制
+            await delay(500);
+        }
+
+        const userPrompt = `这是文档的第 ${i + 1}/${images.length} 页。请将图片中的内容完整转写为 Markdown。`;
+
+        const messages = [
+            { role: 'system', content: imageToMarkdownPrompt },
+            { role: 'user', content: buildMultimodalContent([images[i]], userPrompt) }
+        ];
+
+        try {
+            // OCR 转写不需要 document-parser 的大配额，用默认配额即可（clamp 自动限制）
+            const content = await callAI(agentConfig, messages, {
+                maxTokens: DEFAULT_MAX_TOKENS,
+                temperature: 0.1
+            });
+            console.log(`第 ${i + 1}/${images.length} 页 OCR 转写完成，长度: ${content.length}`);
+            markdownParts.push(content.trim());
+        } catch (error) {
+            console.warn(`第 ${i + 1}/${images.length} 页 OCR 转写失败:`, error.message);
+            // 单页失败不影响其他页，用占位符标记
+            markdownParts.push(`\n<!-- 第 ${i + 1} 页 OCR 转写失败: ${error.message} -->\n`);
+        }
+    }
+
+    return markdownParts.join('\n\n---\n\n');
+};
+
+/**
+ * 使用多模态 AI 识别图片中的题目（两阶段解析）
+ *
+ * 阶段 1：视觉 AI（agentConfig）把每页图片转写为 Markdown 文本
+ *         —— 输出紧凑（纯文本+LaTeX），适配小配额视觉模型（如 GLM-4V-Flash 1024 token）
+ * 阶段 2：主 AI（textAgentConfig）从合并的 Markdown 解析出结构化题目 JSON
+ *         —— 配额充足（如 32768 token），JSON 完整不截断
+ *
+ * 若 textAgentConfig 未配置，回退到单阶段（视觉 AI 直接输出 JSON，可能截断）
+ * @param {Object} agentConfig - 视觉 AI 配置（必须支持多模态）
  * @param {string[]} images - base64 data URL 数组
  * @param {string} materialId - 题目所属文档 ID
+ * @param {Object} [textAgentConfig] - 主 AI 配置（阶段 2 使用，配额大）
  * @returns {Promise<Object>} 识别结果 { knowledgePoints, questions }
  */
-export const parseImagesWithAI = async (agentConfig, images, materialId = 'image-source') => {
+export const parseImagesWithAI = async (agentConfig, images, materialId = 'image-source', textAgentConfig = null) => {
     if (!images || images.length === 0) {
         return { knowledgePoints: [], questions: [] };
     }
@@ -1770,20 +1841,43 @@ export const parseImagesWithAI = async (agentConfig, images, materialId = 'image
         throw new Error('当前 AI 模型不支持多模态视觉输入，无法识别图片题目');
     }
 
+    // 判断是否有可用的主 AI 做阶段 2 结构化解析
+    const hasTextAgent = textAgentConfig && isAIConfigured(textAgentConfig);
+
+    if (hasTextAgent) {
+        // ========== 两阶段解析：视觉 AI 转 Markdown → 主 AI 结构化解析 ==========
+        console.log('两阶段图片解析：视觉 AI OCR 转写 → 主 AI 结构化解析');
+
+        // 阶段 1：视觉 AI 把每页图片转写为 Markdown
+        const markdown = await parseImagesToMarkdown(agentConfig, images, materialId);
+
+        if (!markdown.trim()) {
+            console.warn('视觉 AI OCR 转写返回空内容');
+            return { knowledgePoints: [], questions: [] };
+        }
+
+        console.log(`OCR 转写完成，Markdown 总长度: ${markdown.length} 字符，交由主 AI 结构化解析`);
+
+        // 阶段 2：主 AI 从 Markdown 解析结构化题目（复用 parseDocumentWithAI，已含分块/合并/规范化）
+        return await parseDocumentWithAI(textAgentConfig, markdown, 'pdf-image', materialId);
+    }
+
+    // ========== 单阶段回退：视觉 AI 直接输出结构化 JSON（可能因配额小而截断） ==========
+    console.warn('未配置主 AI，视觉 AI 直接输出结构化 JSON（小配额模型可能截断）');
+
     // 分批处理图片，避免单次请求图片过多导致超时或超限
     const batches = [];
     for (let i = 0; i < images.length; i += MAX_IMAGES_PER_REQUEST) {
         batches.push(images.slice(i, i + MAX_IMAGES_PER_REQUEST));
     }
 
-    console.log(`图片题识别：共 ${images.length} 张图片，分 ${batches.length} 批处理`);
+    console.log(`图片题识别（单阶段）：共 ${images.length} 张图片，分 ${batches.length} 批处理`);
 
     const parseResults = [];
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     for (let i = 0; i < batches.length; i++) {
         if (i > 0) {
-            // 批次间延迟 500ms，避免触发速率限制
             await delay(500);
         }
 
@@ -1805,7 +1899,6 @@ export const parseImagesWithAI = async (agentConfig, images, materialId = 'image
             parseResults.push(result);
         } catch (error) {
             console.warn(`图片批次 ${i + 1}/${batches.length} 识别失败:`, error);
-            // 单批失败不影响其他批次
         }
     }
 
@@ -1814,7 +1907,6 @@ export const parseImagesWithAI = async (agentConfig, images, materialId = 'image
         return { knowledgePoints: [], questions: [] };
     }
     if (parseResults.length === 1) {
-        // 规范化单批次结果中每个题目的 visualizations 字段，并标注 AI 识别信心度
         const singleResult = parseResults[0];
         const normalizedQuestions = assignConfidence(
             (singleResult.questions || []).map(q => ({
@@ -1960,6 +2052,7 @@ export default {
     parseDocumentWithAI,
     reParseDocument,
     parseImagesWithAI,
+    parseImagesToMarkdown,
     extractDocumentStructure,
     parseSingleQuestion,
     parseQuestionsBatch,

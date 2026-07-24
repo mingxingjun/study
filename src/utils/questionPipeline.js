@@ -381,8 +381,11 @@ export const parseQuestionFile = async (file, agentConfig, onProgress, visionAge
             console.log(`走多模态整页图片解析：${pageImages.length} 页图片${usedVisionAI ? '（使用独立视觉 AI）' : ''}`);
 
             // 将整页图片交给多模态 AI 识别
+            // 两阶段解析：视觉 AI（imageAgentConfig）做 OCR 转 Markdown → 主 AI（agentConfig）做结构化解析
+            // 当主 AI 支持多模态时，imageAgentConfig === agentConfig，两阶段用同一 AI
+            // 当主 AI 不支持多模态时，阶段 1 用独立视觉 AI，阶段 2 用主 AI（配额大，JSON 不截断）
             const pageImageUrls = pageImages.map(p => p.imageData);
-            const imageResult = await parseImagesWithAI(imageAgentConfig, pageImageUrls, materialId);
+            const imageResult = await parseImagesWithAI(imageAgentConfig, pageImageUrls, materialId, agentConfig);
 
             const totalQuestions = imageResult?.questions?.length || 0;
 
@@ -426,7 +429,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress, visionAge
                 text.trim()
                     ? parseDocumentWithAI(agentConfig, text, ext, materialId)
                     : Promise.resolve({ knowledgePoints: [], questions: [] }),
-                parseImagesWithAI(imageAgentConfig, images, materialId)
+                parseImagesWithAI(imageAgentConfig, images, materialId, agentConfig)
             ]);
 
             const textResult = textSettled.status === 'fulfilled'
