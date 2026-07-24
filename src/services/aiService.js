@@ -1853,13 +1853,15 @@ export const parseImagesWithAI = async (agentConfig, images, materialId = 'image
 
         if (!markdown.trim()) {
             console.warn('视觉 AI OCR 转写返回空内容');
-            return { knowledgePoints: [], questions: [] };
+            return { knowledgePoints: [], questions: [], rawMarkdown: '' };
         }
 
         console.log(`OCR 转写完成，Markdown 总长度: ${markdown.length} 字符，交由主 AI 结构化解析`);
 
         // 阶段 2：主 AI 从 Markdown 解析结构化题目（复用 parseDocumentWithAI，已含分块/合并/规范化）
-        return await parseDocumentWithAI(textAgentConfig, markdown, 'pdf-image', materialId);
+        const structured = await parseDocumentWithAI(textAgentConfig, markdown, 'pdf-image', materialId);
+        // 附加 OCR 转写的 Markdown，供原文预览展示
+        return { ...structured, rawMarkdown: markdown };
     }
 
     // ========== 单阶段回退：视觉 AI 直接输出结构化 JSON（可能因配额小而截断） ==========

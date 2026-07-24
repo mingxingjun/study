@@ -388,6 +388,9 @@ export const parseQuestionFile = async (file, agentConfig, onProgress, visionAge
             const imageResult = await parseImagesWithAI(imageAgentConfig, pageImageUrls, materialId, agentConfig);
 
             const totalQuestions = imageResult?.questions?.length || 0;
+            // 两阶段解析会返回 rawMarkdown（OCR 转写文本），优先用于原文预览；
+            // 单阶段回退无 rawMarkdown，沿用 PDF 原始提取文本 text
+            const previewText = imageResult?.rawMarkdown?.trim() ? imageResult.rawMarkdown : text;
 
             if (totalQuestions > 0) {
                 if (onProgress) onProgress(100);
@@ -397,7 +400,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress, visionAge
                     imageResult,
                     'ai-page-image',
                     `多模态看图解析完成：共识别 ${totalQuestions} 题（基于 ${pageImages.length} 页图片）`,
-                    text,
+                    previewText,
                     pageImages
                 );
             }
@@ -410,7 +413,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress, visionAge
                     ruleResult,
                     'rule-fallback',
                     'AI 看图解析未识别到题目，已用规则解析结果兜底',
-                    text,
+                    previewText,
                     pageImages
                 );
             }
