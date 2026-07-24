@@ -3,6 +3,7 @@
  * @description 定义 Study Buddy 应用支持的所有 AI 服务商、可用模型、
  *              预设组合方案及默认 Agent 配置。所有服务商均提供 OpenAI 兼容接口，
  *              便于统一调用。数据更新于 2026 年 7 月，源自各平台官方文档。
+ *              共包含 17 个服务商：11 个直营平台 + 6 个聚合平台。
  */
 
 /**
@@ -14,6 +15,7 @@
  * @property {boolean} isFree       - 是否免费
  * @property {number} contextLength - 上下文窗口大小（单位：token）
  * @property {number} maxOutput     - 最大输出长度（单位：token）
+ * @property {boolean} [supportsVision] - 是否支持多模态视觉输入（看图解析）
  */
 
 /**
@@ -40,9 +42,12 @@
 /**
  * AI 服务商列表
  * @type {AiProvider[]}
- * @description 包含 8 个主流 AI 服务商，涵盖国内外、免费/付费、通用/推理等不同场景
+ * @description 包含 17 个服务商，涵盖国内外直营平台与聚合平台，覆盖免费/付费、
+ *              通用/推理/多模态等不同场景。价格单位均为人民币（元/百万 Tokens）。
  */
 export const aiProviders = [
+    // ==================== 直营平台（11 个）====================
+
     {
         id: 'deepseek',
         name: 'DeepSeek',
@@ -55,7 +60,7 @@ export const aiProviders = [
             {
                 id: 'deepseek-v4-flash',
                 name: 'DeepSeek V4 Flash',
-                description: '快速高效，默认开启思维链；输入$0.14/M，输出$0.28/M tokens',
+                description: '快速高效，默认开启思维链；输入¥1/M，输出¥2/M tokens',
                 isFree: false,
                 contextLength: 1000000,
                 maxOutput: 384000
@@ -63,52 +68,17 @@ export const aiProviders = [
             {
                 id: 'deepseek-v4-pro',
                 name: 'DeepSeek V4 Pro',
-                description: '旗舰模型，推理能力最强；输入$0.435/M，输出$0.87/M tokens',
+                description: '旗舰模型，推理能力最强；输入~¥3/M，输出~¥12/M tokens',
                 isFree: false,
                 contextLength: 1000000,
                 maxOutput: 384000
-            }
-        ]
-    },
-    {
-        id: 'siliconflow',
-        name: '硅基流动',
-        apiBaseUrl: 'https://api.siliconflow.cn/v1',
-        apiKeyUrl: 'https://cloud.siliconflow.cn/',
-        apiKeyGuide: '注册硅基流动 → 新用户赠送 2000 万 Token → 左侧 API 密钥 → 创建密钥。聚合多家开源模型。',
-        isFree: true,
-        isOpenAICompatible: true,
-        models: [
-            {
-                id: 'Qwen/Qwen2.5-7B-Instruct',
-                name: 'Qwen2.5-7B-Instruct',
-                description: '免费模型，轻量高速，适合简单日常任务',
-                isFree: true,
-                contextLength: 32000,
-                maxOutput: 8192
             },
             {
-                id: 'Nex-N2-Pro',
-                name: 'Nex-N2-Pro',
-                description: '硅基自研旗舰，限时免费 API，综合能力优秀',
-                isFree: true,
-                contextLength: 128000,
-                maxOutput: 8192
-            },
-            {
-                id: 'deepseek-ai/DeepSeek-V3',
-                name: 'DeepSeek-V3',
-                description: '通用大模型，消耗赠送 Token',
+                id: 'deepseek-r1',
+                name: 'DeepSeek R1',
+                description: '推理模型，适合复杂逻辑问题；输入~¥1/M，输出~¥2/M tokens',
                 isFree: false,
-                contextLength: 64000,
-                maxOutput: 8192
-            },
-            {
-                id: 'deepseek-ai/DeepSeek-R1',
-                name: 'DeepSeek-R1',
-                description: '推理模型，适合复杂逻辑问题，消耗赠送 Token',
-                isFree: false,
-                contextLength: 64000,
+                contextLength: 1000000,
                 maxOutput: 16384
             }
         ]
@@ -133,7 +103,7 @@ export const aiProviders = [
             {
                 id: 'glm-4-plus',
                 name: 'GLM-4-Plus',
-                description: '长上下文旗舰，支持视觉理解，适合复杂任务',
+                description: '长上下文旗舰，支持视觉理解；输入¥5/M，输出¥5/M tokens',
                 isFree: false,
                 contextLength: 128000,
                 maxOutput: 4096,
@@ -146,6 +116,38 @@ export const aiProviders = [
                 isFree: false,
                 contextLength: 200000,
                 maxOutput: 8192
+            },
+            {
+                id: 'glm-5.2',
+                name: 'GLM-5.2',
+                description: '2026 最新旗舰，SWE-bench 第一梯队，Coding 能力领先',
+                isFree: false,
+                contextLength: 200000,
+                maxOutput: 8192
+            },
+            {
+                id: 'glm-4-long',
+                name: 'GLM-4-Long',
+                description: '超长文本模型，128K-1M 上下文；输入¥1/M，输出¥1/M tokens',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 8192
+            },
+            {
+                id: 'glm-4-flashx',
+                name: 'GLM-4-FlashX',
+                description: '极速轻量模型；输入¥0.1/M，输出¥0.1/M tokens',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 4096
+            },
+            {
+                id: 'glm-z1-air',
+                name: 'GLM-Z1-Air',
+                description: '推理模型，深度思考；输入¥0.5/M，输出¥0.5/M tokens',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192
             }
         ]
     },
@@ -154,7 +156,7 @@ export const aiProviders = [
         name: '阿里通义千问',
         apiBaseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         apiKeyUrl: 'https://bailian.console.aliyun.com/',
-        apiKeyGuide: '登录阿里云百炼平台 → 右上角 API-KEY 管理 → 创建 API Key。Qwen-Turbo 每月 100 万 Token 免费额度。',
+        apiKeyGuide: '登录阿里云百炼平台 → 右上角 API-KEY 管理 → 创建 API Key。新用户赠送 7000 万+ Tokens。',
         isFree: true,
         isOpenAICompatible: true,
         models: [
@@ -167,13 +169,29 @@ export const aiProviders = [
                 maxOutput: 8192
             },
             {
+                id: 'qwen3.6-flash',
+                name: 'Qwen3.6-Flash',
+                description: '极速版，适合高并发场景；输入~¥0.3/M，输出~¥0.6/M tokens',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
+            {
                 id: 'qwen3.6-plus',
                 name: 'Qwen3.6-Plus',
-                description: '多模态智能体模型，支持文图视频输入，性价比优选',
+                description: '多模态智能体模型，支持文图视频输入；输入~¥2/M，输出~¥12/M tokens',
                 isFree: false,
                 contextLength: 256000,
                 maxOutput: 8192,
                 supportsVision: true
+            },
+            {
+                id: 'qwen3-max',
+                name: 'Qwen3-Max',
+                description: '通义旗舰，综合能力强；输入~¥5/M，输出~¥20/M tokens',
+                isFree: false,
+                contextLength: 256000,
+                maxOutput: 16384
             },
             {
                 id: 'qwen3.7-max',
@@ -182,6 +200,14 @@ export const aiProviders = [
                 isFree: false,
                 contextLength: 256000,
                 maxOutput: 16384
+            },
+            {
+                id: 'qwen-long',
+                name: 'Qwen-Long',
+                description: '超长文本模型，1000 万上下文；输入~¥0.5/M，输出~¥2/M tokens',
+                isFree: false,
+                contextLength: 10000000,
+                maxOutput: 8192
             }
         ]
     },
@@ -190,7 +216,7 @@ export const aiProviders = [
         name: 'Moonshot Kimi',
         apiBaseUrl: 'https://api.moonshot.cn/v1',
         apiKeyUrl: 'https://platform.moonshot.cn/',
-        apiKeyGuide: '注册 Moonshot 开放平台 → 左侧 API Key 管理 → 创建。Kimi K2.5 支持视觉理解。',
+        apiKeyGuide: '注册 Moonshot 开放平台 → 左侧 API Key 管理 → 创建。Kimi K2.5 支持视觉理解，K2.6 命中缓存输入仅¥1.10/M。',
         isFree: false,
         isOpenAICompatible: true,
         models: [
@@ -206,15 +232,31 @@ export const aiProviders = [
             {
                 id: 'kimi-k2.6',
                 name: 'Kimi K2.6',
-                description: '2026 年最新版本，长文本与智能体能力升级',
+                description: '2026 年最新旗舰，长文本与 Agentic Coding 升级；命中缓存输入¥1.10/M，未命中¥6.50/M，输出¥27/M',
                 isFree: false,
                 contextLength: 256000,
                 maxOutput: 8192
             },
             {
+                id: 'kimi-k2-turbo',
+                name: 'Kimi K2 Turbo',
+                description: '加速版，适合高并发场景，性价比优',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
+            {
+                id: 'moonshot-v1-8k',
+                name: 'Moonshot V1 8K',
+                description: '经典模型，稳定可靠；输入¥12/M，输出¥12/M tokens',
+                isFree: false,
+                contextLength: 8000,
+                maxOutput: 8192
+            },
+            {
                 id: 'moonshot-v1-128k',
                 name: 'Moonshot V1 128K',
-                description: '经典长文本模型，稳定可靠',
+                description: '经典长文本模型，128K 上下文',
                 isFree: false,
                 contextLength: 128000,
                 maxOutput: 8192
@@ -226,34 +268,224 @@ export const aiProviders = [
         name: '火山豆包',
         apiBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
         apiKeyUrl: 'https://console.volcengine.com/ark',
-        apiKeyGuide: '火山引擎控制台 → 方舟 → 创建推理接入点（选择模型）→ API Key 管理 → 创建密钥。每日 200 万免费 Token！注意：需先创建"推理接入点"获得 endpoint ID，将其作为模型 ID 使用。',
+        apiKeyGuide: '火山引擎控制台 → 方舟 → 创建推理接入点（选择模型）→ API Key 管理 → 创建密钥。Seed-2.0-Lite 每月 100 万 Token 永久免费！注意：需先创建"推理接入点"获得 endpoint ID，将其作为模型 ID 使用。',
         isFree: true,
         isOpenAICompatible: true,
         models: [
             {
                 id: 'doubao-seed-2.1-pro',
                 name: 'Doubao Seed 2.1 Pro',
-                description: '2026 年 6 月最新旗舰，多模态推理，每日 200 万免费 Token',
-                isFree: true,
+                description: '2026 年 6 月旗舰，多模态推理',
+                isFree: false,
                 contextLength: 256000,
                 maxOutput: 8192,
                 supportsVision: true
             },
             {
+                id: 'doubao-seed-2.0-pro',
+                name: 'Doubao Seed 2.0 Pro',
+                description: '旗舰模型，多模态；输入¥3.2/M，输出¥16/M tokens',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192,
+                supportsVision: true
+            },
+            {
+                id: 'doubao-seed-2.0-code',
+                name: 'Doubao Seed 2.0 Code',
+                description: '代码专用模型，接近 Claude 能力',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 16384
+            },
+            {
+                id: 'doubao-seed-2.0-lite',
+                name: 'Doubao Seed 2.0 Lite',
+                description: '100 万/月永久免费！输入¥0.6/M，输出¥3.66/M tokens',
+                isFree: true,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
+            {
+                id: 'doubao-seed-2.0-mini',
+                name: 'Doubao Seed 2.0 Mini',
+                description: '轻量高速版；输入¥0.2/M，输出¥2/M tokens',
+                isFree: false,
+                contextLength: 32000,
+                maxOutput: 8192
+            },
+            {
+                id: 'doubao-seed-1.6-flash',
+                name: 'Doubao Seed 1.6 Flash',
+                description: '价格最低梯队；输入¥0.075/M，输出~¥0.3/M tokens',
+                isFree: false,
+                contextLength: 32000,
+                maxOutput: 8192
+            },
+            {
                 id: 'doubao-1.5-pro-32k',
                 name: 'Doubao 1.5 Pro 32K',
-                description: '成熟稳定的旗舰模型，每日 200 万免费 Token',
-                isFree: true,
+                description: '成熟稳定的旗舰模型，32K 上下文',
+                isFree: false,
                 contextLength: 32000,
                 maxOutput: 8192
             },
             {
                 id: 'doubao-1.5-lite-32k',
                 name: 'Doubao 1.5 Lite 32K',
-                description: '轻量高速版，适合简单任务，每日 200 万免费 Token',
-                isFree: true,
+                description: '轻量高速版，适合简单任务',
+                isFree: false,
                 contextLength: 32000,
                 maxOutput: 4096
+            }
+        ]
+    },
+    {
+        id: 'hunyuan',
+        name: '腾讯混元',
+        apiBaseUrl: 'https://api.hunyuan.cloud.tencent.com/v1',
+        apiKeyUrl: 'https://cloud.tencent.com/product/hunyuan',
+        apiKeyGuide: '登录腾讯云 → 控制台搜索"混元" → API Key 管理 → 创建密钥。Hunyuan-lite 永久免费！',
+        isFree: true,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'hunyuan-2.0-think',
+                name: 'Hunyuan 2.0 Think',
+                description: '深度思考旗舰；输入¥3.975/M，输出¥15.9/M tokens',
+                isFree: false,
+                contextLength: 256000,
+                maxOutput: 8192
+            },
+            {
+                id: 'hunyuan-2.0-instruct',
+                name: 'Hunyuan 2.0 Instruct',
+                description: '指令模型，响应快；输入¥3.18/M，输出¥7.95/M tokens',
+                isFree: false,
+                contextLength: 256000,
+                maxOutput: 8192
+            },
+            {
+                id: 'hunyuan-t1',
+                name: 'Hunyuan T1',
+                description: '推理模型，性价比高；输入¥1/M，输出¥4/M tokens',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
+            {
+                id: 'hunyuan-turbos',
+                name: 'Hunyuan TurboS',
+                description: '加速版，适合高并发；输入¥0.8/M，输出¥2/M tokens',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
+            {
+                id: 'hunyuan-lite',
+                name: 'Hunyuan Lite',
+                description: '永久免费！适合日常任务和学习测试',
+                isFree: true,
+                contextLength: 256000,
+                maxOutput: 8192
+            }
+        ]
+    },
+    {
+        id: 'minimax',
+        name: 'MiniMax',
+        apiBaseUrl: 'https://api.minimaxi.com/v1',
+        apiKeyUrl: 'https://platform.minimaxi.com/',
+        apiKeyGuide: '注册 MiniMax 开放平台 → API Keys → 创建。MoE 架构，语音合成与视频生成业界领先。部分模型限时免费。',
+        isFree: false,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'MiniMax-M2.7',
+                name: 'MiniMax M2.7',
+                description: '2026 旗舰；输入¥2.1/M，输出¥8.4/M tokens',
+                isFree: false,
+                contextLength: 197000,
+                maxOutput: 8192
+            },
+            {
+                id: 'MiniMax-M2.7-highspeed',
+                name: 'MiniMax M2.7 Highspeed',
+                description: '高速版，低延迟；输入¥4.2/M，输出¥16.8/M tokens',
+                isFree: false,
+                contextLength: 197000,
+                maxOutput: 8192
+            },
+            {
+                id: 'MiniMax-M1',
+                name: 'MiniMax M1',
+                description: '推理模型，深度思考，适合复杂逻辑',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 16384
+            }
+        ]
+    },
+    {
+        id: 'mimo',
+        name: '小米 MiMo',
+        apiBaseUrl: 'https://api.mimo.xiaomi.com/v1',
+        apiKeyUrl: 'https://mimo.xiaomi.com/',
+        apiKeyGuide: '前往 Xiaomi MiMo API 开放平台 → 注册 → API Keys → 创建密钥。登录后有专属免费额度。注意：若 API 地址有变更，请以官网文档为准。',
+        isFree: true,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'MiMo-V2-Pro',
+                name: 'MiMo-V2-Pro',
+                description: '旗舰模型，深度思考；输入¥7/M，输出¥21/M tokens',
+                isFree: false,
+                contextLength: 256000,
+                maxOutput: 16384
+            },
+            {
+                id: 'MiMo-V2-Omni',
+                name: 'MiMo-V2-Omni',
+                description: '多模态全能模型，支持图文理解；输入¥2.94/M，输出¥14.7/M tokens',
+                isFree: false,
+                contextLength: 256000,
+                maxOutput: 8192,
+                supportsVision: true
+            },
+            {
+                id: 'MiMo-V2-Flash',
+                name: 'MiMo-V2-Flash',
+                description: '开源 MoE 模型，309B 参数；输入¥0.7/M，输出¥2.1/M tokens',
+                isFree: false,
+                contextLength: 256000,
+                maxOutput: 8192
+            }
+        ]
+    },
+    {
+        id: 'wenxin',
+        name: '百度文心',
+        apiBaseUrl: 'https://qianfan.baidubce.com/v2',
+        apiKeyUrl: 'https://console.bce.baidu.com/qianfan/',
+        apiKeyGuide: '登录百度智能云千帆平台 → 应用中心 → 创建应用 → 获取 API Key 与 Secret Key。新用户赠送 ERNIE 3.5 旗舰 5000 万 Tokens。',
+        isFree: true,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'ernie-4.5-8k',
+                name: '文心 4.5',
+                description: '旗舰模型，中文知识问答强；输入~¥0.8-2/M，输出~¥2-4/M tokens',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
+            {
+                id: 'ernie-3.5-8k',
+                name: '文心 3.5',
+                description: '经典版，企业级方案成熟，新用户免费 5000 万 Tokens',
+                isFree: true,
+                contextLength: 8000,
+                maxOutput: 8192
             }
         ]
     },
@@ -320,6 +552,240 @@ export const aiProviders = [
                 isFree: false,
                 contextLength: 256000,
                 maxOutput: 32768
+            }
+        ]
+    },
+
+    // ==================== 聚合平台（6 个）====================
+
+    {
+        id: 'siliconflow',
+        name: '硅基流动',
+        apiBaseUrl: 'https://api.siliconflow.cn/v1',
+        apiKeyUrl: 'https://cloud.siliconflow.cn/',
+        apiKeyGuide: '注册硅基流动 → 新用户赠送 2000 万 Token → 左侧 API 密钥 → 创建密钥。聚合 100+ 开源模型，DeepSeek 推理加速 10 倍+。',
+        isFree: true,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'Qwen/Qwen2.5-7B-Instruct',
+                name: 'Qwen2.5-7B-Instruct',
+                description: '免费模型，轻量高速，适合简单日常任务',
+                isFree: true,
+                contextLength: 32000,
+                maxOutput: 8192
+            },
+            {
+                id: 'Nex-N2-Pro',
+                name: 'Nex-N2-Pro',
+                description: '硅基自研旗舰，限时免费 API，综合能力优秀',
+                isFree: true,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
+            {
+                id: 'deepseek-ai/DeepSeek-V3',
+                name: 'DeepSeek-V3',
+                description: '通用大模型，消耗赠送 Token',
+                isFree: false,
+                contextLength: 64000,
+                maxOutput: 8192
+            },
+            {
+                id: 'deepseek-ai/DeepSeek-R1',
+                name: 'DeepSeek-R1',
+                description: '推理模型，适合复杂逻辑问题，消耗赠送 Token',
+                isFree: false,
+                contextLength: 64000,
+                maxOutput: 16384
+            },
+            {
+                id: 'Pro/deepseek-ai/DeepSeek-V3',
+                name: 'DeepSeek-V3 (Pro加速)',
+                description: 'DeepSeek 推理加速版，10 倍+速度提升',
+                isFree: false,
+                contextLength: 64000,
+                maxOutput: 8192
+            }
+        ]
+    },
+    {
+        id: 'openrouter',
+        name: 'OpenRouter',
+        apiBaseUrl: 'https://openrouter.ai/api/v1',
+        apiKeyUrl: 'https://openrouter.ai/',
+        apiKeyGuide: '注册 OpenRouter → Keys → Create Key（格式 sk-or-...）。聚合 300+ 全球模型，自动路由，信用点计费。有 27 个免费模型可用。',
+        isFree: true,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'google/gemini-2.5-flash',
+                name: 'Gemini 2.5 Flash (via OpenRouter)',
+                description: '免费模型，100 万上下文，支持多模态',
+                isFree: true,
+                contextLength: 1000000,
+                maxOutput: 8192,
+                supportsVision: true
+            },
+            {
+                id: 'deepseek/deepseek-chat',
+                name: 'DeepSeek V3 (via OpenRouter)',
+                description: '通用大模型，自动路由，略高于官方价',
+                isFree: false,
+                contextLength: 64000,
+                maxOutput: 8192
+            },
+            {
+                id: 'qwen/qwen-2.5-72b-instruct',
+                name: 'Qwen 2.5 72B (via OpenRouter)',
+                description: '通义旗舰开源版，中文理解领先',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 8192
+            },
+            {
+                id: 'anthropic/claude-3.5-sonnet',
+                name: 'Claude 3.5 Sonnet (via OpenRouter)',
+                description: '国际推理旗舰，需海外网络或信用点',
+                isFree: false,
+                contextLength: 200000,
+                maxOutput: 8192
+            }
+        ]
+    },
+    {
+        id: 'qiniu',
+        name: '七牛云 AI',
+        apiBaseUrl: 'https://api.ai7n.io/v1',
+        apiKeyUrl: 'https://www.qiniu.com/',
+        apiKeyGuide: '注册七牛云 → AI 推理服务 → 创建 API Key。新用户赠送 300 万 Tokens。支持 OpenAI 与 Anthropic 双协议，国内直连 Claude/GPT。注意：本系统仅支持 OpenAI 兼容协议调用。',
+        isFree: true,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'gpt-4o',
+                name: 'GPT-4o (七牛云中转)',
+                description: '国内直连 GPT-4o，接近官方价',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
+            {
+                id: 'claude-3-5-sonnet',
+                name: 'Claude 3.5 Sonnet (七牛云中转)',
+                description: '国内直连 Claude，支持 MCP',
+                isFree: false,
+                contextLength: 200000,
+                maxOutput: 8192
+            },
+            {
+                id: 'deepseek-chat',
+                name: 'DeepSeek V3 (七牛云中转)',
+                description: '中转 DeepSeek，参数原生透传',
+                isFree: false,
+                contextLength: 64000,
+                maxOutput: 8192
+            }
+        ]
+    },
+    {
+        id: 'nonlinear',
+        name: '非线智能',
+        apiBaseUrl: 'https://api.nonlinear.cn/v1',
+        apiKeyUrl: 'https://www.nonlinear.cn/',
+        apiKeyGuide: '注册非线智能 → API 管理 → 创建密钥。新用户 20-50 元体验金，官网 8-9 折，输入/输出/缓存分离计费。注意：API 地址请以官网文档为准。',
+        isFree: true,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'gpt-4o',
+                name: 'GPT-4o (非线中转)',
+                description: '中转 GPT-4o，官网 8-9 折',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
+            {
+                id: 'deepseek-v4-pro',
+                name: 'DeepSeek V4 Pro (非线中转)',
+                description: '中转 DeepSeek 旗舰，透明计费',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 384000
+            },
+            {
+                id: 'claude-3-5-sonnet',
+                name: 'Claude 3.5 Sonnet (非线中转)',
+                description: '中转 Claude，详单可查',
+                isFree: false,
+                contextLength: 200000,
+                maxOutput: 8192
+            }
+        ]
+    },
+    {
+        id: 'bumoai',
+        name: '不墨 AI',
+        apiBaseUrl: 'https://api.bumoai.cn/v1',
+        apiKeyUrl: 'https://www.bumoai.com/',
+        apiKeyGuide: '注册不墨 AI → API Keys → 创建。一个 Key 调用多模型，OpenAI 兼容统一接口，按量计费。注意：API 地址请以官网文档为准。',
+        isFree: false,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'gpt-4o',
+                name: 'GPT-4o (不墨中转)',
+                description: '统一接口调用 GPT-4o',
+                isFree: false,
+                contextLength: 128000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
+            {
+                id: 'deepseek-v4-pro',
+                name: 'DeepSeek V4 Pro (不墨中转)',
+                description: '统一接口调用 DeepSeek 旗舰',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 384000
+            },
+            {
+                id: 'qwen3-max',
+                name: 'Qwen3-Max (不墨中转)',
+                description: '统一接口调用通义旗舰',
+                isFree: false,
+                contextLength: 256000,
+                maxOutput: 16384
+            }
+        ]
+    },
+    {
+        id: 'weelinking',
+        name: 'weelinking',
+        apiBaseUrl: 'https://api.weelinking.com/v1',
+        apiKeyUrl: 'https://www.weelinking.com/',
+        apiKeyGuide: '注册 weelinking → API 管理 → 创建密钥。新用户百万 Token 免费，按 Token 计费。注意：API 地址请以官网文档为准。',
+        isFree: true,
+        isOpenAICompatible: true,
+        models: [
+            {
+                id: 'gpt-4o-mini',
+                name: 'GPT-4o Mini (weelinking)',
+                description: '经济之选，新用户百万 Token 免费',
+                isFree: true,
+                contextLength: 128000,
+                maxOutput: 16384,
+                supportsVision: true
+            },
+            {
+                id: 'deepseek-v4-flash',
+                name: 'DeepSeek V4 Flash (weelinking)',
+                description: '中转 DeepSeek，性价比高',
+                isFree: false,
+                contextLength: 1000000,
+                maxOutput: 384000
             }
         ]
     }
