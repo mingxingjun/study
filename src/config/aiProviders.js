@@ -106,7 +106,7 @@ export const aiProviders = [
                 description: '完全免费！智谱首款免费多模态视觉模型，支持图像理解、OCR、图表解析，适合文档图片识别',
                 isFree: true,
                 contextLength: 200000,
-                maxOutput: 4096,
+                maxOutput: 1024,
                 supportsVision: true
             },
             {

@@ -115,6 +115,37 @@ export const getProviderById = (providerId) => {
 };
 
 /**
+ * 根据 providerId + modelId 获取模型配置
+ * @param {Object|null} provider - 服务商配置对象
+ * @param {string} modelId - 模型 ID
+ * @returns {Object|null} 模型配置对象，未找到时返回 null
+ */
+export const getModelById = (provider, modelId) => {
+    if (!provider || !Array.isArray(provider.models)) return null;
+    return provider.models.find(model => model.id === modelId) || null;
+};
+
+/**
+ * 将 maxTokens 限制在模型允许的 maxOutput 范围内
+ * 部分模型（如 GLM-4V-Flash maxOutput=1024）对 max_tokens 有严格上限，
+ * 超出会被服务端拒绝（400 错误）。此函数在请求前自动 clamp，防御性处理。
+ * @param {Object|null} provider - 服务商配置
+ * @param {string} modelId - 模型 ID
+ * @param {number} maxTokens - 请求的 maxTokens
+ * @returns {number} clamp 后的 maxTokens
+ */
+const clampMaxTokens = (provider, modelId, maxTokens) => {
+    const model = getModelById(provider, modelId);
+    if (model && typeof model.maxOutput === 'number' && maxTokens > model.maxOutput) {
+        console.warn(
+            `max_tokens ${maxTokens} 超过模型 ${modelId} 上限 ${model.maxOutput}，已自动限制`
+        );
+        return model.maxOutput;
+    }
+    return maxTokens;
+};
+
+/**
  * 检查 Agent 配置是否有效（包含服务商、模型和密钥）
  * @param {Object} agentConfig - Agent 配置 { providerId, modelId, apiKey }
  * @returns {boolean} 配置是否完整有效
@@ -274,12 +305,15 @@ const callOpenAICompatible = async (provider, modelId, apiKey, messages, options
         onStreamChunk
     } = options;
 
+    // 请求前 clamp：部分模型（如 GLM-4V-Flash 上限 1024）对 max_tokens 有严格限制
+    const clampedMaxTokens = clampMaxTokens(provider, modelId, maxTokens);
+
     const url = `${provider.apiBaseUrl}/chat/completions`;
 
     // 非流式请求：对空响应也进行重试（429 恢复后可能返回空内容）
     if (!stream) {
         let lastError = null;
-        let currentMaxTokens = maxTokens; // 重试时可能动态增大配额
+        let currentMaxTokens = clampedMaxTokens; // 重试时可能动态增大配额（仍受模型上限约束）
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
             const requestBody = {
                 model: modelId,
@@ -342,10 +376,10 @@ const callOpenAICompatible = async (provider, modelId, apiKey, messages, options
                     }
                 }
 
-                // 第三层：增大 max_tokens 重试（翻倍，上限 65536）
+                // 第三层：增大 max_tokens 重试（翻倍，上限 65536，且不超过模型 maxOutput）
                 if (attempt < MAX_RETRIES) {
                     const delay = calculateBackoffDelay(attempt);
-                    const newMaxTokens = Math.min(currentMaxTokens * 2, 65536);
+                    const newMaxTokens = clampMaxTokens(provider, modelId, Math.min(currentMaxTokens * 2, 65536));
                     console.warn(
                         `AI 思维链占满输出配额（reasoning ${reasoningContent.length} 字符），` +
                         `正则提取和 AI 转化均失败，max_tokens ${currentMaxTokens}→${newMaxTokens}，` +
@@ -383,7 +417,7 @@ const callOpenAICompatible = async (provider, modelId, apiKey, messages, options
     const requestBody = {
         model: modelId,
         messages,
-        max_tokens: maxTokens,
+        max_tokens: clampedMaxTokens,
         temperature,
         stream: true
     };
@@ -479,6 +513,9 @@ const callGemini = async (provider, modelId, apiKey, messages, options) => {
         onStreamChunk
     } = options;
 
+    // 请求前 clamp：部分模型对 maxOutputTokens 有严格限制
+    const clampedMaxTokens = clampMaxTokens(provider, modelId, maxTokens);
+
     // 流式与非流式使用不同的 action 端点
     const action = stream ? 'streamGenerateContent' : 'generateContent';
     const streamParam = stream ? '&alt=sse' : '';
@@ -488,7 +525,7 @@ const callGemini = async (provider, modelId, apiKey, messages, options) => {
     const requestBody = {
         contents,
         generationConfig: {
-            maxOutputTokens: maxTokens,
+            maxOutputTokens: clampedMaxTokens,
             temperature
         }
     };
@@ -1023,7 +1060,8 @@ const convertReasoningToJson = async (provider, modelId, apiKey, reasoningConten
         model: modelId,
         messages,
         // 转化时思维链仍会消耗配额，16384 token 保证思维链+完整 JSON 输出空间
-        max_tokens: 16384,
+        // clamp 到模型 maxOutput 上限，避免小配额模型（如 GLM-4V-Flash 1024）400 错误
+        max_tokens: clampMaxTokens(provider, modelId, 16384),
         temperature: 0.1,
         stream: false
     };
