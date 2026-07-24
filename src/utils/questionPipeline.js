@@ -20,7 +20,7 @@
  *   - warning: 降级/失败提示（空字符串表示无警告）
  */
 
-import { parseDocument, parseDocumentWithImages } from './documentParser';
+import { parseDocument, parseDocumentWithImages, renderPdfPages } from './documentParser';
 import { parseQuestionBank } from './questionParser';
 import { parseStructured } from './structuredParser';
 import {
@@ -63,9 +63,11 @@ const getExtension = (fileName) => {
  * @param {Object} parsed - 解析器原始返回
  * @param {string} method - 解析方式
  * @param {string} warning - 警告信息
+ * @param {string} rawText - 原文文本
+ * @param {Array} [pageImages=[]] - PDF 整页渲染图片数组 [{ pageNumber, imageData }]
  * @returns {Object} 统一结构结果
  */
-const buildResult = (parsed, method, warning = '', rawText = '') => ({
+const buildResult = (parsed, method, warning = '', rawText = '', pageImages = []) => ({
     questions: parsed.questions || [],
     knowledgePoints: parsed.knowledgePoints || [],
     invalidQuestions: parsed.invalidQuestions || [],
@@ -75,6 +77,7 @@ const buildResult = (parsed, method, warning = '', rawText = '') => ({
     invalidCount: parsed.invalidCount || 0,
     typeDistribution: parsed.typeDistribution || {},
     rawText,
+    pageImages,
     method,
     warning
 });
@@ -222,15 +225,39 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
     }
 
     // 根据是否需要图片提取，选择不同的解析函数
-    const needImages = isAIConfigured(agentConfig) && isMultimodalModel(agentConfig);
+    const supportsMultimodal = isAIConfigured(agentConfig) && isMultimodalModel(agentConfig);
+    const isPdf = ext === 'pdf';
+    // PDF + 多模态 AI：优先走整页渲染看图解析（解决 getTextContent 无法提取公式的问题）
+    const usePdfPageRendering = isPdf && supportsMultimodal;
     let text = '';
     let images = [];
+    let pageImages = [];
 
     try {
-        if (needImages) {
+        if (usePdfPageRendering) {
+            // PDF 整页渲染：保留完整版式、公式、图表，供多模态 AI 看图解析
+            if (onProgress) onProgress(5);
+            pageImages = await renderPdfPages(file, (progress) => {
+                if (onProgress) onProgress(5 + Math.floor(progress * 0.2));
+            });
+            console.log(`PDF 整页渲染完成：${pageImages.length} 页图片`);
+
+            // 同时提取文本（用于规则解析兜底和原文预览的文本模式）
+            if (onProgress) onProgress(25);
+            try {
+                const docResult = await parseDocumentWithImages(file, (progress) => {
+                    if (onProgress) onProgress(25 + Math.floor(progress * 0.15));
+                });
+                text = docResult.text;
+                images = docResult.images || [];
+            } catch (textError) {
+                // 文本提取失败不影响图片解析
+                console.warn('PDF 文本提取失败（不影响图片解析）:', textError.message);
+            }
+        } else if (supportsMultimodal) {
+            // 非 PDF 但支持多模态（如 Word）：提取文本 + 内嵌图片
             if (onProgress) onProgress(10);
             const docResult = await parseDocumentWithImages(file, (progress) => {
-                // 文本+图片提取占整体 10%-40%
                 if (onProgress) onProgress(10 + Math.floor(progress * 0.3));
             });
             text = docResult.text;
@@ -247,11 +274,11 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
     }
 
     if (!text || !text.trim()) {
-        // 文本为空但有图片时，仍可走多模态 AI 识别
-        if (images.length === 0) {
+        // 文本为空但有整页图片或内嵌图片时，仍可走多模态 AI 识别
+        if (pageImages.length === 0 && images.length === 0) {
             throw new Error('文档提取文本为空，可能是扫描版 PDF 或空文件');
         }
-        console.warn('文档提取文本为空，但提取到图片，将走多模态 AI 识别');
+        console.warn('文档提取文本为空，但有图片，将走多模态 AI 识别');
     }
 
     // ========== 阶段 4：规则优先解析文本 ==========
@@ -292,7 +319,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             ruleResult.questions,
             getConfidenceFromSuccessRate(ruleSuccessRate)
         );
-        return buildResult(ruleResult, 'rule', warning, text);
+        return buildResult(ruleResult, 'rule', warning, text, pageImages);
     }
 
     // ========== 阶段 6：规则解析不足，走 AI 补充 ==========
@@ -311,7 +338,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                 `未配置 AI，规则解析成功率 ${Math.round(ruleSuccessRate * 100)}%` +
                 `（${ruleResult.successCount}/${ruleResult.totalCount}）。` +
                 '配置 AI 可识别更多版式与复杂格式。',
-                text
+                text,
+                pageImages
             );
         }
         // 规则解析也无结果
@@ -323,17 +351,59 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             'rule-only',
             '未配置 AI 且规则解析未识别到题目。建议配置 AI 后重新解析，' +
             'AI 能识别多种版式、答案表、英文题库等复杂格式' + hasImagesHint,
-            text
+            text,
+            pageImages
         );
     }
 
     // ========== 阶段 6.2：已配置 AI，走 AI 补充解析 ==========
-    const supportsMultimodal = isMultimodalModel(agentConfig);
+    // supportsMultimodal 已在阶段 3 定义
     const hasImages = images.length > 0;
+    const hasPageImages = pageImages.length > 0;
     const materialId = file.name || `upload-${Date.now()}`;
 
     try {
-        // 情况 A：模型支持多模态且文档有图片 → 文本+图片并行处理
+        // 情况 0（最高优先级）：PDF 整页渲染图片 + 多模态 AI 看图解析
+        // 直接让 AI 看每页图片识别题目，完美保留公式、版式、图表
+        if (supportsMultimodal && hasPageImages) {
+            if (onProgress) onProgress(50);
+            console.log(`走多模态整页图片解析：${pageImages.length} 页图片`);
+
+            // 将整页图片交给多模态 AI 识别
+            const pageImageUrls = pageImages.map(p => p.imageData);
+            const imageResult = await parseImagesWithAI(agentConfig, pageImageUrls, materialId);
+
+            const totalQuestions = imageResult?.questions?.length || 0;
+
+            if (totalQuestions > 0) {
+                if (onProgress) onProgress(100);
+                // 整页图片看图解析成功，信心度为 high
+                imageResult.questions = addConfidence(imageResult.questions, CONFIDENCE.HIGH);
+                return buildResult(
+                    imageResult,
+                    'ai-page-image',
+                    `多模态看图解析完成：共识别 ${totalQuestions} 题（基于 ${pageImages.length} 页图片）`,
+                    text,
+                    pageImages
+                );
+            }
+
+            // 整页图片解析返回 0 题，降级到文本解析
+            console.warn('整页图片看图解析返回 0 题，降级到文本解析');
+            if (ruleResult && ruleQuestions.length > 0) {
+                ruleResult.questions = addConfidence(ruleResult.questions, CONFIDENCE.LOW);
+                return buildResult(
+                    ruleResult,
+                    'rule-fallback',
+                    'AI 看图解析未识别到题目，已用规则解析结果兜底',
+                    text,
+                    pageImages
+                );
+            }
+            // 继续尝试文本 AI 解析
+        }
+
+        // 情况 A：模型支持多模态且文档有内嵌图片 → 文本+图片并行处理
         if (supportsMultimodal && hasImages) {
             if (onProgress) onProgress(55);
 
@@ -373,14 +443,16 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                         ruleResult,
                         'rule-fallback',
                         'AI 未能从文档中识别题目，已用规则解析结果兜底（图片题未识别）',
-                        text
+                        text,
+                        pageImages
                     );
                 }
                 return buildResult(
                     { questions: [], knowledgePoints: [] },
                     'ai-multimodal',
                     'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置',
-                    text
+                    text,
+                    pageImages
                 );
             }
 
@@ -394,7 +466,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
             }
             // AI 多模态解析成功，信心度为 high
             merged.questions = addConfidence(merged.questions, CONFIDENCE.HIGH);
-            return buildResult(merged, 'ai-multimodal', warning, text);
+            return buildResult(merged, 'ai-multimodal', warning, text, pageImages);
         }
 
         // ========== 阶段 4.5：AI 两阶段解析（优先于单次解析） ==========
@@ -436,7 +508,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                             { questions: addConfidence(questions, CONFIDENCE.HIGH), knowledgePoints },
                             'ai-two-pass',
                             `两阶段解析完成：共识别 ${structure.totalQuestions} 题，成功解析 ${questions.length} 题`,
-                            text
+                            text,
+                            pageImages
                         );
                     }
                 }
@@ -466,7 +539,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                         ruleResult,
                         'rule-fallback',
                         'AI 未能从文档中识别题目，已用规则解析结果兜底',
-                        text
+                        text,
+                        pageImages
                     );
                 }
                 // 文档有图片但模型不支持多模态，给出更明确的提示
@@ -477,7 +551,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                     { questions: [], knowledgePoints: [] },
                     'ai',
                     'AI 与规则解析均未识别到题目，请检查文件内容或调整 AI 配置' + multimodalHint,
-                    text
+                    text,
+                    pageImages
                 );
             }
 
@@ -487,7 +562,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                 { questions: addConfidence(aiQuestions, CONFIDENCE.HIGH), knowledgePoints: aiKnowledgePoints },
                 'ai',
                 '',
-                text
+                text,
+                pageImages
             );
         }
 
@@ -508,7 +584,8 @@ export const parseQuestionFile = async (file, agentConfig, onProgress) => {
                 ruleResult,
                 'rule-fallback',
                 `AI 解析失败（${error.message}），已用规则解析结果兜底，复杂版式可能识别不全`,
-                text
+                text,
+                pageImages
             );
         }
         // AI 失败且规则解析也无结果

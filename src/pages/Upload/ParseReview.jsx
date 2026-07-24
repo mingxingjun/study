@@ -424,9 +424,10 @@ const SummaryBar = ({ questions, method, duration }) => {
  * @param {string} props.rawText - 原始文档文本
  * @param {Function} props.onAddFromSelection - 从选中文本创建题目回调 (selectedText) => void
  */
-const RawTextPreview = ({ rawText, onAddFromSelection }) => {
+const RawTextPreview = ({ rawText, pageImages, onAddFromSelection }) => {
     const [selectionPos, setSelectionPos] = useState(null);
     const [selectedText, setSelectedText] = useState('');
+    const [previewMode, setPreviewMode] = useState('image'); // 'image' | 'text'
     const previewRef = useRef(null);
 
     /**
@@ -490,8 +491,12 @@ const RawTextPreview = ({ rawText, onAddFromSelection }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // 无原文数据时显示空状态
-    if (!rawText) {
+    // 有页面图片时默认图片模式，无图片但有文本时自动切到文本模式
+    const hasPageImages = pageImages && pageImages.length > 0;
+    const hasText = rawText && rawText.trim();
+
+    // 无任何原文数据时显示空状态
+    if (!hasPageImages && !hasText) {
         return (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-gray-400">
                 <span className="text-5xl mb-4 opacity-30">&#x1F4C4;</span>
@@ -501,23 +506,77 @@ const RawTextPreview = ({ rawText, onAddFromSelection }) => {
         );
     }
 
-    return (
-        <div className="relative h-full overflow-hidden" ref={previewRef}>
-            {/* 原文展示区域 */}
-            <div
-                className="h-full overflow-y-auto p-5 bg-white rounded-xl border border-gray-200"
-                onMouseUp={handleMouseUp}
-            >
-                <pre
-                    className="font-mono text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words select-text"
-                    style={{ fontFamily: "'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace" }}
-                >
-                    {rawText}
-                </pre>
-            </div>
+    // 自动选择可用模式：有图片优先图片模式，否则文本模式
+    const effectiveMode = hasPageImages ? previewMode : 'text';
 
-            {/* 浮动"添加为题目"按钮 */}
-            {selectionPos && (
+    return (
+        <div className="relative h-full overflow-hidden flex flex-col" ref={previewRef}>
+            {/* 模式切换 Tab */}
+            {hasPageImages && hasText && (
+                <div className="flex items-center gap-1 px-4 py-2 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+                    <button
+                        onClick={() => setPreviewMode('image')}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 cursor-pointer
+                            ${effectiveMode === 'image'
+                                ? 'bg-[#c9a227] text-white'
+                                : 'text-gray-600 hover:bg-gray-200'}`}
+                    >
+                        图片预览（{pageImages.length} 页）
+                    </button>
+                    <button
+                        onClick={() => setPreviewMode('text')}
+                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 cursor-pointer
+                            ${effectiveMode === 'text'
+                                ? 'bg-[#c9a227] text-white'
+                                : 'text-gray-600 hover:bg-gray-200'}`}
+                    >
+                        文本预览
+                    </button>
+                </div>
+            )}
+
+            {/* 图片预览模式：显示 PDF 每页渲染的高清图片 */}
+            {effectiveMode === 'image' && hasPageImages && (
+                <div className="flex-1 overflow-y-auto p-5 bg-gray-100">
+                    <div className="flex flex-col items-center gap-4">
+                        {pageImages.map((page) => (
+                            <div
+                                key={page.pageNumber}
+                                className="relative w-full max-w-3xl bg-white rounded-lg shadow-md overflow-hidden"
+                            >
+                                <img
+                                    src={page.imageData}
+                                    alt={`第 ${page.pageNumber} 页`}
+                                    className="w-full h-auto block"
+                                    loading="lazy"
+                                />
+                                <span className="absolute top-2 right-2 px-2 py-0.5 text-xs font-mono
+                                    bg-black/50 text-white rounded backdrop-blur-sm">
+                                    第 {page.pageNumber} 页
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* 文本预览模式：保留原有的文本选择 + 添加为题目功能 */}
+            {effectiveMode === 'text' && (
+                <div
+                    className="flex-1 overflow-y-auto p-5 bg-white border border-gray-200 rounded-b-xl"
+                    onMouseUp={handleMouseUp}
+                >
+                    <pre
+                        className="font-mono text-sm text-gray-800 leading-relaxed whitespace-pre-wrap break-words select-text"
+                        style={{ fontFamily: "'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace" }}
+                    >
+                        {rawText}
+                    </pre>
+                </div>
+            )}
+
+            {/* 浮动"添加为题目"按钮（仅文本模式可用） */}
+            {effectiveMode === 'text' && selectionPos && (
                 <div
                     className="absolute z-20 transform -translate-x-1/2 pointer-events-none"
                     style={{ top: selectionPos.top, left: selectionPos.left }}
@@ -936,6 +995,7 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
                         {activeTab === 'preview' && (
                             <RawTextPreview
                                 rawText={parsedResult?.rawText || ''}
+                                pageImages={parsedResult?.pageImages || []}
                                 onAddFromSelection={handleAddFromSelection}
                             />
                         )}

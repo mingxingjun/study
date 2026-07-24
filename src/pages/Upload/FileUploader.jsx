@@ -132,7 +132,8 @@ const FileUploader = ({ files, setFiles, onUseSampleQuestions, onParsed }) => {
         result = {
           knowledgePoints: parsed.knowledgePoints || [],
           questions: parsed.questions || [],
-          rawText: parsed.rawText || ''
+          rawText: parsed.rawText || '',
+          pageImages: parsed.pageImages || []
         };
         method = parsed.method || '';
         warning = parsed.warning || '';

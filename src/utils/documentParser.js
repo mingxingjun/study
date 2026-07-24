@@ -413,4 +413,100 @@ export const parseDocumentWithImages = async (file, onProgress) => {
     throw new Error(`不支持的文件类型: ${file.name}`);
 };
 
+// ==================== PDF 整页渲染（用于多模态 AI 看图解析 + 原文预览）====================
+
+/**
+ * PDF 整页渲染的默认缩放比例
+ * scale=2 约 144 DPI，能清晰保留数学公式、上下标、图表等细节
+ * 过低会导致公式模糊，AI 识别准确率下降；过高会增大 base64 体积，触发请求体限制
+ */
+const DEFAULT_RENDER_SCALE = 2;
+
+/**
+ * 单页渲染图片的 JPEG 质量（0-1）
+ * 0.85 在文字清晰度和文件体积之间取得平衡，文字边缘无明显锯齿
+ */
+const JPEG_QUALITY = 0.85;
+
+/**
+ * 单张页面图片的最大宽度（像素），超出时等比缩放
+ * 用于控制 base64 体积，避免多模态 AI 请求体超限
+ */
+const MAX_PAGE_IMAGE_WIDTH = 2000;
+
+/**
+ * 将 PDF 每页渲染为高清 JPEG base64 图片
+ * 使用 pdf.js 的 page.render() 方法，完美保留原始版式、数学公式、图表、表格
+ * 用于：
+ *   1. 多模态 AI 看图解析（解决 getTextContent 无法提取公式的问题）
+ *   2. 原文预览（替代残缺的纯文本预览）
+ *
+ * @param {File} file - PDF 文件对象
+ * @param {Function} [onProgress] - 进度回调 (0-100)
+ * @param {number} [scale=2] - 渲染缩放比例，越大越清晰但体积越大
+ * @returns {Promise<Array<{pageNumber: number, imageData: string}>>} 页面图片数组
+ */
+export const renderPdfPages = async (file, onProgress, scale = DEFAULT_RENDER_SCALE) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdfDocument = await loadingTask.promise;
+    const totalPages = pdfDocument.numPages;
+    const pages = [];
+
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        const page = await pdfDocument.getPage(pageNum);
+        const viewport = page.getViewport({ scale });
+
+        // 创建 canvas 渲染页面
+        const canvas = document.createElement('canvas');
+        let renderWidth = viewport.width;
+        let renderHeight = viewport.height;
+
+        // 如果图片宽度超限，等比缩放
+        if (renderWidth > MAX_PAGE_IMAGE_WIDTH) {
+            const ratio = MAX_PAGE_IMAGE_WIDTH / renderWidth;
+            renderWidth = Math.floor(renderWidth * ratio);
+            renderHeight = Math.floor(renderHeight * ratio);
+        }
+
+        canvas.width = renderWidth;
+        canvas.height = renderHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error(`无法获取 canvas 2d 上下文（第 ${pageNum} 页渲染失败）`);
+        }
+
+        // 白色背景（部分 PDF 透明背景，JPEG 不支持透明，需填充白色）
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, renderWidth, renderHeight);
+
+        // 如果缩放过，需要用变换矩阵适配
+        if (renderWidth !== viewport.width) {
+            const ratio = renderWidth / viewport.width;
+            ctx.scale(ratio, ratio);
+        }
+
+        await page.render({
+            canvasContext: ctx,
+            viewport
+        }).promise;
+
+        // 转为 JPEG base64（比 PNG 体积小很多，适合传给 AI）
+        const imageData = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+        pages.push({ pageNumber: pageNum, imageData });
+
+        // 触发进度回调
+        if (typeof onProgress === 'function') {
+            onProgress(Math.round((pageNum / totalPages) * 100));
+        }
+    }
+
+    // 释放 PDF.js 资源
+    if (typeof pdfDocument.destroy === 'function') {
+        await pdfDocument.destroy();
+    }
+
+    return pages;
+};
+
 export default parseDocument;
