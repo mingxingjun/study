@@ -88,7 +88,7 @@ export const aiProviders = [
         name: '智谱 GLM',
         apiBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
         apiKeyUrl: 'https://open.bigmodel.cn/',
-        apiKeyGuide: '注册智谱开放平台 BigModel.cn → API Keys → 创建 API Key。GLM-4.7-Flash 完全免费无限调用。',
+        apiKeyGuide: '注册智谱开放平台 BigModel.cn → API Keys → 创建 API Key。GLM-4.7-Flash 与 GLM-4V-Flash 均完全免费无限调用。',
         isFree: true,
         isOpenAICompatible: true,
         models: [
@@ -99,6 +99,15 @@ export const aiProviders = [
                 isFree: true,
                 contextLength: 200000,
                 maxOutput: 8192
+            },
+            {
+                id: 'glm-4v-flash',
+                name: 'GLM-4V-Flash',
+                description: '完全免费！智谱首款免费多模态视觉模型，支持图像理解、OCR、图表解析，适合文档图片识别',
+                isFree: true,
+                contextLength: 200000,
+                maxOutput: 4096,
+                supportsVision: true
             },
             {
                 id: 'glm-4-plus',
@@ -926,11 +935,12 @@ export const aiProviders = [
  *              supervisor 督学官）映射到指定服务商和模型。
  */
 export const presetCombinations = {
-    /** 免费方案：三个 Agent 全部使用智谱 GLM-4.7-Flash，零成本体验 */
+    /** 免费方案：三个 Agent 全部使用智谱 GLM-4.7-Flash，视觉 AI 使用 GLM-4V-Flash，零成本体验 */
     free: {
         'quiz-master': { providerId: 'zhipu', modelId: 'glm-4.7-flash', apiKey: '' },
         'explainer': { providerId: 'zhipu', modelId: 'glm-4.7-flash', apiKey: '' },
-        'supervisor': { providerId: 'zhipu', modelId: 'glm-4.7-flash', apiKey: '' }
+        'supervisor': { providerId: 'zhipu', modelId: 'glm-4.7-flash', apiKey: '' },
+        'vision': { providerId: 'zhipu', modelId: 'glm-4v-flash', apiKey: '' }
     },
     /** 性价比方案：三个 Agent 全部使用 DeepSeek V4 Flash，极低价格兼顾速度与质量 */
     costEffective: {

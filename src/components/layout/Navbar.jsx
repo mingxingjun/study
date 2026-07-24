@@ -1,17 +1,24 @@
-import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { animate, utils } from 'animejs';
 import { LayoutDashboard, Upload, BookOpen, BookMarked, BookX, Clock, Settings, Menu, X, Info } from 'lucide-react';
 import { useStudyContext } from '../../context/StudyContext';
+import useReducedMotion from '../../hooks/useReducedMotion';
 
 /**
  * 顶部导航栏 - Refined Editorial Minimalism
- * 极简浮动导航 + 衬线品牌字 + 金色激活态 + 滚动阴影
+ * 极简浮动导航 + 衬线品牌字 + 金色激活态 + 滚动阴影 + 滑动指示器
  */
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { state } = useStudyContext();
   const isDemoMode = state.mode === 'demo';
+  const location = useLocation();
+  const reducedMotion = useReducedMotion();
+  // 滑动指示器：用 ref 收集各导航项 DOM，激活项变化时用 anime.js 平滑滑动
+  const itemRefs = useRef([]);
+  const indicatorRef = useRef(null);
 
   // 滚动时增强阴影
   useEffect(() => {
@@ -30,6 +37,49 @@ const Navbar = () => {
     { path: '/supervise', label: '督学中心', icon: Clock },
     { path: '/settings', label: '设置', icon: Settings },
   ];
+
+  // 判断导航项是否激活：首页精确匹配，其余前缀匹配
+  const isItemActive = (item) => {
+    return item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
+  };
+
+  /**
+   * 滑动指示器：路由变化时测量激活项位置，用 anime.js 平滑滑动
+   * 窗口尺寸变化时同步重新定位（无动画过渡，避免 resize 抖动）
+   */
+  useEffect(() => {
+    const moveIndicator = () => {
+      const activeIndex = navItems.findIndex(isItemActive);
+      const item = itemRefs.current[activeIndex];
+      if (!item || !indicatorRef.current) {
+        if (indicatorRef.current) indicatorRef.current.style.opacity = '0';
+        return;
+      }
+      const left = item.offsetLeft;
+      const width = item.offsetWidth;
+
+      if (reducedMotion) {
+        utils.set(indicatorRef.current, { left, width, opacity: 1 });
+      } else {
+        animate(indicatorRef.current, {
+          left,
+          width,
+          opacity: 1,
+          duration: 350,
+          ease: 'outExpo'
+        });
+      }
+    };
+
+    // 首次渲染后稍延迟测量，确保布局已稳定
+    const raf = requestAnimationFrame(moveIndicator);
+    window.addEventListener('resize', moveIndicator);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', moveIndicator);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, reducedMotion]);
 
   return (
     <nav
@@ -58,30 +108,32 @@ const Navbar = () => {
           </div>
         </NavLink>
 
-        {/* 桌面端导航项 - 胶囊式容器 + 金色激活态 */}
-        <div className="hidden lg:flex items-center gap-0.5 bg-white/60 rounded-full p-1 border border-gray-200/60 shadow-xs">
-          {navItems.map((item) => {
+        {/* 桌面端导航项 - 胶囊式容器 + 滑动指示器（anime.js 驱动） */}
+        <div className="hidden lg:flex items-center gap-0.5 bg-white/60 rounded-full p-1 border border-gray-200/60 shadow-xs relative">
+          {/* 滑动指示器：绝对定位，跟随激活项位置平滑滑动 */}
+          <div
+            ref={indicatorRef}
+            className="absolute top-1 bottom-1 bg-primary rounded-full shadow-sm pointer-events-none"
+            style={{ left: 0, width: 0, opacity: 0 }}
+          />
+          {navItems.map((item, idx) => {
             const Icon = item.icon;
+            const isActive = isItemActive(item);
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
                 end={item.path === '/'}
+                ref={(el) => { itemRefs.current[idx] = el; }}
                 onClick={() => setIsMenuOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-3.5 xl:px-4 py-2 rounded-full text-[13px] font-medium transition-all duration-200 cursor-pointer select-none whitespace-nowrap ${
-                    isActive
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-gray-600 hover:text-primary hover:bg-gray-100/70'
-                  }`
-                }
+                className={`relative z-10 flex items-center gap-2 px-3.5 xl:px-4 py-2 rounded-full text-[13px] font-medium transition-colors duration-200 cursor-pointer select-none whitespace-nowrap ${
+                  isActive
+                    ? 'text-white'
+                    : 'text-gray-600 hover:text-primary hover:bg-gray-100/70'
+                }`}
               >
-                {({ isActive }) => (
-                  <>
-                    <Icon className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="hidden xl:inline">{item.label}</span>
-                  </>
-                )}
+                <Icon className="w-[14px] h-[14px] flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
+                <span className="hidden xl:inline">{item.label}</span>
               </NavLink>
             );
           })}
