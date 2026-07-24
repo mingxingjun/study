@@ -10,8 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@gsap/react": "^2.1.2",
-    "gsap": "^3.15.0",
+    "animejs": "^4.5.0",
     "jsxgraph": "^1.13.1",
     "katex": "^0.17.0",
     "lucide-react": "^1.24.0",

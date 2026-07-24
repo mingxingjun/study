@@ -1,6 +1,5 @@
-import { useRef } from 'react';
-import { gsap } from 'gsap';
-import { useGSAP } from '@gsap/react';
+import { useEffect, useRef } from 'react';
+import { animate, createTimeline, utils } from 'animejs';
 import { useStudyContext } from '../../context/StudyContext';
 import { sampleKnowledgePoints } from '../../mock/sampleData';
 import { Check, Loader2 } from 'lucide-react';
@@ -42,33 +41,65 @@ const QuestionCard = ({
   const reducedMotion = useReducedMotion();
 
   /**
-   * 答题反馈动画
-   * 正确：金色闪烁
-   * 错误：水平抖动 + 红色闪烁
+   * 答题反馈动画（anime.js v4 实现）
+   * 正确：金色背景淡出至白色
+   * 错误：水平抖动 + 红色背景淡出（createTimeline 串联序列）
+   * 使用 useEffect + revert 清理，避免状态切换时动画叠加
    */
-  useGSAP(() => {
+  useEffect(() => {
     if (!cardRef.current || !showResult || reducedMotion) {
       return;
     }
 
+    const node = cardRef.current;
+    let anim;
+
     if (isCorrect) {
-      gsap.fromTo(
-        cardRef.current,
-        { backgroundColor: '#f5e6b3' },
-        { backgroundColor: '#ffffff', duration: 0.6, ease: 'power2.out', clearProps: 'backgroundColor' }
-      );
+      // 正确：背景色 #f5e6b3 → #ffffff，600ms
+      // fromTo 用数组 [from, to] 实现
+      anim = animate(node, {
+        backgroundColor: ['#f5e6b3', '#ffffff'],
+        duration: 600,
+        ease: 'outQuad',
+        onComplete: () => {
+          // 清理内联 backgroundColor，避免影响后续布局
+          if (node) node.style.backgroundColor = '';
+        }
+      });
     } else {
-      const tl = gsap.timeline();
-      tl.fromTo(
-        cardRef.current,
-        { x: 0, backgroundColor: '#fee2e2' },
-        { x: -6, duration: 0.08, ease: 'power1.inOut' }
-      )
-        .to(cardRef.current, { x: 6, duration: 0.08, ease: 'power1.inOut' })
-        .to(cardRef.current, { x: -6, duration: 0.08, ease: 'power1.inOut' })
-        .to(cardRef.current, { x: 6, duration: 0.08, ease: 'power1.inOut' })
-        .to(cardRef.current, { x: 0, backgroundColor: '#ffffff', duration: 0.25, ease: 'power2.out', clearProps: 'all' });
+      // 错误：抖动序列 + 背景色淡出
+      // createTimeline 替代 gsap.timeline；默认接续执行
+      const tl = createTimeline({
+        defaults: { duration: 80, ease: 'inOutQuad' }
+      });
+      // 初始红色背景，抖动 4 段后回到 0，并过渡到白色
+      utils.set(node, { backgroundColor: '#fee2e2' });
+      tl.add({
+        targets: node,
+        x: [0, -6],
+        duration: 80
+      })
+        .add({ targets: node, x: 6, duration: 80 })
+        .add({ targets: node, x: -6, duration: 80 })
+        .add({ targets: node, x: 6, duration: 80 })
+        .add({
+          targets: node,
+          x: 0,
+          backgroundColor: '#ffffff',
+          duration: 250,
+          ease: 'outQuad',
+          onComplete: () => {
+            // 清理内联样式，避免影响后续布局
+            if (node) {
+              node.style.transform = '';
+              node.style.backgroundColor = '';
+            }
+          }
+        });
+      anim = tl;
     }
+
+    return () => anim?.revert();
   }, [showResult, isCorrect, reducedMotion]);
   // 优先从 Context 中查找知识点（正式模式），回退到示例知识点（演示模式）
   const contextKps = state.plan?.knowledgePoints || [];

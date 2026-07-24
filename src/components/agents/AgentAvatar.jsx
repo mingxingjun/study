@@ -1,6 +1,5 @@
-import { useRef } from 'react';
-import { gsap } from 'gsap';
-import { useGSAP } from '@gsap/react';
+import { useEffect, useRef } from 'react';
+import { animate } from 'animejs';
 import { HelpCircle, BookOpen, Clock } from 'lucide-react';
 import useReducedMotion from '../../hooks/useReducedMotion';
 
@@ -53,33 +52,39 @@ const AgentAvatar = ({ agent, size = 'md', className = '' }) => {
   };
 
   /**
-   * 根据状态应用 GSAP 微动画
-   * thinking: 呼吸式缩放脉冲
-   * speaking: 单次缩放强调
+   * 根据状态应用 anime.js 微动画
+   * thinking: 呼吸式缩放脉冲（无限循环）
+   * speaking: 单次缩放强调（5 次往返）
+   * 使用 useEffect + revert 清理，避免状态切换时动画叠加
    */
-  useGSAP(() => {
+  useEffect(() => {
     if (!avatarRef.current || reducedMotion || status === 'idle' || status === 'working') {
       return;
     }
 
+    let anim;
+    // thinking: 无限循环呼吸；loop:true 替代 repeat:-1，alternate:true 替代 yoyo:true
     if (status === 'thinking') {
-      gsap.to(avatarRef.current, {
+      anim = animate(avatarRef.current, {
         scale: 1.08,
         opacity: 0.75,
-        duration: 1,
-        repeat: -1,
-        yoyo: true,
-        ease: 'power1.inOut'
+        duration: 1000,
+        loop: true,
+        alternate: true,
+        ease: 'inOutQuad'
       });
     } else if (status === 'speaking') {
-      gsap.to(avatarRef.current, {
+      // speaking: 5 次往返缩放；loop:5 替代 repeat:5
+      anim = animate(avatarRef.current, {
         scale: 1.08,
-        duration: 0.35,
-        repeat: 5,
-        yoyo: true,
-        ease: 'power1.inOut'
+        duration: 350,
+        loop: 5,
+        alternate: true,
+        ease: 'inOutQuad'
       });
     }
+
+    return () => anim?.revert();
   }, [status, reducedMotion]);
 
   const getBaseStyles = () => {

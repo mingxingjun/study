@@ -1,6 +1,5 @@
-import { useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { useGSAP } from '@gsap/react';
+import { useEffect, useRef, useState } from 'react';
+import { animate, stagger } from 'animejs';
 import {
     ExternalLink, Check, Clock, Loader2, Brain, BookOpen, Lightbulb,
     Target, RotateCcw, Plus, BarChart3, X, Trash2
@@ -282,10 +281,11 @@ const WrongQuestionDetail = ({
   const [showVizForm, setShowVizForm] = useState(false);
 
   /**
-   * 解析步骤依次淡入动画
+   * 解析步骤依次淡入动画（anime.js v4 实现）
    * 当错题切换或 AI 分析完成时触发
+   * 使用 stagger(120) 替代 GSAP stagger:0.12；fromTo 用数组 [from, to]
    */
-  useGSAP(() => {
+  useEffect(() => {
     if (!stepsRef.current || reducedMotion) {
       return;
     }
@@ -295,18 +295,19 @@ const WrongQuestionDetail = ({
       return;
     }
 
-    gsap.fromTo(
-      items,
-      { opacity: 0, y: 16 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.45,
-        stagger: 0.12,
-        ease: 'power2.out',
-        clearProps: 'transform'
+    const anim = animate(items, {
+      opacity: [0, 1],
+      y: [16, 0],
+      duration: 450,
+      delay: stagger(120),
+      ease: 'outQuad',
+      onComplete: () => {
+        // 清理 transform 内联样式，避免影响后续布局
+        items.forEach(el => { el.style.transform = ''; });
       }
-    );
+    });
+
+    return () => anim.revert();
   }, [wrongQuestion?.id, aiAnalysis, reducedMotion]);
 
   if (!wrongQuestion) return null;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { gsap } from 'gsap';
+import { animate } from 'animejs';
 import { Play, Pause, RotateCcw, SkipForward } from 'lucide-react';
 import { useStudyContext } from '../../context/StudyContext';
 import useReducedMotion from '../../hooks/useReducedMotion';
@@ -81,8 +81,9 @@ const PomodoroTimer = ({ onFocusComplete }) => {
   const targetOffset = circumference - (progress / 100) * circumference;
 
   /**
-   * 使用 GSAP 驱动圆形进度条 stroke-dashoffset 平滑过渡
+   * 使用 anime.js v4 驱动圆形进度条 stroke-dashoffset 平滑过渡
    * 减少动画偏好时直接设置目标值
+   * cleanup 时 revert 避免进度快速变化时动画叠加
    */
   useEffect(() => {
     if (!progressRef.current) {
@@ -94,11 +95,13 @@ const PomodoroTimer = ({ onFocusComplete }) => {
       return;
     }
 
-    gsap.to(progressRef.current, {
+    const anim = animate(progressRef.current, {
       strokeDashoffset: targetOffset,
-      duration: 0.6,
-      ease: 'power2.out'
+      duration: 600,
+      ease: 'outQuad'
     });
+
+    return () => anim.revert();
   }, [targetOffset, reducedMotion]);
 
   const formatTime = (seconds) => {
