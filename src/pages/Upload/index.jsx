@@ -169,6 +169,7 @@ const Upload = () => {
         knowledgePoints: parsedData.result.knowledgePoints || [],
         rawText: parsedData.result.rawText || '',
         pageImages: parsedData.result.pageImages || [],
+        images: parsedData.result.images || [],
         method: parsedData.method || 'rule',
         duration: 0,
         retryCount: 0,

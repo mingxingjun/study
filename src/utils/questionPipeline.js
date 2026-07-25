@@ -119,16 +119,27 @@ const attachImagesToQuestions = async (questions, materialId, pageImages = [], i
         return { attachedCount: 0, failedCount: 0 };
     }
 
+    // 诊断：统计题目中 imageIndex 字段的分布情况
+    const withImageIndex = questions.filter(q => q.imageIndex !== undefined && q.imageIndex !== null && q.imageIndex !== 0);
+    console.log(`[attachImages] 诊断: 共 ${questions.length} 题，${withImageIndex.length} 题声明了 imageIndex，图片来源=${usePageImages ? 'pageImages' : 'images'}(${sourceImages.length} 张)`);
+    if (withImageIndex.length === 0) {
+        console.warn('[attachImages] 警告: 没有题目声明 imageIndex，可能 AI 输出被截断或 prompt 未生效');
+    } else {
+        console.log(`[attachImages] imageIndex 分布:`, withImageIndex.map(q => ({ id: q.id, idx: q.imageIndex })));
+    }
+
     // 图片序号 → IndexedDB key 缓存，避免同一张图重复写入
     const keyCache = new Map();
     let attachedCount = 0;
     let failedCount = 0;
+    let skippedCount = 0;
 
     for (const q of questions) {
         // 兼容 imageIndex 字段缺失/0/无效的情况
         const idx = Number(q.imageIndex);
         if (!Number.isFinite(idx) || idx < 1 || idx > sourceImages.length) {
-            // 未声明图片或序号无效，清空可能的脏值，保持 image 字段干净
+            // 未声明图片或序号无效，跳过（保持 image 字段为空）
+            skippedCount++;
             continue;
         }
 
@@ -159,7 +170,7 @@ const attachImagesToQuestions = async (questions, materialId, pageImages = [], i
         }
     }
 
-    console.log(`[attachImages] 完成：${attachedCount} 题关联图片，${failedCount} 题失败，共 ${sourceImages.length} 张源图`);
+    console.log(`[attachImages] 完成：${attachedCount} 题关联图片，${failedCount} 题失败，${skippedCount} 题无 imageIndex，共 ${sourceImages.length} 张源图`);
     return { attachedCount, failedCount };
 };
 
