@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "animejs": "^4.5.0",
+    "idb-keyval": "^6.3.0",
     "jsxgraph": "^1.13.1",
     "katex": "^0.17.0",
     "lucide-react": "^1.24.0",

@@ -9,6 +9,7 @@ import { useStudyContext } from '../../context/StudyContext';
 import usePageTitle from '../../hooks/usePageTitle';
 import { sampleKnowledgePoints } from '../../mock/sampleData';
 import { generateQuestionsByKnowledgePoint, isAIConfigured } from '../../services/aiService';
+import { buildImageKey, saveImage, deleteImage, isImageKey } from '../../services/imageStorage';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import QuestionImage from '../../components/ui/QuestionImage';
@@ -278,29 +279,56 @@ const QuestionBank = () => {
 
   /**
    * 处理题目图片上传
+   * 图片写入 IndexedDB（避免 base64 撑爆 localStorage），form.image 只存 IndexedDB key
    * @param {FileList} files
    */
-  const handleImageUpload = useCallback((files) => {
+  const handleImageUpload = useCallback(async (files) => {
     const file = files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       setFormError('请上传图片文件');
       return;
     }
+
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setForm((prev) => ({ ...prev, image: e.target?.result || '' }));
+    const readBase64 = new Promise((resolve, reject) => {
+      reader.onload = (e) => resolve(e.target?.result || '');
+      reader.onerror = () => reject(new Error('图片读取失败'));
+      reader.readAsDataURL(file);
+    });
+
+    try {
+      const base64 = await readBase64;
+      // 生成唯一 key：manual + 时间戳，避免与 AI 解析的图片 key 冲突
+      const imageKey = buildImageKey('manual', `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
+      await saveImage(imageKey, base64);
+
+      // 如果之前已有图片（编辑模式下替换图片），删除旧 key 避免 IndexedDB 累积垃圾
+      setForm((prev) => {
+        if (prev.image && isImageKey(prev.image) && prev.image !== imageKey) {
+          // 异步删除，不阻塞 UI
+          deleteImage(prev.image).catch(err => console.warn('删除旧图片失败:', err));
+        }
+        return { ...prev, image: imageKey };
+      });
       setFormError('');
-    };
-    reader.onerror = () => setFormError('图片读取失败');
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('图片上传失败:', error);
+      setFormError(`图片存储失败：${error.message}`);
+    }
   }, []);
 
   /**
    * 移除题目图片
+   * 同步删除 IndexedDB 中的图片，避免累积垃圾数据
    */
   const handleRemoveImage = useCallback(() => {
-    setForm((prev) => ({ ...prev, image: '' }));
+    setForm((prev) => {
+      if (prev.image && isImageKey(prev.image)) {
+        deleteImage(prev.image).catch(err => console.warn('删除图片失败:', err));
+      }
+      return { ...prev, image: '' };
+    });
   }, []);
 
   /**
@@ -1145,10 +1173,10 @@ const QuestionBank = () => {
                 {/* 题目图片上传 */}
                 {form.image ? (
                   <div className="mt-3 relative inline-block group max-w-full">
-                    <img
+                    <QuestionImage
                       src={form.image}
                       alt="题目图片"
-                      className="max-w-full max-h-40 rounded-xl border border-gray-200 object-contain"
+                      className="max-h-40"
                     />
                     <button
                       type="button"

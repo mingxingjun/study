@@ -1,5 +1,6 @@
-import { createContext, useContext, useReducer, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useReducer, useEffect, useCallback, useMemo, useRef } from 'react';
 import { saveData, loadData } from '../services/storageService';
+import { deleteImage, deleteImagesByMaterial } from '../services/imageStorage';
 import { sampleKnowledgePoints } from '../mock/sampleData';
 import { agents as mockAgents } from '../mock/agents';
 import { loadDemoData } from '../mock/demoData';
@@ -600,6 +601,13 @@ export const StudyProvider = ({ children }) => {
     return initial;
   });
 
+  // stateRef 用于在 useCallback 中获取最新的 state（避免 useCallback 依赖 state 导致频繁重建）
+  // 主要用于 deleteQuestion 时查找题目对应的图片 key 进行级联删除
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   useEffect(() => {
     saveData(STORAGE_KEY, state);
   }, [state]);
@@ -616,7 +624,14 @@ export const StudyProvider = ({ children }) => {
     []
   );
   const deleteMaterial = useCallback(
-    (materialId) => dispatch({ type: 'DELETE_MATERIAL', payload: materialId }),
+    (materialId) => {
+      // 级联删除 IndexedDB 中该文档的所有图片（按 materialId 前缀批量清理）
+      // 异步执行不阻塞 UI；失败时仅打日志，不影响题库删除流程
+      deleteImagesByMaterial(materialId).catch(err =>
+        console.warn('[StudyContext] 删除文档图片失败:', err)
+      );
+      dispatch({ type: 'DELETE_MATERIAL', payload: materialId });
+    },
     []
   );
   const setPlan = useCallback(
@@ -636,7 +651,19 @@ export const StudyProvider = ({ children }) => {
     []
   );
   const deleteQuestion = useCallback(
-    (id) => dispatch({ type: 'DELETE_QUESTION', payload: id }),
+    (id) => {
+      // 级联删除 IndexedDB 中该题目关联的图片
+      // 通过 state.questions 查找题目对应的 image key，异步删除
+      // 注意：需要在 dispatch 之前从 state 中读取题目，否则 reducer 已删除就拿不到了
+      // 这里用闭包中的 state（来自 useReducer 的最新值）
+      const question = stateRef.current.questions.find(q => q.id === id);
+      if (question?.image) {
+        deleteImage(question.image).catch(err =>
+          console.warn('[StudyContext] 删除题目图片失败:', err)
+        );
+      }
+      dispatch({ type: 'DELETE_QUESTION', payload: id });
+    },
     []
   );
   const setExamDate = useCallback(

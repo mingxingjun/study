@@ -32,6 +32,10 @@ import {
     isAIConfigured,
     isMultimodalModel
 } from '../services/aiService';
+import {
+    buildImageKey,
+    saveImage
+} from '../services/imageStorage';
 
 /** 信心度等级常量：标注每道题 AI 解析的可靠性 */
 export const CONFIDENCE = {
@@ -81,6 +85,81 @@ const buildResult = (parsed, method, warning = '', rawText = '', pageImages = []
     method,
     warning
 });
+
+/**
+ * 根据 AI 返回的 imageIndex 字段，把对应图片写入 IndexedDB，
+ * 并把 question.image 字段从序号替换为 IndexedDB key
+ *
+ * 处理两种图片来源：
+ *  - pageImages（PDF 整页渲染）：imageIndex 是页码，1-based
+ *  - images（Word/PDF 内嵌图）：imageIndex 是图片序号，1-based
+ *
+ * 同一张图被多题引用时，IndexedDB 只写一份，多题 question.image 共享同一 key
+ *
+ * @param {Array} questions - 题目数组（会被原地修改 image 字段）
+ * @param {string} materialId - 文档 ID，用于生成 IndexedDB key
+ * @param {Array} [pageImages=[]] - 整页图片数组 [{ pageNumber, imageData }]
+ * @param {Array} [images=[]] - 内嵌图片数组 [base64, ...]
+ * @returns {Promise<{attachedCount: number, failedCount: number}>} 处理统计
+ */
+const attachImagesToQuestions = async (questions, materialId, pageImages = [], images = []) => {
+    if (!Array.isArray(questions) || questions.length === 0) {
+        return { attachedCount: 0, failedCount: 0 };
+    }
+
+    // 选择可用图片来源：pageImages 优先（PDF 整页路径），其次 images（Word 内嵌图）
+    const usePageImages = pageImages.length > 0;
+    const sourceImages = usePageImages
+        ? pageImages.map(p => p.imageData)
+        : images;
+
+    if (sourceImages.length === 0) {
+        return { attachedCount: 0, failedCount: 0 };
+    }
+
+    // 图片序号 → IndexedDB key 缓存，避免同一张图重复写入
+    const keyCache = new Map();
+    let attachedCount = 0;
+    let failedCount = 0;
+
+    for (const q of questions) {
+        // 兼容 imageIndex 字段缺失/0/无效的情况
+        const idx = Number(q.imageIndex);
+        if (!Number.isFinite(idx) || idx < 1 || idx > sourceImages.length) {
+            // 未声明图片或序号无效，清空可能的脏值，保持 image 字段干净
+            continue;
+        }
+
+        // 命中缓存：同一张图已被前一道题写入过，直接复用 key
+        if (keyCache.has(idx)) {
+            q.image = keyCache.get(idx);
+            attachedCount++;
+            continue;
+        }
+
+        const base64 = sourceImages[idx - 1];
+        if (!base64) {
+            failedCount++;
+            continue;
+        }
+
+        const imageKey = buildImageKey(materialId, idx);
+        try {
+            await saveImage(imageKey, base64);
+            q.image = imageKey;
+            keyCache.set(idx, imageKey);
+            attachedCount++;
+        } catch (error) {
+            // IndexedDB 写入失败（配额不足/隐私模式），不阻塞解析流程
+            // 题目仍可正常使用，只是 image 字段为空
+            console.warn(`[attachImages] 写入图片失败 idx=${idx} materialId=${materialId}:`, error);
+            failedCount++;
+        }
+    }
+
+    console.log(`[attachImages] 完成：${attachedCount} 题关联图片，${failedCount} 题失败，共 ${sourceImages.length} 张源图`);
+    return { attachedCount, failedCount };
+};
 
 /**
  * 根据解析成功率计算信心度等级
@@ -396,6 +475,13 @@ export const parseQuestionFile = async (file, agentConfig, onProgress, visionAge
                 if (onProgress) onProgress(100);
                 // 整页图片看图解析成功，信心度为 high
                 imageResult.questions = addConfidence(imageResult.questions, CONFIDENCE.HIGH);
+                // 根据 AI 返回的 imageIndex 把对应整页图写入 IndexedDB，question.image 存 key
+                await attachImagesToQuestions(
+                    imageResult.questions,
+                    materialId,
+                    pageImages,
+                    images
+                );
                 return buildResult(
                     imageResult,
                     'ai-page-image',
@@ -484,6 +570,14 @@ export const parseQuestionFile = async (file, agentConfig, onProgress, visionAge
             }
             // AI 多模态解析成功，信心度为 high
             merged.questions = addConfidence(merged.questions, CONFIDENCE.HIGH);
+            // 根据 AI 返回的 imageIndex 把对应内嵌图写入 IndexedDB，question.image 存 key
+            // 此路径下 pageImages 为空（Word 文档无整页渲染），attachImages 内部会使用 images 数组
+            await attachImagesToQuestions(
+                merged.questions,
+                materialId,
+                pageImages,
+                images
+            );
             return buildResult(merged, 'ai-multimodal', warning, text, pageImages);
         }
 

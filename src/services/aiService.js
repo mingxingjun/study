@@ -1806,11 +1806,12 @@ export const parseImagesToMarkdown = async (agentConfig, images, _materialId = '
                 temperature: 0.1
             });
             console.log(`第 ${i + 1}/${images.length} 页 OCR 转写完成，长度: ${content.length}`);
-            markdownParts.push(content.trim());
+            // 在每页 Markdown 前插入 [[PAGE-N]] 标记，供阶段 2 主 AI 引用图片序号
+            markdownParts.push(`[[PAGE-${i + 1}]]\n${content.trim()}`);
         } catch (error) {
             console.warn(`第 ${i + 1}/${images.length} 页 OCR 转写失败:`, error.message);
-            // 单页失败不影响其他页，用占位符标记
-            markdownParts.push(`\n<!-- 第 ${i + 1} 页 OCR 转写失败: ${error.message} -->\n`);
+            // 单页失败不影响其他页，用占位符标记（仍保留页码标记）
+            markdownParts.push(`[[PAGE-${i + 1}]]\n<!-- 第 ${i + 1} 页 OCR 转写失败: ${error.message} -->`);
         }
     }
 
@@ -1884,10 +1885,14 @@ export const parseImagesWithAI = async (agentConfig, images, materialId = 'image
         }
 
         const batch = batches[i];
-        const textPrompt = `这是文档中的第 ${i + 1}/${batches.length} 批图片（共 ${batch.length} 张）。\n` +
+        // 单阶段路径：每道题的 imageIndex 字段填本批次内的图片序号（1-based），
+        // 合并时由外层（parseQuestionFile）转换为全局序号
+        const batchStartIndex = i * MAX_IMAGES_PER_REQUEST;
+        const textPrompt = `这是文档中的第 ${i + 1}/${batches.length} 批图片（共 ${batch.length} 张，对应文档第 ${batchStartIndex + 1} - ${batchStartIndex + batch.length} 张图）。\n` +
             `题目所属文档ID: ${materialId}\n` +
             '请识别图片中的所有题目（包括题干、选项、答案、解析），并按 JSON Schema 输出。\n' +
-            '注意：图片可能包含电路图、公式、表格等，请尽量识别并描述。';
+            '注意：图片可能包含电路图、公式、表格等，请尽量识别并描述。\n' +
+            `请务必为每道题填写 imageIndex 字段：第 1 张图中的题填 ${batchStartIndex + 1}，第 2 张图中的题填 ${batchStartIndex + 2}，以此类推。`;
 
         const messages = [
             { role: 'system', content: documentParsePrompt },

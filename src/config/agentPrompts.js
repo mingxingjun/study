@@ -341,7 +341,8 @@ export const documentParsePrompt = `你是 Study Buddy 的教育资料解析专�
       "difficultyRationale": "string, 难度判定理由",
       "knowledgePointId": "string, 对应知识点 id",
       "materialId": "string, 传入的 materialId",
-      "visualizations": "array, 可视化数据数组，每项为 {type, title, data}，不需要时为空数组 []"
+      "visualizations": "array, 可视化数据数组，每项为 {type, title, data}，不需要时为空数组 []",
+      "imageIndex": "number, 题目对应的图片序号（1-based）。输入文本中通过 [[PAGE-N]] 标记标识每张图片，N 为图片序号。题目所在的图片序号填入此字段。跨页题取起始页；纯文本题目不包含题目图片时填 0 或省略此字段；多题共用一张图时填相同序号"
     }
   ]
 }
@@ -361,6 +362,13 @@ export const documentParsePrompt = `你是 Study Buddy 的教育资料解析专�
 4. 如果图片不包含题目信息（如纯装饰图、作者头像、Logo），跳过该图片
 5. 图片与文本中的题目若重复，保留信息更完整的那一个
 6. 图片题的 question 字段必须包含完整的文字描述，让没看过图的用户也能答题
+7. 【imageIndex 字段填写规则——重要】
+   - 输入文本中会通过 [[PAGE-N]] 标记标识每张图片的位置，N 为 1-based 图片序号
+   - 每道题的 imageIndex 字段填入该题所在图片的序号 N
+   - 跨页题（一道题跨两页）：取题干起始所在页的序号
+   - 一页多题：这些题的 imageIndex 都填同一页码
+   - 纯文本题目（不涉及图片内容）填 0 或省略 imageIndex 字段
+   - 例：题干出现在 [[PAGE-3]] 之后、[[PAGE-4]] 之前，则 imageIndex=3
 
 只输出一个 JSON 对象，禁止其他文字。`;
 
