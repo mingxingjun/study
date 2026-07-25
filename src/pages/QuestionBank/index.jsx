@@ -1125,7 +1125,7 @@ const QuestionBank = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-2">
                   <X size={16} strokeWidth={1.8} />
@@ -1394,7 +1394,7 @@ const QuestionBank = () => {
             </div>
 
             {isGenerating || generationSuccess ? (
-              <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
                 <div className="space-y-4">
                   {GENERATION_STEPS.map((label, idx) => {
                     const isDone = generationSuccess || idx < generationStep;
@@ -1447,7 +1447,7 @@ const QuestionBank = () => {
                 )}
               </div>
             ) : (
-              <div className="p-6 space-y-5">
+              <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
                 {generatorError && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-2">
                     <X size={16} strokeWidth={1.8} />

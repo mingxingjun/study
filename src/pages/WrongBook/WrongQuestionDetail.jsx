@@ -114,7 +114,7 @@ const VisualizationFormModal = ({ open, onClose, onConfirm }) => {
                 </div>
 
                 {/* 表单内容 */}
-                <div className="p-6 space-y-5 overflow-y-auto flex-1">
+                <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
                     {/* 可视化类型 - 当前仅支持函数图像 */}
                     <div>
                         <label className={labelClass}>可视化类型</label>
