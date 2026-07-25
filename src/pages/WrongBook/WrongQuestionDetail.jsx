@@ -86,11 +86,12 @@ const VisualizationFormModal = ({ open, onClose, onConfirm }) => {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/40"
             onClick={handleCancel}
         >
+            <div className="relative min-h-full flex items-center justify-center p-4">
             <div
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* 弹窗头部 */}
@@ -113,7 +114,7 @@ const VisualizationFormModal = ({ open, onClose, onConfirm }) => {
                 </div>
 
                 {/* 表单内容 */}
-                <div className="p-6 space-y-5">
+                <div className="p-6 space-y-5 overflow-y-auto flex-1">
                     {/* 可视化类型 - 当前仅支持函数图像 */}
                     <div>
                         <label className={labelClass}>可视化类型</label>
@@ -227,6 +228,7 @@ const VisualizationFormModal = ({ open, onClose, onConfirm }) => {
                         添加
                     </Button>
                 </div>
+            </div>
             </div>
         </div>
     );

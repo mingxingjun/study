@@ -1100,11 +1100,12 @@ const QuestionBank = () => {
 
       {/* 新增/编辑弹窗 */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-[200] overflow-y-auto">
           <div
             className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
             onClick={handleCloseModal}
           />
+          <div className="relative min-h-full flex items-center justify-center p-4 sm:p-6">
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* 弹窗头部 - 编辑风 */}
             <div className="bg-white border-b border-gray-100 px-6 py-5 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0">
@@ -1360,17 +1361,19 @@ const QuestionBank = () => {
               </Button>
             </div>
           </div>
+          </div>
         </div>
       )}
 
       {/* AI 出题弹窗 */}
       {isAIGeneratorOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="fixed inset-0 z-[200] overflow-y-auto">
           <div
             className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
             onClick={handleCloseAIGenerator}
           />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+          <div className="relative min-h-full flex items-center justify-center p-4 sm:p-6">
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
             {/* 弹窗头部 */}
             <div className="border-b border-gray-100 px-6 py-5 flex items-center justify-between rounded-t-2xl">
               <div>
@@ -1391,7 +1394,7 @@ const QuestionBank = () => {
             </div>
 
             {isGenerating || generationSuccess ? (
-              <div className="p-6 space-y-6">
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
                 <div className="space-y-4">
                   {GENERATION_STEPS.map((label, idx) => {
                     const isDone = generationSuccess || idx < generationStep;
@@ -1541,6 +1544,7 @@ const QuestionBank = () => {
                 )}
               </Button>
             </div>
+          </div>
           </div>
         </div>
       )}
