@@ -69,9 +69,10 @@ const getExtension = (fileName) => {
  * @param {string} warning - 警告信息
  * @param {string} rawText - 原文文本
  * @param {Array} [pageImages=[]] - PDF 整页渲染图片数组 [{ pageNumber, imageData }]
+ * @param {Array} [images=[]] - Word/PDF 内嵌图片数组 [base64, ...]
  * @returns {Object} 统一结构结果
  */
-const buildResult = (parsed, method, warning = '', rawText = '', pageImages = []) => ({
+const buildResult = (parsed, method, warning = '', rawText = '', pageImages = [], images = []) => ({
     questions: parsed.questions || [],
     knowledgePoints: parsed.knowledgePoints || [],
     invalidQuestions: parsed.invalidQuestions || [],
@@ -82,6 +83,7 @@ const buildResult = (parsed, method, warning = '', rawText = '', pageImages = []
     typeDistribution: parsed.typeDistribution || {},
     rawText,
     pageImages,
+    images,
     method,
     warning
 });
@@ -578,7 +580,7 @@ export const parseQuestionFile = async (file, agentConfig, onProgress, visionAge
                 pageImages,
                 images
             );
-            return buildResult(merged, 'ai-multimodal', warning, text, pageImages);
+            return buildResult(merged, 'ai-multimodal', warning, text, pageImages, images);
         }
 
         // ========== 阶段 4.5：AI 两阶段解析（优先于单次解析） ==========

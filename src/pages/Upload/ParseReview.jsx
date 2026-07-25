@@ -422,9 +422,11 @@ const SummaryBar = ({ questions, method, duration }) => {
  * 展示解析时使用的原始文档文本，支持用户手动选取文本并创建题目
  * @param {Object} props
  * @param {string} props.rawText - 原始文档文本
+ * @param {Array} [props.pageImages=[]] - PDF 整页渲染图 [{ pageNumber, imageData }]
+ * @param {Array} [props.images=[]] - Word/PDF 内嵌图 [base64, ...]
  * @param {Function} props.onAddFromSelection - 从选中文本创建题目回调 (selectedText) => void
  */
-const RawTextPreview = ({ rawText, pageImages, onAddFromSelection }) => {
+const RawTextPreview = ({ rawText, pageImages = [], images = [], onAddFromSelection }) => {
     const [selectionPos, setSelectionPos] = useState(null);
     const [selectedText, setSelectedText] = useState('');
     const [previewMode, setPreviewMode] = useState('image'); // 'image' | 'text'
@@ -493,10 +495,12 @@ const RawTextPreview = ({ rawText, pageImages, onAddFromSelection }) => {
 
     // 有页面图片时默认图片模式，无图片但有文本时自动切到文本模式
     const hasPageImages = pageImages && pageImages.length > 0;
+    const hasEmbeddedImages = images && images.length > 0;
+    const hasImages = hasPageImages || hasEmbeddedImages;
     const hasText = rawText && rawText.trim();
 
     // 无任何原文数据时显示空状态
-    if (!hasPageImages && !hasText) {
+    if (!hasImages && !hasText) {
         return (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-gray-400">
                 <span className="text-5xl mb-4 opacity-30">&#x1F4C4;</span>
@@ -507,12 +511,17 @@ const RawTextPreview = ({ rawText, pageImages, onAddFromSelection }) => {
     }
 
     // 自动选择可用模式：有图片优先图片模式，否则文本模式
-    const effectiveMode = hasPageImages ? previewMode : 'text';
+    const effectiveMode = hasImages ? previewMode : 'text';
+
+    // 图片预览模式下要展示的图列表：优先整页图，否则内嵌图
+    const previewImages = hasPageImages
+        ? pageImages.map(p => ({ key: `page-${p.pageNumber}`, src: p.imageData, label: `第 ${p.pageNumber} 页` }))
+        : images.map((src, idx) => ({ key: `img-${idx + 1}`, src, label: `图 ${idx + 1}` }));
 
     return (
         <div className="relative h-full overflow-hidden flex flex-col" ref={previewRef}>
             {/* 模式切换 Tab */}
-            {hasPageImages && hasText && (
+            {hasImages && hasText && (
                 <div className="flex items-center gap-1 px-4 py-2 border-b border-gray-200 bg-gray-50 rounded-t-xl">
                     <button
                         onClick={() => setPreviewMode('image')}
@@ -521,7 +530,7 @@ const RawTextPreview = ({ rawText, pageImages, onAddFromSelection }) => {
                                 ? 'bg-[#c9a227] text-white'
                                 : 'text-gray-600 hover:bg-gray-200'}`}
                     >
-                        图片预览（{pageImages.length} 页）
+                        图片预览（{previewImages.length} 张）
                     </button>
                     <button
                         onClick={() => setPreviewMode('text')}
@@ -535,24 +544,24 @@ const RawTextPreview = ({ rawText, pageImages, onAddFromSelection }) => {
                 </div>
             )}
 
-            {/* 图片预览模式：显示 PDF 每页渲染的高清图片 */}
-            {effectiveMode === 'image' && hasPageImages && (
+            {/* 图片预览模式：显示 PDF 整页渲染图 或 Word/PDF 内嵌图 */}
+            {effectiveMode === 'image' && hasImages && (
                 <div className="flex-1 overflow-y-auto p-5 bg-gray-100">
                     <div className="flex flex-col items-center gap-4">
-                        {pageImages.map((page) => (
+                        {previewImages.map((img) => (
                             <div
-                                key={page.pageNumber}
+                                key={img.key}
                                 className="relative w-full max-w-3xl bg-white rounded-lg shadow-md overflow-hidden"
                             >
                                 <img
-                                    src={page.imageData}
-                                    alt={`第 ${page.pageNumber} 页`}
+                                    src={img.src}
+                                    alt={img.label}
                                     className="w-full h-auto block"
                                     loading="lazy"
                                 />
                                 <span className="absolute top-2 right-2 px-2 py-0.5 text-xs font-mono
                                     bg-black/50 text-white rounded backdrop-blur-sm">
-                                    第 {page.pageNumber} 页
+                                    {img.label}
                                 </span>
                             </div>
                         ))}
@@ -996,6 +1005,7 @@ const ParseReview = ({ parsedResult, onConfirm, onReParse, onClose }) => {
                             <RawTextPreview
                                 rawText={parsedResult?.rawText || ''}
                                 pageImages={parsedResult?.pageImages || []}
+                                images={parsedResult?.images || []}
                                 onAddFromSelection={handleAddFromSelection}
                             />
                         )}
