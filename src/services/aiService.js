@@ -1362,6 +1362,44 @@ export const getSuperviseMessage = async (agentConfig, context = {}) => {
 const DOC_CHUNK_SIZE = 12000;
 /** 分块之间的重叠字符数，避免题目跨越两个分块时被遗漏 */
 const DOC_CHUNK_OVERLAP = 500;
+/** 图片页标记正则：用于检测并按页拆分带 [[PAGE-N]] 标记的文档 */
+const PAGE_MARKER_REGEX = /\[\[PAGE-(\d+)\]\]/;
+
+/**
+ * 按页拆分带 [[PAGE-N]] 标记的文档
+ * 当文档来自 PDF/Word 图片 OCR 路径时，每页内容已通过 [[PAGE-N]] 分隔
+ * 按页拆分让主 AI 每次只处理一页，避免大文档输出 JSON 被截断
+ * @param {string} text - 带 [[PAGE-N]] 标记的文档
+ * @returns {string[]} 按页拆分的文本块数组，每块保留 [[PAGE-N]] 标记
+ */
+const splitByPageMarkers = (text) => {
+    if (!text || !PAGE_MARKER_REGEX.test(text)) return [];
+
+    // 重置 lastIndex（test 会修改）
+    PAGE_MARKER_REGEX.lastIndex = 0;
+
+    // 用 [[PAGE-N]] 作为分隔符，但保留标记在每块开头
+    const parts = text.split(/(\[\[PAGE-\d+\]\])/);
+    const chunks = [];
+    let currentChunk = '';
+
+    for (const part of parts) {
+        if (/^\[\[PAGE-\d+\]\]$/.test(part)) {
+            // 遇到新的页码标记，先把累积的内容作为一块
+            if (currentChunk.trim()) {
+                chunks.push(currentChunk.trim());
+            }
+            currentChunk = part;
+        } else {
+            currentChunk += part;
+        }
+    }
+    if (currentChunk.trim()) {
+        chunks.push(currentChunk.trim());
+    }
+
+    return chunks.filter(c => c.trim().length > 50);
+};
 
 /**
  * 题号边界正则：用于在固定长度切分时找到最近的题目起始位置
@@ -1377,7 +1415,16 @@ const QUESTION_BOUNDARY_REGEX = /(?:\n|^)\s*(?:\d+|[一二三四五六七八九�
  */
 const splitDocumentIntoChunks = (text) => {
     const chunks = [];
-    // 优先按标题行拆分：##、模块、单元、章节、第x章 等
+
+    // 优先级 1：检测 [[PAGE-N]] 标记，按页拆分（来自图片 OCR 路径）
+    // 按页拆分让主 AI 每次只处理一页，避免大文档输出 JSON 被截断
+    const pageChunks = splitByPageMarkers(text);
+    if (pageChunks.length > 1) {
+        console.log(`[splitDocument] 检测到 ${pageChunks.length} 个 [[PAGE-N]] 标记，按页拆分`);
+        return pageChunks;
+    }
+
+    // 优先级 2：按标题行拆分：##、模块、单元、章节、第x章 等
     const headingRegex = /(?:\n|\r|^)(?:#{1,3}\s+|\d+[.、]\s*[^\n]+|第[一二三四五六七八九十\d]+章|模块[一二三四五六七八九十\d]+|单元[一二三四五六七八九十\d]+)[\s\S]*?(?=\n(?:#{1,3}\s+|\d+[.、]\s*[^\n]+|第[一二三四五六七八九十\d]+章|模块[一二三四五六七八九十\d]+|单元[一二三四五六七八九十\d]+)|$)/g;
     const matches = text.match(headingRegex);
 
@@ -1554,12 +1601,28 @@ export const parseDocumentWithAI = async (agentConfig, text, documentType = 'tex
         const content = await callAI(agentConfig, messages, getAgentOptions('document-parser'));
         const parsed = parseJsonFromText(content);
         // 规范化每个题目的 visualizations 字段，并标注 AI 解析信心度为 high
-        const normalizedQuestions = assignConfidence(
+        let normalizedQuestions = assignConfidence(
             (parsed.questions || []).map(q => ({
                 ...q,
                 visualizations: normalizeVisualizations(q.visualizations)
             }))
         );
+
+        // 兜底：如果整文档有 [[PAGE-N]] 标记但 AI 没输出 imageIndex，
+        // 按题目在文档中出现的顺序，依次匹配 [[PAGE-N]] 标记的页码
+        // 这种情况发生在文档较短未分块，但仍有多页图片标记时
+        const allPageMarkers = text.match(/\[\[PAGE-\d+\]\]/g) || [];
+        if (allPageMarkers.length > 0 && normalizedQuestions.length > 0) {
+            normalizedQuestions = normalizedQuestions.map((q, idx) => {
+                if (q.imageIndex !== undefined && q.imageIndex !== null && q.imageIndex !== 0) {
+                    return q;
+                }
+                // 简单兜底：按题目序号对页码取模（不精确但优于空）
+                const pageIdx = Math.min(idx % allPageMarkers.length + 1, allPageMarkers.length);
+                return { ...q, imageIndex: pageIdx };
+            });
+        }
+
         return { ...parsed, questions: normalizedQuestions };
     }
 
@@ -1573,9 +1636,15 @@ export const parseDocumentWithAI = async (agentConfig, text, documentType = 'tex
         }
 
         const chunk = chunks[i];
+        // 从 chunk 开头提取 [[PAGE-N]] 标记中的页码 N
+        // 用于兜底：如果 AI 没输出 imageIndex 字段，用这个 N 作为该 chunk 所有题目的 imageIndex
+        const pageMatch = chunk.match(/^\[\[PAGE-(\d+)\]\]/);
+        const chunkPageNum = pageMatch ? parseInt(pageMatch[1], 10) : null;
+
         const userPrompt = `文档类型: ${documentType}\n` +
             `题目所属文档ID: ${materialId}\n` +
-            `这是文档的第 ${i + 1}/${chunks.length} 部分。\n` +
+            `这是文档的第 ${i + 1}/${chunks.length} 部分。` +
+            (chunkPageNum ? `本部分对应原文第 ${chunkPageNum} 页。\n` : '\n') +
             `文档内容:\n${chunk}\n\n` +
             '请提取本部分的知识点和题目。';
 
@@ -1587,6 +1656,16 @@ export const parseDocumentWithAI = async (agentConfig, text, documentType = 'tex
         const content = await callAI(agentConfig, messages, getAgentOptions('document-parser'));
         console.log(`分块 ${i + 1}/${chunks.length} 返回长度: ${content.length}`);
         const result = parseJsonFromText(content);
+        // 兜底：如果 AI 没输出 imageIndex，但本 chunk 有 [[PAGE-N]] 标记，则用页码 N 填充
+        // 这保证了即使 AI 忽略 imageIndex 字段，题目也能关联到对应页的图片
+        if (chunkPageNum && result.questions) {
+            result.questions = result.questions.map(q => {
+                if (q.imageIndex === undefined || q.imageIndex === null || q.imageIndex === 0) {
+                    return { ...q, imageIndex: chunkPageNum };
+                }
+                return q;
+            });
+        }
         parseResults.push(result);
     }
 
