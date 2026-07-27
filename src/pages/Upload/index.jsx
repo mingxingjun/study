@@ -197,6 +197,7 @@ const Upload = () => {
 
   /**
    * 审核确认回调：处理审核后的题目导入
+   * 注意：必须同时更新 state.plan.knowledgePoints，否则 Dashboard 会回退到示例知识点
    * @param {Array} finalQuestions - 审核后的题目列表
    * @param {Array} finalKnowledgePoints - 审核后的知识点列表
    */
@@ -210,6 +211,33 @@ const Upload = () => {
 
     setQuestions(questionsWithId);
     setKnowledgePoints(finalKnowledgePoints);
+
+    // 关键：同步更新 state.plan.knowledgePoints
+    // Dashboard 的今日任务、整体进度等均依赖 plan.knowledgePoints
+    // 若不更新，会回退到 sampleKnowledgePoints 导致数据不对
+    const kpsForPlan = finalKnowledgePoints.length > 0
+      ? finalKnowledgePoints
+      : sampleKnowledgePoints;
+    const planWithDates = {
+      id: state.plan?.id || `plan-${Date.now()}`,
+      title: state.plan?.title || '学习计划',
+      createdAt: state.plan?.createdAt || new Date().toISOString(),
+      // 为每个知识点分配预计学习日期（按 14 天均分）
+      knowledgePoints: kpsForPlan.map((kp, idx) => {
+        const daysToAdd = Math.floor(idx * (14 / Math.max(kpsForPlan.length, 1)));
+        const date = new Date();
+        date.setDate(date.getDate() + daysToAdd + 1);
+        return {
+          ...kp,
+          // 保留已有 mastery，避免覆盖用户已答题的进度
+          mastery: kp.mastery || 0,
+          scheduledDate: date.toISOString().split('T')[0]
+        };
+      }),
+      estimatedDays: state.plan?.estimatedDays || 14,
+      totalMinutes: kpsForPlan.reduce((sum, kp) => sum + (kp.estimatedTime || 60), 0)
+    };
+    setPlan(planWithDates);
 
     // 清除持久化的待审核结果
     dispatch({ type: 'CLEAR_PENDING_REVIEW' });
