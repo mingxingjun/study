@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Key,
     ExternalLink,
@@ -10,7 +10,9 @@ import {
     Crown,
     RotateCcw,
     Sparkles,
-    ShieldCheck
+    ShieldCheck,
+    RefreshCw,
+    Loader2
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -20,6 +22,7 @@ import usePageTitle from '../../hooks/usePageTitle';
 import useAIStatus from '../../hooks/useAIStatus';
 import { aiProviders, presetCombinations } from '../../config/aiProviders';
 import { agents as agentMeta } from '../../mock/agents';
+import { getCachedCatalog, syncProviderModels } from '../../services/modelCatalog';
 
 /**
  * 预设组合方案元数据
@@ -95,6 +98,187 @@ const Settings = () => {
 
     /** 当前选中的预设方案 key，用于高亮显示 */
     const [activePreset, setActivePreset] = useState(null);
+
+    /** 服务商实时模型目录：{ [providerId]: { models, status, ts, error } } */
+    const [catalogs, setCatalogs] = useState({});
+    /** 正在同步的服务商 */
+    const [syncing, setSyncing] = useState({});
+    /** 防止同一服务商并发重复请求 */
+    const syncingRef = useRef(new Set());
+
+    /**
+     * 同步某个服务商的模型目录
+     * @param {string} providerId
+     * @param {string} apiKey
+     * @param {boolean} [force=false] - 是否忽略缓存强制刷新
+     */
+    const handleSyncProvider = useCallback(async (providerId, apiKey, force = false) => {
+        const provider = getProviderById(providerId);
+        if (!provider || syncingRef.current.has(providerId)) return;
+
+        syncingRef.current.add(providerId);
+        setSyncing((prev) => ({ ...prev, [providerId]: true }));
+
+        try {
+            const result = await syncProviderModels(provider, apiKey, { force });
+            setCatalogs((prev) => ({
+                ...prev,
+                [providerId]: {
+                    models: result.models,
+                    status: result.source,
+                    ts: result.ts,
+                    error: null
+                }
+            }));
+        } catch (error) {
+            const cached = getCachedCatalog(providerId);
+            setCatalogs((prev) => ({
+                ...prev,
+                [providerId]: cached
+                    ? {
+                        models: cached.models,
+                        status: 'cache',
+                        ts: cached.ts,
+                        error: error?.message || '同步失败'
+                    }
+                    : {
+                        models: null,
+                        status: 'error',
+                        ts: null,
+                        error: error?.message || '同步失败'
+                    }
+            }));
+        } finally {
+            syncingRef.current.delete(providerId);
+            setSyncing((prev) => ({ ...prev, [providerId]: false }));
+        }
+    }, []);
+
+    // 配置里出现 Key 后，自动尝试同步一次（有缓存则先展示缓存）
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const seen = new Set();
+            Object.values(aiConfig || {}).forEach((config) => {
+                const providerId = config?.providerId;
+                const apiKey = config?.apiKey;
+                if (!providerId || !apiKey || seen.has(providerId)) return;
+                seen.add(providerId);
+                // 已有目录（缓存 / 成功 / 失败）时不自动重复请求，交给手动「同步」重试
+                if (catalogs[providerId]) return;
+
+                const cached = getCachedCatalog(providerId);
+                if (cached) {
+                    setCatalogs((prev) => (
+                        prev[providerId]
+                            ? prev
+                            : {
+                                ...prev,
+                                [providerId]: {
+                                    models: cached.models,
+                                    status: 'cache',
+                                    ts: cached.ts,
+                                    error: null
+                                }
+                            }
+                    ));
+                    return;
+                }
+                handleSyncProvider(providerId, apiKey);
+            });
+        }, 800);
+
+        return () => clearTimeout(timer);
+    }, [aiConfig, catalogs, handleSyncProvider]);
+
+    /**
+     * 取某个服务商当前可用的模型列表（实时目录优先，内置列表兜底）
+     * @param {AiProvider|undefined} provider
+     * @param {string} modelId
+     */
+    const getModelOptions = (provider, modelId) => {
+        const syncedModels = catalogs[provider?.id]?.models;
+        const base = syncedModels?.length
+            ? syncedModels.map((model) => {
+                // 用内置元数据补全实时目录里已知的模型（能力、上下文、价格说明）
+                const builtin = provider?.models?.find((item) => item.id === model.id);
+                return builtin ? { ...builtin, synced: true } : model;
+            })
+            : (provider?.models || []);
+        if (!modelId || base.some((model) => model.id === modelId)) return base;
+        // 用户已保存的旧模型 ID 不在最新目录里时，保留为可选项避免配置丢失
+        return [
+            {
+                id: modelId,
+                name: modelId,
+                description: '已保存的模型 ID',
+                isFree: false,
+                contextLength: null,
+                maxOutput: null,
+                synced: true
+            },
+            ...base
+        ];
+    };
+
+    /**
+     * 渲染模型目录同步状态
+     * @param {AiProvider|undefined} provider
+     * @param {AgentConfig} config
+     */
+    const renderCatalogStatus = (provider, config) => {
+        if (!provider) return null;
+        const entry = catalogs[provider.id];
+        const isSyncing = syncing[provider.id];
+
+        if (isSyncing) {
+            return (
+                <p className="mt-2 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-gray-400">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    正在同步模型目录…
+                </p>
+            );
+        }
+
+        if (entry?.models?.length) {
+            const time = entry.ts
+                ? new Date(entry.ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+                : '';
+            const modelMissing = config.modelId && !entry.models.some((model) => model.id === config.modelId);
+            return (
+                <p className="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-gray-400">
+                    <span className="h-1 w-1 bg-accent" />
+                    已同步 {entry.models.length} 个模型
+                    {entry.status === 'cache' ? ' · 缓存' : ''}
+                    {time ? ` · ${time}` : ''}
+                    {entry.error ? <span className="text-red-600">· 刷新失败：{entry.error}</span> : null}
+                    {modelMissing ? (
+                        <span className="text-amber-600">· 当前模型不在最新目录，可能已下线</span>
+                    ) : null}
+                </p>
+            );
+        }
+
+        if (entry?.status === 'error') {
+            return (
+                <p className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[10px] tracking-[0.08em] text-red-600">
+                    同步失败：{entry.error}，继续使用内置列表
+                    <button
+                        type="button"
+                        onClick={() => handleSyncProvider(provider.id, config.apiKey, true)}
+                        className="cursor-pointer border border-red-300 px-2 py-0.5 hover:bg-red-50"
+                    >
+                        重试
+                    </button>
+                </p>
+            );
+        }
+
+        return (
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-gray-400">
+                使用内置模型列表{config.apiKey ? ' · 点右侧「同步」获取最新模型' : ' · 填写 Key 后可同步'}
+            </p>
+        );
+    };
 
     /**
      * 切换运行模式
@@ -488,9 +672,16 @@ const Settings = () => {
                                     <label className="text-sm font-medium text-gray-700">
                                         模型
                                     </label>
-                                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
-                                        Model
-                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSyncProvider(provider?.id, config.apiKey, true)}
+                                        disabled={!provider || syncing[provider?.id]}
+                                        title="从服务商同步最新模型 ID"
+                                        className="inline-flex cursor-pointer items-center gap-1 border border-primary/15 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-gray-500 transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                        <RefreshCw size={11} className={syncing[provider?.id] ? 'animate-spin' : ''} />
+                                        {syncing[provider?.id] ? '同步中' : '同步'}
+                                    </button>
                                 </div>
                                 <div className="relative">
                                     <select
@@ -506,10 +697,11 @@ const Settings = () => {
                                         className="custom-select w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
                                     >
                                         <option value="">选择模型</option>
-                                        {provider?.models.map((m) => (
+                                        {getModelOptions(provider, config.modelId).map((m) => (
                                             <option key={m.id} value={m.id}>
                                                 {m.name}
-                                                {m.isFree ? '（免费）' : ''} - {m.description}
+                                                {m.isFree ? '（免费）' : ''}
+                                                {m.description ? ` - ${m.description}` : ''}
                                             </option>
                                         ))}
                                     </select>
@@ -517,6 +709,7 @@ const Settings = () => {
                                         ▼
                                     </span>
                                 </div>
+                                {renderCatalogStatus(provider, config)}
                                 {model && (
                                     <div className="mt-2.5 flex items-center gap-2 flex-wrap text-[11px] text-gray-500 font-mono">
                                         {model.isFree && (
@@ -741,9 +934,16 @@ const Settings = () => {
                                     <label className="text-sm font-medium text-gray-700">
                                         模型
                                     </label>
-                                    <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
-                                        Model
-                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSyncProvider(provider?.id, config.apiKey, true)}
+                                        disabled={!provider || syncing[provider?.id]}
+                                        title="从服务商同步最新模型 ID"
+                                        className="inline-flex cursor-pointer items-center gap-1 border border-primary/15 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-gray-500 transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                        <RefreshCw size={11} className={syncing[provider?.id] ? 'animate-spin' : ''} />
+                                        {syncing[provider?.id] ? '同步中' : '同步'}
+                                    </button>
                                 </div>
                                 <div className="relative">
                                     <select
@@ -755,10 +955,11 @@ const Settings = () => {
                                         className="custom-select w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-primary focus:outline-none focus:border-primary focus:ring-2 focus:ring-accent/30 cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
                                     >
                                         <option value="">选择模型</option>
-                                        {provider?.models.filter(m => m.supportsVision).map((m) => (
+                                        {getModelOptions(provider, config.modelId).filter(m => m.supportsVision).map((m) => (
                                             <option key={m.id} value={m.id}>
                                                 {m.name}
-                                                {m.isFree ? '（免费）' : ''} - {m.description}
+                                                {m.isFree ? '（免费）' : ''}
+                                                {m.description ? ` - ${m.description}` : ''}
                                             </option>
                                         ))}
                                     </select>
@@ -766,7 +967,8 @@ const Settings = () => {
                                         ▼
                                     </span>
                                 </div>
-                                {provider && provider.models.filter(m => m.supportsVision).length === 0 && (
+                                {renderCatalogStatus(provider, config)}
+                                {provider && getModelOptions(provider, config.modelId).filter(m => m.supportsVision).length === 0 && (
                                     <p className="mt-2 text-xs text-amber-600">
                                         该服务商暂无支持多模态视觉的模型，请选择其他服务商
                                     </p>
