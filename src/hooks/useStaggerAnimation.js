@@ -28,10 +28,10 @@ const useStaggerAnimation = (dependencies = [], selector = '.stagger-item') => {
     // duration 单位毫秒
     const anim = animate(items, {
       opacity: [0, 1],
-      y: [20, 0],
-      duration: 500,
-      delay: stagger(80),
-      ease: 'outCubic',
+      y: [26, 0],
+      duration: 650,
+      delay: stagger(90),
+      ease: 'outExpo',
       onComplete: () => {
         // 清理 transform 内联样式，避免影响后续布局
         items.forEach(el => { el.style.transform = ''; });

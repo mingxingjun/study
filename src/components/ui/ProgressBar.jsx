@@ -31,7 +31,7 @@ const ProgressBar = ({
     <div className={`w-full ${className}`}>
       <div className={`w-full overflow-hidden rounded-none bg-gray-100 ${sizes[size]}`}>
         <div
-          className={`h-full rounded-none ${animated ? '' : 'transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]'}`}
+          className={`bar-fill h-full rounded-none ${animated ? '' : 'transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]'}`}
           style={{
             width: `${percentage}%`,
             backgroundColor: color

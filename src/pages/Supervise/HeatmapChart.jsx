@@ -154,10 +154,11 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
                 {week.map((day, dayIndex) => (
                   <div
                     key={dayIndex}
-                    className="relative h-[14px] w-[14px] cursor-pointer rounded-[2px] transition-all duration-150 hover:z-10 hover:ring-2 hover:ring-primary"
+                    className={`relative h-[14px] w-[14px] cursor-pointer rounded-[2px] transition-all duration-150 hover:z-10 hover:ring-2 hover:ring-primary ${day ? 'heat-cell' : ''}`}
                     style={{
                       backgroundColor: day ? getColorByMinutes(day.minutes) : 'transparent',
-                      opacity: day ? 1 : 0
+                      opacity: day ? 1 : 0,
+                      '--d': weekIndex * 7 + dayIndex
                     }}
                     onMouseEnter={() => day && setHoveredDate(day)}
                     onMouseLeave={() => setHoveredDate(null)}

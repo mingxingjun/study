@@ -80,7 +80,7 @@ const AgentsPanel = ({ agents, className = '', compact = false }) => {
             </div>
 
             {isExpanded && (
-              <div className="mt-4 border-t border-primary/10 pt-4">
+              <div className="expand-in mt-4 border-t border-primary/10 pt-4">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-500">对话历史</span>
                   <ChevronUp size={16} className="text-gray-400" />

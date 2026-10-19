@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Trophy } from 'lucide-react';
 import Card from '../../components/ui/Card';
+import useCountUp from '../../hooks/useCountUp';
 
 /**
  * 圆环进度组件 - 大号金色圆环
@@ -65,6 +66,7 @@ const MasteryCard = ({ answerRecords = [] }) => {
   }, [answerRecords]);
 
   const label = mastery >= 80 ? '表现优秀' : mastery >= 60 ? '稳步提升' : '持续积累';
+  const displayMastery = useCountUp(mastery, { duration: 1400 });
 
   return (
     <Card className="card-hover p-6" elevated>
@@ -83,11 +85,11 @@ const MasteryCard = ({ answerRecords = [] }) => {
       </div>
 
       <div className="flex items-center gap-6">
-        <CircularProgress value={mastery} />
+        <CircularProgress value={displayMastery} />
         <div className="flex-1">
           <div className="mb-2 flex items-baseline gap-1.5">
             <span className="font-serif text-4xl leading-none text-primary tabular-nums">
-              {mastery}
+              {displayMastery}
             </span>
             <span className="font-mono text-sm text-gray-500">%</span>
           </div>

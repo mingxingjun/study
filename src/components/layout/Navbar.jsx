@@ -34,7 +34,7 @@ const SidebarBody = ({ onNavigate }) => {
       <NavLink
         to="/"
         onClick={onNavigate}
-        className="group flex items-center gap-3 px-6 pb-6 pt-7"
+        className="brand-enter group flex items-center gap-3 px-6 pb-6 pt-7"
       >
         <span className="flex h-10 w-10 items-center justify-center bg-accent font-serif text-xl leading-none text-black ring-1 ring-white/10 transition-transform duration-150 group-hover:-translate-y-0.5">
           复
@@ -65,7 +65,8 @@ const SidebarBody = ({ onNavigate }) => {
               to={item.path}
               end={item.path === '/'}
               onClick={onNavigate}
-              className={`group flex min-h-[44px] items-center gap-3 border-l-2 px-3 py-2.5 transition-colors duration-150 ${
+              style={{ '--i': idx }}
+              className={`nav-enter group flex min-h-[44px] items-center gap-3 border-l-2 px-3 py-2.5 transition-colors duration-150 ${
                 active
                   ? 'border-accent bg-accent text-black'
                   : 'border-transparent text-white/60 hover:border-white/25 hover:bg-white/[0.06] hover:text-white'
@@ -97,7 +98,8 @@ const SidebarBody = ({ onNavigate }) => {
         <NavLink
           to="/settings"
           onClick={onNavigate}
-          className="group block border border-white/15 p-3 transition-colors duration-150 hover:border-accent hover:bg-white/[0.04]"
+          style={{ '--i': 7 }}
+          className="nav-enter group block border border-white/15 p-3 transition-colors duration-150 hover:border-accent hover:bg-white/[0.04]"
         >
           <span className="flex items-center justify-between">
             <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
