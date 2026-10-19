@@ -1131,7 +1131,7 @@ const QuestionBank = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-[200] overflow-y-auto">
           <div
-            className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
+            className="modal-backdrop absolute inset-0 bg-primary/40 backdrop-blur-sm"
             onClick={handleCloseModal}
           />
           <div className="relative flex min-h-full items-center justify-center p-4 sm:p-6">
@@ -1139,7 +1139,7 @@ const QuestionBank = () => {
             role="dialog"
             aria-modal="true"
             aria-label={editingQuestion ? '编辑题目' : '新增题目'}
-            className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden border-2 border-primary bg-white shadow-lg"
+            className="modal-panel relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden border-2 border-primary bg-white shadow-lg"
           >
             {/* 弹窗头部 */}
             <div className="z-10 flex flex-shrink-0 items-center justify-between border-b border-primary/10 bg-white px-6 py-5">
@@ -1405,7 +1405,7 @@ const QuestionBank = () => {
       {isAIGeneratorOpen && (
         <div className="fixed inset-0 z-[200] overflow-y-auto">
           <div
-            className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
+            className="modal-backdrop absolute inset-0 bg-primary/40 backdrop-blur-sm"
             onClick={handleCloseAIGenerator}
           />
           <div className="relative flex min-h-full items-center justify-center p-4 sm:p-6">
@@ -1413,7 +1413,7 @@ const QuestionBank = () => {
             role="dialog"
             aria-modal="true"
             aria-label="AI 按知识点出题"
-            className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden border-2 border-primary bg-white shadow-lg"
+            className="modal-panel relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden border-2 border-primary bg-white shadow-lg"
           >
             {/* 弹窗头部 */}
             <div className="flex items-center justify-between border-b border-primary/10 px-6 py-5">

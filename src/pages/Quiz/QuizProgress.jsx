@@ -84,7 +84,7 @@ const QuizProgress = ({
       {/* 进度条 - 直角墨线填充 */}
       <div className="h-1.5 w-full overflow-hidden bg-gray-100">
         <div
-          className="h-full bg-primary transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          className="bar-fill h-full bg-primary transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{ width: `${progressPercent}%` }}
         />
       </div>

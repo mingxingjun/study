@@ -475,3 +475,216 @@ textarea::placeholder {
 button.rounded-full {
   border-radius: 0 !important;
 }
+
+/* ============================================================
+   MOTION — 页面编排 / 路由进度 / 微交互
+   ============================================================ */
+
+/* 路由进度条：每次切页从左扫到右，收尾淡出 */
+@keyframes routeBar {
+  0% { transform: scaleX(0); opacity: 1; }
+  72% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+.route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  height: 3px;
+  background: #ff4d00;
+  transform-origin: left center;
+  animation: routeBar 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+}
+
+@media (max-width: 1023px) {
+  .route-progress { top: 64px; }
+}
+
+/* 页面主标题：裁切上翻 + 上移 */
+@keyframes titleIn {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+main h1 {
+  animation: titleIn 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.06s backwards;
+}
+
+/* 标题下方说明文字：稍后跟进 */
+@keyframes metaIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+main h1 + p {
+  animation: metaIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.18s backwards;
+}
+
+/* 区块标题 */
+.section-title {
+  animation: metaIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.12s backwards;
+}
+
+/* 侧栏导航逐项滑入 */
+@keyframes navIn {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.nav-enter {
+  animation: navIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms + 120ms);
+}
+
+/* 品牌区入场 */
+@keyframes brandIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.brand-enter {
+  animation: brandIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 热力图格子：依次点亮 */
+@keyframes cellIn {
+  from { opacity: 0; transform: scale(0.35); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.heat-cell {
+  animation: cellIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--d, 0) * 7ms);
+}
+
+@media (hover: hover) {
+  .heat-cell:hover {
+    transform: scale(1.3);
+  }
+}
+
+/* 错题列表行：左侧滑入 */
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.row-in {
+  animation: rowIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--d, 0) * 45ms + 60ms);
+}
+
+/* 选项：依次浮现 */
+@keyframes optionIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.option-in {
+  animation: optionIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--d, 0) * 55ms + 80ms);
+}
+
+/* 弹窗：遮罩淡入 + 面板上浮 */
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-backdrop { animation: backdropIn 0.2s ease-out both; }
+.modal-panel { animation: panelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Agent 展开区 */
+@keyframes expandIn {
+  from { opacity: 0; transform: translateY(-6px) scaleY(0.96); }
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+.expand-in {
+  animation: expandIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+}
+
+/* 按钮按下：硬阴影塌陷 */
+.btn-crisp {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+@media (hover: hover) {
+  .btn-crisp:hover {
+    box-shadow: 4px 4px 0 #0b0a08;
+    transform: translate(-1px, -1px);
+  }
+}
+
+.btn-crisp:active {
+  box-shadow: 0 0 0 #0b0a08;
+  transform: translate(0, 0);
+}
+
+/* 悬停时图标轻微位移 */
+.icon-nudge {
+  transition: transform 0.16s ease;
+}
+
+@media (hover: hover) {
+  .group:hover .icon-nudge {
+    transform: translate(2px, -2px);
+  }
+}
+
+/* 数字滚动时的轻微上浮 */
+@keyframes tickIn {
+  from { opacity: 0.4; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tick-in { animation: tickIn 0.35s ease-out both; }
+
+/* 进度条填充：从左生长 */
+@keyframes barFill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.bar-fill {
+  transform-origin: left center;
+  animation: barFill 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+/* 区块标题装饰：方块弹出 + 细线展开 */
+@keyframes squarePop {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+
+.section-square {
+  animation: squarePop 0.38s cubic-bezier(0.16, 1, 0.3, 1) 0.12s backwards;
+}
+
+@keyframes ruleGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.section-rule {
+  transform-origin: left center;
+  animation: ruleGrow 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+}

@@ -12,6 +12,11 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import useReducedMotion from './hooks/useReducedMotion';
 
+function RouteProgress() {
+  const { pathname } = useLocation();
+  return <div key={pathname} className="route-progress" aria-hidden="true" />;
+}
+
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -70,6 +75,7 @@ function App() {
       <ScrollToTop />
       <div className="min-h-screen bg-transparent">
         <a href="#main" className="skip-link">跳到主要内容</a>
+        <RouteProgress />
         <Navbar />
         <div className="lg:pl-[264px]">
           <PageTransition>

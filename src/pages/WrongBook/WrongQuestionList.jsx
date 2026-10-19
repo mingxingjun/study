@@ -102,7 +102,8 @@ const WrongQuestionList = ({
             <button
               key={wq.id}
               onClick={() => onSelect(wq)}
-              className={`relative w-full cursor-pointer border-b border-primary/10 px-6 py-5 text-left transition-colors duration-150 last:border-b-0 ${
+              style={{ '--d': idx }}
+              className={`row-in relative w-full cursor-pointer border-b border-primary/10 px-6 py-5 text-left transition-colors duration-150 last:border-b-0 ${
                 isSelected
                   ? 'bg-warm-50'
                   : 'hover:bg-gray-50/60'

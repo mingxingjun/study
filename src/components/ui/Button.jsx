@@ -38,11 +38,9 @@ const Button = ({
     <button
       className={`
         inline-flex items-center justify-center gap-2
-        rounded-none border-2 font-semibold tracking-wide
+        btn-crisp rounded-none border-2 font-semibold tracking-wide
         cursor-pointer select-none
-        transition-all duration-150
-        hover:-translate-y-0.5 active:translate-y-0
-        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0
+        disabled:opacity-40 disabled:cursor-not-allowed
         ${variants[variant]}
         ${sizes[size]}
         ${className}

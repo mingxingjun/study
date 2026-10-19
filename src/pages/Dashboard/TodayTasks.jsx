@@ -93,7 +93,7 @@ const TodayTasks = ({ todayTasks, hasMaterials }) => {
               <div className="w-28 flex-shrink-0">
                 <div className="h-1.5 w-full overflow-hidden bg-gray-200/70">
                   <div
-                    className={`h-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    className={`bar-fill h-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                       isDone ? 'bg-accent' : 'bg-primary'
                     }`}
                     style={{ width: `${percentage}%` }}

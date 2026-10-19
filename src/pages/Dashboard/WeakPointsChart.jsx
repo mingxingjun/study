@@ -66,7 +66,7 @@ const WeakPointsChart = ({ weakPoints }) => {
 
               <div className="ml-9 h-1.5 w-full overflow-hidden bg-gray-100">
                 <div
-                  className={`h-full ${level.color} transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]`}
+                  className={`bar-fill h-full ${level.color} transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]`}
                   style={{ width: `${barWidth}%` }}
                 />
               </div>

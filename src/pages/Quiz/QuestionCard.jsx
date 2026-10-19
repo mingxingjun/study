@@ -254,10 +254,11 @@ const QuestionCard = ({
 
             return (
               <button
-                key={index}
+                key={`${question.question}-${index}`}
                 onClick={() => !disabled && onAnswerSelect(optionLetter)}
                 disabled={disabled}
-                className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] ${
+                style={{ '--d': index }}
+                className={`option-in w-full text-left p-4 rounded-xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] ${
                   showResult
                     ? resultStyle
                     : isSelected
@@ -304,7 +305,7 @@ const QuestionCard = ({
 
             return (
               <button
-                key={index}
+                key={`${question.question}-${index}`}
                 onClick={() => {
                   if (disabled) return;
                   const next = new Set(selectedLetters);
@@ -316,7 +317,8 @@ const QuestionCard = ({
                   onAnswerSelect(Array.from(next).sort().join(''));
                 }}
                 disabled={disabled}
-                className={`w-full text-left p-4 rounded-xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] ${
+                style={{ '--d': index }}
+                className={`option-in w-full text-left p-4 rounded-xl border transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.99] ${
                   showResult
                     ? resultStyle
                     : isSelected
