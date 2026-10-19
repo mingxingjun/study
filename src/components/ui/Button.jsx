@@ -1,9 +1,9 @@
 /**
- * 按钮组件 - Refined Editorial Minimalism
- * 金色 CTA + 精致阴影 + 微妙位移
+ * 按钮组件 — "SIGNAL" 设计系统
+ * 直角硬边 + 2px 墨线 + 信号橙悬停
  * @param {Object} props
  * @param {React.ReactNode} props.children - 按钮内容
- * @param {string} [props.variant='primary'] - 按钮变体：primary(金底)/secondary(白底)/accent(金底强调)/ghost(透明)
+ * @param {string} [props.variant='primary'] - 按钮变体：primary(墨黑)/secondary(白底墨线)/accent(信号橙)/ghost(透明)
  * @param {string} [props.size='md'] - 按钮尺寸
  * @param {string} [props.className] - 额外的 CSS 类名
  * @param {boolean} [props.disabled=false] - 是否禁用
@@ -18,31 +18,31 @@ const Button = ({
   ...props
 }) => {
   const variants = {
-    // 金色主按钮 - 奢侈品 CTA 风格
-    primary: 'bg-accent text-primary hover:bg-accent-dark border border-accent/40 hover:border-accent-dark hover:shadow-gold',
-    // 白底描边 - 编辑风次按钮
-    secondary: 'bg-white text-primary border border-gray-300 hover:border-gray-900 hover:bg-gray-50 hover:shadow-sm',
-    // 金底强调 - 与 primary 一致，语义别名
-    accent: 'bg-accent text-primary hover:bg-accent-dark border border-accent/40 hover:border-accent-dark hover:shadow-gold',
-    // 透明幽灵 - 极简内嵌
-    ghost: 'bg-transparent text-gray-600 border border-transparent hover:text-primary hover:bg-gray-100/80'
+    // 墨黑主按钮：悬停翻转为信号橙
+    primary: 'bg-primary text-white border-primary hover:bg-accent hover:text-black hover:border-accent',
+    // 白底墨线：悬停压黑
+    secondary: 'bg-white text-primary border-primary hover:bg-primary hover:text-white',
+    // 信号橙：悬停加深
+    accent: 'bg-accent text-black border-black hover:bg-accent-dark hover:text-white',
+    // 透明幽灵
+    ghost: 'bg-transparent text-gray-600 border-transparent hover:text-primary hover:bg-gray-100'
   };
 
   const sizes = {
-    sm: 'px-3.5 py-1.5 text-xs tracking-wide',
-    md: 'px-5 py-2.5 text-sm tracking-wide',
-    lg: 'px-7 py-3.5 text-sm tracking-wider'
+    sm: 'px-3 py-1.5 text-[11px]',
+    md: 'px-4 py-2.5 text-[13px]',
+    lg: 'px-6 py-3.5 text-sm'
   };
 
   return (
     <button
       className={`
         inline-flex items-center justify-center gap-2
-        rounded-full font-medium
+        rounded-none border-2 font-semibold tracking-wide
         cursor-pointer select-none
-        transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]
-        hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
-        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:translate-y-0 disabled:hover:shadow-none
+        transition-all duration-150
+        hover:-translate-y-0.5 active:translate-y-0
+        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0
         ${variants[variant]}
         ${sizes[size]}
         ${className}

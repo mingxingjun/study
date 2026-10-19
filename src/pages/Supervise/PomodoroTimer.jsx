@@ -138,8 +138,8 @@ const PomodoroTimer = ({ onFocusComplete }) => {
   };
 
   // 暖灰阶配色：专注模式金色进度环，休息模式温灰
-  const ringColor = isFocusMode ? '#c9a227' : '#837b71';
-  const bgRingColor = isFocusMode ? '#f4f2ef' : '#e8e5e0';
+  const ringColor = isFocusMode ? '#ff4d00' : '#8a8172';
+  const bgRingColor = isFocusMode ? '#f4f1e8' : '#e6dfcf';
 
   return (
     <div className="flex flex-col items-center w-full relative">

@@ -55,10 +55,10 @@ const QuestionCard = ({
     let anim;
 
     if (isCorrect) {
-      // 正确：背景色 #f5e6b3 → #ffffff，600ms
+      // 正确：背景色 #ffd8c7 → #ffffff，600ms
       // fromTo 用数组 [from, to] 实现
       anim = animate(node, {
-        backgroundColor: ['#f5e6b3', '#ffffff'],
+        backgroundColor: ['#ffd8c7', '#ffffff'],
         duration: 600,
         ease: 'outQuad',
         onComplete: () => {

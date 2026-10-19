@@ -10,9 +10,9 @@ import ParseLog from './ParseLog';
 /** 信心度颜色映射 */
 const CONFIDENCE_COLORS = {
     high: '#22c55e',
-    medium: '#eab308',
+    medium: '#ff4d00',
     low: '#ef4444',
-    null: '#9ca3af'
+    null: '#8a8172'
 };
 
 /** 信心度中文标签 */
@@ -527,7 +527,7 @@ const RawTextPreview = ({ rawText, pageImages = [], images = [], onAddFromSelect
                         onClick={() => setPreviewMode('image')}
                         className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 cursor-pointer
                             ${effectiveMode === 'image'
-                                ? 'bg-[#c9a227] text-white'
+                                ? 'bg-[#ff4d00] text-white'
                                 : 'text-gray-600 hover:bg-gray-200'}`}
                     >
                         图片预览（{previewImages.length} 张）
@@ -536,7 +536,7 @@ const RawTextPreview = ({ rawText, pageImages = [], images = [], onAddFromSelect
                         onClick={() => setPreviewMode('text')}
                         className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150 cursor-pointer
                             ${effectiveMode === 'text'
-                                ? 'bg-[#c9a227] text-white'
+                                ? 'bg-[#ff4d00] text-white'
                                 : 'text-gray-600 hover:bg-gray-200'}`}
                     >
                         文本预览
@@ -593,8 +593,8 @@ const RawTextPreview = ({ rawText, pageImages = [], images = [], onAddFromSelect
                     <button
                         onClick={handleAddQuestion}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium
-                                   bg-[#c9a227] text-white rounded-lg shadow-lg
-                                   hover:bg-[#b08d1f] transition-all duration-200 cursor-pointer
+                                   bg-[#ff4d00] text-white rounded-lg shadow-lg
+                                   hover:bg-[#b83200] transition-all duration-200 cursor-pointer
                                    whitespace-nowrap pointer-events-auto"
                         title="将选中文本作为新题目添加"
                     >

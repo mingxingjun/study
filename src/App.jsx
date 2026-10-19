@@ -23,8 +23,7 @@ function ScrollToTop() {
 
 /**
  * 页面切换动画包装器
- * 在路由变化时为 main 内容区添加淡入/上滑进入动画
- * 使用 anime.js v4 实现，cleanup 时 revert 避免动画叠加
+ * 路由变化时内容区淡入 + 轻微上移，同时保证移动端顶栏留白
  */
 function PageTransition({ children }) {
   const { pathname } = useLocation();
@@ -34,20 +33,17 @@ function PageTransition({ children }) {
   useEffect(() => {
     if (!mainRef.current) return;
 
-    // 降级：用户偏好减少动画，直接显示终态
     if (reducedMotion) {
       utils.set(mainRef.current, { opacity: 1, y: 0 });
       return;
     }
 
-    // fromTo 用数组 [from, to] 实现；duration 单位毫秒
     const anim = animate(mainRef.current, {
       opacity: [0, 1],
-      y: [16, 0],
-      duration: 450,
+      y: [14, 0],
+      duration: 420,
       ease: 'outCubic',
       onComplete: () => {
-        // 清理 transform 内联样式，避免影响后续布局
         if (mainRef.current) mainRef.current.style.transform = '';
       }
     });
@@ -58,7 +54,7 @@ function PageTransition({ children }) {
   return (
     <main
       ref={mainRef}
-      className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 pt-12 pb-20"
+      className="mx-auto w-full max-w-[1440px] px-5 pb-24 pt-24 sm:px-8 lg:px-14 lg:pt-14"
     >
       {children}
     </main>
@@ -69,19 +65,21 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-transparent">
         <Navbar />
-        <PageTransition>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/upload" element={<Upload />} />
-            <Route path="/quiz" element={<Quiz />} />
-            <Route path="/question-bank" element={<QuestionBank />} />
-            <Route path="/wrong-book" element={<WrongBook />} />
-            <Route path="/supervise" element={<Supervise />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </PageTransition>
+        <div className="lg:pl-[264px]">
+          <PageTransition>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/upload" element={<Upload />} />
+              <Route path="/quiz" element={<Quiz />} />
+              <Route path="/question-bank" element={<QuestionBank />} />
+              <Route path="/wrong-book" element={<WrongBook />} />
+              <Route path="/supervise" element={<Supervise />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </PageTransition>
+        </div>
       </div>
     </Router>
   );

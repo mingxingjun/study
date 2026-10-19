@@ -8,7 +8,7 @@ import JXG from 'jsxgraph';
 import 'jsxgraph/distrib/jsxgraph.css';
 
 /** 默认颜色 - 黑白金极简设计系统 */
-const DEFAULT_COLORS = ['#171717', '#c9a227', '#6b7280', '#9ca3af', '#374151'];
+const DEFAULT_COLORS = ['#0b0a08', '#ff4d00', '#6b6458', '#8a8172', '#35302a'];
 
 /** 需要映射到 Math 命名空间的数学函数 */
 const MATH_FUNCTIONS = [
@@ -77,12 +77,12 @@ const initBoard = (boardId, xMin, xMax, yMin, yMax) => {
         keepaspectratio: false,
         defaultAxes: {
             x: {
-                strokeColor: '#171717',
-                ticks: { strokeColor: '#9ca3af', majorHeight: 6, minorHeight: 3 }
+                strokeColor: '#0b0a08',
+                ticks: { strokeColor: '#8a8172', majorHeight: 6, minorHeight: 3 }
             },
             y: {
-                strokeColor: '#171717',
-                ticks: { strokeColor: '#9ca3af', majorHeight: 6, minorHeight: 3 }
+                strokeColor: '#0b0a08',
+                ticks: { strokeColor: '#8a8172', majorHeight: 6, minorHeight: 3 }
             }
         },
         grid: false
@@ -196,7 +196,7 @@ const ParameterSlider = ({ param, value, onChange }) => {
                 step={param.step}
                 value={displayValue}
                 onChange={(e) => onChange(param.name, parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer accent-[#171717]"
+                className="w-full h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer accent-[#0b0a08]"
             />
         </div>
     );

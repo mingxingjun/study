@@ -146,7 +146,7 @@ export const explainerPrompt = `你是 Study Buddy 的错题讲解导师，鼓�
 
 1. 函数图像可视化（type: "function-plot"）
    - 当题目涉及函数关系（如信号 sin/cos、系统响应 h(t)、频率特性等）
-   - data 结构：{ functions: [{expr: "sin(x)", color: "#171717", label: "正弦波"}], xRange: [-6.28, 6.28], yRange: [-1.5, 1.5], parameters: [{name, min, max, step, default}] }
+   - data 结构：{ functions: [{expr: "sin(x)", color: "#0b0a08", label: "正弦波"}], xRange: [-6.28, 6.28], yRange: [-1.5, 1.5], parameters: [{name, min, max, step, default}] }
    - expr 使用 JavaScript 数学表达式语法：sin(x), cos(x), x^2, exp(-x), log(x), sqrt(x), abs(x)
 
 2. 电路图可视化（type: "circuit"）
@@ -157,7 +157,7 @@ export const explainerPrompt = `你是 Study Buddy 的错题讲解导师，鼓�
 
 3. 信号波形可视化（type: "waveform"）
    - 当题目涉及信号波形分析时
-   - data 结构：{ waves: [{type: "square", frequency: 1000, amplitude: 5, color: "#171717"}], duration: 0.01 }
+   - data 结构：{ waves: [{type: "square", frequency: 1000, amplitude: 5, color: "#0b0a08"}], duration: 0.01 }
    - 波形类型：sine, square, triangle, sawtooth, impulse
 
 4. 解题步骤可视化（type: "steps"）
@@ -292,7 +292,7 @@ export const documentParsePrompt = `你是 Study Buddy 的教育资料解析专�
 
 1. 函数图像可视化（type: "function-plot"）
    - 当题目涉及函数关系（如信号 sin/cos、系统响应 h(t)、频率特性等）
-   - data 结构：{ functions: [{expr: "sin(x)", color: "#171717", label: "正弦波"}], xRange: [-6.28, 6.28], yRange: [-1.5, 1.5], parameters: [{name, min, max, step, default}] }
+   - data 结构：{ functions: [{expr: "sin(x)", color: "#0b0a08", label: "正弦波"}], xRange: [-6.28, 6.28], yRange: [-1.5, 1.5], parameters: [{name, min, max, step, default}] }
    - expr 使用 JavaScript 数学表达式语法：sin(x), cos(x), x^2, exp(-x), log(x), sqrt(x), abs(x)
 
 2. 电路图可视化（type: "circuit"）
@@ -303,7 +303,7 @@ export const documentParsePrompt = `你是 Study Buddy 的教育资料解析专�
 
 3. 信号波形可视化（type: "waveform"）
    - 当题目涉及信号波形分析时
-   - data 结构：{ waves: [{type: "square", frequency: 1000, amplitude: 5, color: "#171717"}], duration: 0.01 }
+   - data 结构：{ waves: [{type: "square", frequency: 1000, amplitude: 5, color: "#0b0a08"}], duration: 0.01 }
    - 波形类型：sine, square, triangle, sawtooth, impulse
 
 4. 解题步骤可视化（type: "steps"）

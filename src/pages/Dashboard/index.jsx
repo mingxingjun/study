@@ -248,7 +248,7 @@ const Dashboard = () => {
 
           {/* 今日待复习 - 金色强调卡片 */}
           <div className="stagger-item">
-            <Card className="card-hover bg-gradient-to-br from-accent/8 to-accent/3 border-accent/20" elevated>
+            <Card className="card-hover bg-gradient-to-br from-accent/8 to-accent/3 border-accent/20 p-6" elevated>
               <div className="flex items-start justify-between mb-5">
                 <div>
                   <p className="text-[11px] font-mono uppercase tracking-wider text-accent-dark mb-1">

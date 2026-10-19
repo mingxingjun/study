@@ -4,11 +4,11 @@
  */
 
 // 设计系统常量 - Refined Editorial Minimalism（黑白金极简）
-const STROKE_COLOR = '#171717';
+const STROKE_COLOR = '#0b0a08';
 const STROKE_WIDTH = '1.5';
-const TEXT_COLOR = '#171717';
+const TEXT_COLOR = '#0b0a08';
 const VALUE_COLOR = '#666';
-const WIRE_COLOR = '#171717';
+const WIRE_COLOR = '#0b0a08';
 
 // 元件端点偏移量（相对元件中心，旋转前坐标）
 // 每种元件类型定义其端点相对中心的位置
