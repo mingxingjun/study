@@ -99,7 +99,7 @@ const QuizSummary = ({
             cy="80"
             r={radius}
             fill="none"
-            stroke="#f0f0f0"
+            stroke="#eae5d9"
             strokeWidth="6"
           />
           <circle
@@ -107,7 +107,7 @@ const QuizSummary = ({
             cy="80"
             r={radius}
             fill="none"
-            stroke="#c9a227"
+            stroke="#ff4d00"
             strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={circumference}

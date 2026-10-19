@@ -106,7 +106,7 @@ const AgentAvatar = ({ agent, size = 'md', className = '' }) => {
       default:
         return {
           ...base,
-          borderColor: '#d1d5db'
+          borderColor: '#d8d1c0'
         };
     }
   };
@@ -124,7 +124,7 @@ const AgentAvatar = ({ agent, size = 'md', className = '' }) => {
         />
         <div
           className={`${config.container} rounded-full flex items-center justify-center bg-white z-10 ${config.text}`}
-          style={{ border: '2px solid #e5e7eb' }}
+          style={{ border: '2px solid #d8d1c0' }}
         >
           {renderContent()}
         </div>

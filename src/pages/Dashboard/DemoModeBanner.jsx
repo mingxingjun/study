@@ -31,7 +31,7 @@ const DemoModeBanner = () => {
   };
 
   return (
-    <Card className="bg-gradient-to-r from-accent/8 via-accent/4 to-transparent border-accent/25 relative overflow-hidden" elevated>
+    <Card className="relative overflow-hidden border-accent/25 bg-gradient-to-r from-accent/8 via-accent/4 to-transparent p-5 sm:p-6" elevated>
       {/* 装饰性光晕 */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-accent/8 rounded-full blur-3xl pointer-events-none" />
 

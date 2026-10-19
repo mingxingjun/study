@@ -26,7 +26,7 @@ const QuizResult = ({
   return (
     <Card
       className="mt-6 scale-in"
-      style={{ borderLeftWidth: '2px', borderLeftColor: isCorrect ? '#c9a227' : '#a3a3a3' }}
+      style={{ borderLeftWidth: '2px', borderLeftColor: isCorrect ? '#ff4d00' : '#a3a3a3' }}
       elevated
     >
       <div className="flex items-start gap-5">

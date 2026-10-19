@@ -26,7 +26,7 @@ const CircularProgress = ({ value, size = 56, strokeWidth = 3 }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#f0f0f0"
+          stroke="#eae5d9"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -34,7 +34,7 @@ const CircularProgress = ({ value, size = 56, strokeWidth = 3 }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#c9a227"
+          stroke="#ff4d00"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -109,7 +109,7 @@ const StatCard = ({ item, index }) => {
         )}
         {item.visualType === 'bar' && (
           <div className="flex-shrink-0 w-full max-w-[120px]">
-            <ProgressBar value={animatedValue} size="md" color="#171717" animated />
+            <ProgressBar value={animatedValue} size="md" color="#0b0a08" animated />
           </div>
         )}
       </div>

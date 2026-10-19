@@ -5,7 +5,7 @@ import Card from '../../components/ui/Card';
 /**
  * 圆环进度组件 - 大号金色圆环
  */
-const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#c9a227' }) => {
+const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#ff4d00' }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / 100) * circumference;
@@ -21,7 +21,7 @@ const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#c9a227
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#f0f0f0"
+          stroke="#eae5d9"
           strokeWidth={strokeWidth}
         />
         <circle
