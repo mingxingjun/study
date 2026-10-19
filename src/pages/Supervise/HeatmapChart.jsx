@@ -102,14 +102,14 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
   return (
     <div className="overflow-x-auto">
       {!hasData && (
-        <div className="bg-warm-50/60 rounded-xl p-12 text-center border border-dashed border-gray-200">
-          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-200/60 shadow-xs">
+        <div className="border border-dashed border-primary/25 bg-warm-50/60 p-12 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border border-primary/15 bg-white">
             <Calendar size={22} className="text-gray-400" strokeWidth={1.5} />
           </div>
-          <p className="font-serif text-base text-gray-700 mb-1.5" style={{ fontWeight: 500 }}>
+          <p className="mb-1.5 font-serif text-base text-gray-700">
             暂无打卡记录
           </p>
-          <p className="text-xs text-gray-400 font-mono tracking-wide">
+          <p className="font-mono text-xs tracking-wide text-gray-400">
             每日打卡和专注学习后，热力图将逐渐点亮
           </p>
         </div>
@@ -136,11 +136,11 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
         {/* 热力图主体 */}
         <div className="flex">
           {/* 星期标签 */}
-          <div className="flex flex-col gap-[3px] mr-2.5">
+          <div className="mr-2.5 flex flex-col gap-[4px]">
             {WEEKDAYS.map((day, i) => (
               <div
                 key={i}
-                className="h-[13px] w-5 text-[10px] text-gray-400 flex items-center font-mono"
+                className="flex h-[14px] w-5 items-center font-mono text-[10px] text-gray-400"
               >
                 {i % 2 === 1 ? day : ''}
               </div>
@@ -148,13 +148,13 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
           </div>
 
           {/* 格子网格 */}
-          <div className="flex gap-[3px]">
+          <div className="flex gap-[4px]">
             {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-[3px]">
+              <div key={weekIndex} className="flex flex-col gap-[4px]">
                 {week.map((day, dayIndex) => (
                   <div
                     key={dayIndex}
-                    className="w-[13px] h-[13px] rounded-[3px] cursor-pointer transition-all duration-150 hover:ring-1 hover:ring-accent hover:ring-offset-1 hover:ring-offset-white relative"
+                    className="relative h-[14px] w-[14px] cursor-pointer rounded-[2px] transition-all duration-150 hover:z-10 hover:ring-2 hover:ring-primary"
                     style={{
                       backgroundColor: day ? getColorByMinutes(day.minutes) : 'transparent',
                       opacity: day ? 1 : 0
@@ -162,11 +162,11 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
                     onMouseEnter={() => day && setHoveredDate(day)}
                     onMouseLeave={() => setHoveredDate(null)}
                   >
-                    {/* Tooltip - 编辑风深色卡片 */}
+                    {/* Tooltip - 硬边卡片 */}
                     {hoveredDate === day && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-primary text-white text-[11px] rounded-md whitespace-nowrap z-20 shadow-lg font-mono tracking-wide">
+                      <div className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap border-2 border-primary bg-white px-2.5 py-1.5 font-mono text-[11px] tracking-wide text-primary shadow-md">
                         {formatTooltip(day)}
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-primary"></div>
+                        <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-primary"></div>
                       </div>
                     )}
                   </div>
@@ -176,19 +176,19 @@ const HeatmapChart = ({ dailyRecords = {} }) => {
           </div>
         </div>
 
-        {/* 图例 - mono 标签 + 渐变色阶 */}
-        <div className="flex items-center justify-end mt-5 gap-2">
-          <span className="text-[10px] text-gray-400 font-mono tracking-[0.15em] uppercase">Less</span>
-          <div className="flex gap-[3px]">
+        {/* 图例 - mono 标签 + 色阶 */}
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-gray-400">Less</span>
+          <div className="flex gap-[4px]">
             {COLORS.map((color, i) => (
               <div
                 key={i}
-                className="w-[13px] h-[13px] rounded-[3px]"
+                className="h-[14px] w-[14px] rounded-[2px] border border-primary/15"
                 style={{ backgroundColor: color }}
               />
             ))}
           </div>
-          <span className="text-[10px] text-gray-400 font-mono tracking-[0.15em] uppercase">More</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-gray-400">More</span>
         </div>
       </div>
       )}

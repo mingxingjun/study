@@ -178,18 +178,18 @@ const WrongBook = () => {
 
   return (
     <div ref={pageRef}>
-      {/* 页面标题区 - 衬线大字 + mono 标签 + 金色点缀 */}
-      <div className="mb-14 stagger-item">
-        <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+      {/* 页面标题区 - 展示大字 + mono 标签 */}
+      <div className="mb-10 stagger-item">
+        <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400">
+          <span className="h-1.5 w-1.5 bg-accent" />
           Wrong Book · 错题档案
         </p>
-        <div className="flex items-end justify-between flex-wrap gap-6">
+        <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
-              错题本
-              <span className="text-accent-dark">.</span>
+            <h1 className="mb-3 text-primary">
+              错题本<span className="text-accent">.</span>
             </h1>
-            <p className="text-gray-500 text-base max-w-xl leading-relaxed">
+            <p className="max-w-xl text-base leading-relaxed text-gray-500">
               分析错题，查漏补缺 — 每一道错题都是一次精进的契机。
             </p>
           </div>
@@ -230,6 +230,32 @@ const WrongBook = () => {
         </div>
       </div>
 
+      {wrongQuestions.length === 0 ? (
+        <Card className="stagger-item relative overflow-hidden p-8 sm:p-12" elevated>
+          <div className="stripe-panel pointer-events-none absolute right-0 top-0 h-full w-44 opacity-70" />
+          <div className="relative flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+              <span className="font-serif text-[92px] leading-[0.75] tracking-[-0.06em] text-gray-200">
+                00
+              </span>
+              <div className="max-w-md">
+                <p className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-accent-dark">
+                  <span className="h-1.5 w-1.5 bg-accent" />
+                  No Records
+                </p>
+                <h2 className="mb-3 font-serif text-3xl text-primary">暂无错题记录</h2>
+                <p className="text-sm leading-relaxed text-gray-500">
+                  答错的题目会自动收录到这里，并按遗忘曲线安排复习。先去刷几道题吧。
+                </p>
+              </div>
+            </div>
+            <Button size="lg" onClick={() => navigate('/quiz')}>
+              <BookOpen className="h-4 w-4" />
+              开始刷题
+            </Button>
+          </div>
+        </Card>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10">
         <div className="stagger-item">
           <WrongQuestionList
@@ -305,6 +331,7 @@ const WrongBook = () => {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };

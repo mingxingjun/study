@@ -31,19 +31,16 @@ const DemoModeBanner = () => {
   };
 
   return (
-    <Card className="relative overflow-hidden border-accent/25 bg-gradient-to-r from-accent/8 via-accent/4 to-transparent p-5 sm:p-6" elevated>
-      {/* 装饰性光晕 */}
-      <div className="absolute top-0 right-0 w-48 h-48 bg-accent/8 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="flex items-start gap-4 relative">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-          <Cpu className="w-5 h-5 text-accent" strokeWidth={2} />
+    <Card className="stripe-panel relative overflow-hidden border-accent/30 bg-[#fff6f0] p-5 sm:p-6" elevated>
+      <div className="relative flex items-start gap-4">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 border-primary bg-primary">
+          <Cpu className="h-5 w-5 text-accent" strokeWidth={2} />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-accent-dark mb-1">
+        <div className="min-w-0 flex-1">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent-dark">
             Demo Mode
           </p>
-          <h3 className="text-base font-serif text-primary mb-2" style={{ fontWeight: 500 }}>
+          <h3 className="mb-2 font-serif text-base text-primary">
             当前为演示模式
           </h3>
           <p className="text-sm text-gray-600 leading-relaxed mb-4">

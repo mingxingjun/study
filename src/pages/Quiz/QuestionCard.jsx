@@ -180,9 +180,9 @@ const QuestionCard = ({
     <Card ref={cardRef} className="p-6 sm:p-8" elevated>
       {activeAgent && (
         <div className="flex items-center justify-end mb-5">
-          <div className="flex items-center bg-gray-50/80 rounded-full pl-1.5 pr-3 py-1.5 border border-gray-200">
+          <div className="flex items-center border border-primary/15 bg-gray-50/80 py-1.5 pl-1.5 pr-3">
             <span
-              className="w-1 h-5 rounded-full mr-2 flex-shrink-0"
+              className="mr-2 h-5 w-1 flex-shrink-0"
               style={{ backgroundColor: activeAgent.color }}
             />
             <AgentAvatar agent={activeAgent} size="sm" />
@@ -201,11 +201,11 @@ const QuestionCard = ({
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3 flex-wrap">
           {knowledgePoint && (
-            <span className="px-3 py-1 bg-gray-50 text-secondary rounded-full text-xs font-medium border border-gray-200">
+            <span className="border border-primary/15 bg-gray-50 px-2.5 py-1 text-xs font-medium text-secondary">
               {knowledgePoint.name}
             </span>
           )}
-          <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium border ${difficultyConfig.className}`}>
+          <span className={`border px-2.5 py-1 font-mono text-xs font-medium ${difficultyConfig.className}`}>
             {difficultyConfig.label}
           </span>
         </div>
@@ -419,7 +419,7 @@ const QuestionCard = ({
       )}
 
       {isGrading && gradingStatus && ['fill', 'calculation', 'essay'].includes(questionType) && (
-        <div className="mt-4 flex items-center gap-2 w-fit px-3.5 py-2 rounded-full bg-accent/8 border border-accent/25 text-sm text-primary animate-fade-in">
+        <div className="mt-4 flex w-fit items-center gap-2 border border-accent/25 bg-accent/8 px-3.5 py-2 text-sm text-primary animate-fade-in">
           <Loader2 size={14} className="animate-spin text-accent-dark" />
           <span className="font-mono text-xs tracking-wide">{gradingStatus}</span>
         </div>

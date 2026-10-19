@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import SectionTitle from '../../components/ui/SectionTitle';
 import { useStudyContext } from '../../context/StudyContext';
 import usePageTitle from '../../hooks/usePageTitle';
 import useAIStatus from '../../hooks/useAIStatus';
@@ -71,22 +72,6 @@ const getModelById = (provider, modelId) => {
  */
 const isConfigComplete = (config) =>
     !!config.providerId && !!config.modelId && !!config.apiKey;
-
-/**
- * 区块标题 - 衬线中文 + mono 英文 + 渐变细线
- */
-const SectionTitle = ({ title, subtitle, action }) => (
-    <div className="flex items-baseline gap-3 mb-6">
-        <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
-            {title}
-        </h2>
-        <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
-            {subtitle}
-        </span>
-        <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
-        {action}
-    </div>
-);
 
 /**
  * AI 配置中心页面
@@ -179,15 +164,16 @@ const Settings = () => {
 
     return (
         <div className="page-fade-in max-w-4xl mx-auto">
-            {/* 页面标题 - 衬线大字 + mono 标签 */}
-            <div className="mb-12 stagger-1">
-                <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+            {/* 页面标题 - 展示大字 + mono 眉标 */}
+            <div className="mb-10 stagger-1">
+                <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400">
+                    <span className="h-1.5 w-1.5 bg-accent" />
                     Configuration
                 </p>
-                <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
-                    AI 配置中心
+                <h1 className="mb-3 text-primary">
+                    AI 配置中心<span className="text-accent">.</span>
                 </h1>
-                <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
+                <p className="max-w-2xl text-base leading-relaxed text-gray-500">
                     统一管理三位 AI 学习助手的运行模式与服务商配置，所有设置实时生效并自动保存到本地。
                 </p>
             </div>
@@ -427,7 +413,7 @@ const Settings = () => {
 
                                 {/* 状态指示器 */}
                                 <div
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono tracking-wide ${
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.12em] ${
                                         complete
                                             ? 'bg-accent-light/30 text-accent-dark border border-accent/30'
                                             : 'bg-gray-100 text-gray-500 border border-gray-200'
@@ -439,7 +425,7 @@ const Settings = () => {
                                     }
                                 >
                                     <span
-                                        className={`inline-flex items-center justify-center w-1.5 h-1.5 rounded-full ${
+                                        className={`inline-flex items-center justify-center w-1.5 h-1.5 ${
                                             complete ? 'bg-accent' : 'bg-gray-400'
                                         }`}
                                     />
@@ -671,7 +657,7 @@ const Settings = () => {
 
                                 {/* 状态指示器 */}
                                 <div
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono tracking-wide ${
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.12em] ${
                                         complete
                                             ? 'bg-accent-light/30 text-accent-dark border border-accent/30'
                                             : 'bg-gray-100 text-gray-500 border border-gray-200'
@@ -685,7 +671,7 @@ const Settings = () => {
                                     }
                                 >
                                     <span
-                                        className={`inline-flex items-center justify-center w-1.5 h-1.5 rounded-full ${
+                                        className={`inline-flex items-center justify-center w-1.5 h-1.5 ${
                                             complete ? 'bg-accent' : 'bg-gray-400'
                                         }`}
                                     />

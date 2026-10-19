@@ -36,25 +36,22 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
     });
   }, [answerRecords, dailyRecords]);
 
-  // 自定义 Tooltip — 编辑风极简卡片
+  // 自定义 Tooltip — 硬边卡片
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3">
-          <p className="text-[10px] font-mono text-gray-400 mb-2 tracking-[0.2em] uppercase">
+        <div className="border-2 border-primary bg-white px-4 py-3 shadow-md">
+          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-gray-400">
             {label}
           </p>
           {payload.map((entry, index) => (
             <div key={index} className="flex items-center gap-2.5 text-sm">
               <span
-                className="w-1.5 h-1.5 rounded-full"
+                className="h-1.5 w-1.5"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-gray-500 font-sans">{entry.name}</span>
-              <span
-                className="font-serif font-medium text-primary ml-auto tabular-nums"
-                style={{ letterSpacing: '-0.02em' }}
-              >
+              <span className="text-gray-500">{entry.name}</span>
+              <span className="ml-auto font-serif tabular-nums text-primary">
                 {entry.value}{entry.name === '正确率' ? '%' : 'min'}
               </span>
             </div>
@@ -92,11 +89,11 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
       </div>
 
       {!hasData && (
-        <div className="bg-warm-50/60 rounded-xl p-12 text-center border border-dashed border-gray-200">
-          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-200/60 shadow-xs">
+        <div className="border border-dashed border-primary/25 bg-warm-50/60 p-12 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border border-primary/15 bg-white">
             <TrendingUp size={22} className="text-gray-400" strokeWidth={1.5} />
           </div>
-          <p className="font-serif text-base text-gray-700 mb-1.5" style={{ fontWeight: 500 }}>
+          <p className="mb-1.5 font-serif text-base text-gray-700">
             暂无学习数据
           </p>
           <p className="text-xs text-gray-400 font-mono tracking-wide">
@@ -116,14 +113,14 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
             />
             <XAxis
               dataKey="date"
-              tick={{ fill: '#8a8172', fontSize: 11, fontFamily: 'Fira Code' }}
+              tick={{ fill: '#7c7365', fontSize: 11, fontFamily: 'JetBrains Mono' }}
               axisLine={{ stroke: '#e6dfcf' }}
               tickLine={false}
               dy={8}
             />
             <YAxis
               yAxisId="left"
-              tick={{ fill: '#8a8172', fontSize: 11, fontFamily: 'Fira Code' }}
+              tick={{ fill: '#7c7365', fontSize: 11, fontFamily: 'JetBrains Mono' }}
               axisLine={false}
               tickLine={false}
             />
@@ -131,7 +128,7 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
               yAxisId="right"
               orientation="right"
               domain={[0, 100]}
-              tick={{ fill: '#8a8172', fontSize: 11, fontFamily: 'Fira Code' }}
+              tick={{ fill: '#7c7365', fontSize: 11, fontFamily: 'JetBrains Mono' }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `${v}%`}
@@ -139,7 +136,8 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#d8d1c0', strokeWidth: 1, strokeDasharray: '3 3' }} />
             <Legend
               wrapperStyle={{ paddingTop: '16px' }}
-              iconType="circle"
+              iconType="square"
+              iconSize={8}
               formatter={renderLegend}
             />
             <Line

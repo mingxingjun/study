@@ -12,6 +12,7 @@ import { generateQuestionsByKnowledgePoint, isAIConfigured } from '../../service
 import { buildImageKey, saveImage, deleteImage, isImageKey } from '../../services/imageStorage';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import SectionTitle from '../../components/ui/SectionTitle';
 import QuestionImage from '../../components/ui/QuestionImage';
 import MathRenderer from '../../components/MathRenderer';
 import FormulaInput from '../../components/FormulaInput';
@@ -105,22 +106,6 @@ const createEmptyForm = (materialId = 'manual') => ({
   image: '',
   materialId
 });
-
-/**
- * 区块标题 - 衬线中文 + mono 英文 + 渐变细线
- */
-const SectionTitle = ({ title, subtitle, action }) => (
-  <div className="flex items-baseline gap-3 mb-6">
-    <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
-      {title}
-    </h2>
-    <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
-      {subtitle}
-    </span>
-    <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
-    {action}
-  </div>
-);
 
 /**
  * 题库管理页面
@@ -251,6 +236,21 @@ const QuestionBank = () => {
     setForm(createEmptyForm(selectedBankId));
     setFormError('');
   }, [selectedBankId]);
+
+  // 弹窗打开时锁定页面滚动，并支持 Esc 关闭
+  useEffect(() => {
+    if (!isModalOpen) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') handleCloseModal();
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isModalOpen, handleCloseModal]);
 
   /**
    * 处理表单字段变更
@@ -699,17 +699,18 @@ const QuestionBank = () => {
 
   return (
     <div ref={pageRef} className="page-fade-in">
-      {/* 页面标题 - 衬线大字 + mono 标签 */}
-      <div className="mb-12 stagger-item">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+      {/* 页面标题 - 展示大字 + mono 眉标 */}
+      <div className="mb-10 stagger-item">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+            <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400">
+              <span className="h-1.5 w-1.5 bg-accent" />
               Question Library
             </p>
-            <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
-              题库管理
+            <h1 className="mb-3 text-primary">
+              题库管理<span className="text-accent">.</span>
             </h1>
-            <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
+            <p className="max-w-2xl text-base leading-relaxed text-gray-500">
               按文档管理题库，支持搜索、编辑、手动添加和 AI 出题
             </p>
           </div>
@@ -1133,21 +1134,28 @@ const QuestionBank = () => {
             className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
             onClick={handleCloseModal}
           />
-          <div className="relative min-h-full flex items-center justify-center p-4 sm:p-6">
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* 弹窗头部 - 编辑风 */}
-            <div className="bg-white border-b border-gray-100 px-6 py-5 flex items-center justify-between rounded-t-2xl z-10 flex-shrink-0">
+          <div className="relative flex min-h-full items-center justify-center p-4 sm:p-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={editingQuestion ? '编辑题目' : '新增题目'}
+            className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden border-2 border-primary bg-white shadow-lg"
+          >
+            {/* 弹窗头部 */}
+            <div className="z-10 flex flex-shrink-0 items-center justify-between border-b border-primary/10 bg-white px-6 py-5">
               <div>
-                <p className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em] mb-1">
+                <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-gray-400">
                   {editingQuestion ? 'Edit Question' : 'New Question'}
                 </p>
-                <h2 className="font-serif text-xl text-primary" style={{ fontWeight: 500 }}>
+                <h2 className="font-serif text-xl text-primary">
                   {editingQuestion ? '编辑题目' : '新增题目'}
                 </h2>
               </div>
               <button
                 onClick={handleCloseModal}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200 cursor-pointer"
+                autoFocus
+                aria-label="关闭弹窗"
+                className="cursor-pointer p-2 text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-600"
               >
                 <X size={20} strokeWidth={1.8} />
               </button>
@@ -1379,7 +1387,7 @@ const QuestionBank = () => {
               </div>
             </div>
 
-            <div className="bg-white border-t border-gray-100 px-6 py-4 flex justify-end gap-3 rounded-b-2xl flex-shrink-0">
+            <div className="flex justify-end gap-3 border-t border-primary/10 px-6 py-4">
               <Button variant="secondary" onClick={handleCloseModal}>
                 取消
               </Button>
@@ -1400,22 +1408,28 @@ const QuestionBank = () => {
             className="absolute inset-0 bg-primary/40 backdrop-blur-sm"
             onClick={handleCloseAIGenerator}
           />
-          <div className="relative min-h-full flex items-center justify-center p-4 sm:p-6">
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="relative flex min-h-full items-center justify-center p-4 sm:p-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI 按知识点出题"
+            className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden border-2 border-primary bg-white shadow-lg"
+          >
             {/* 弹窗头部 */}
-            <div className="border-b border-gray-100 px-6 py-5 flex items-center justify-between rounded-t-2xl">
+            <div className="flex items-center justify-between border-b border-primary/10 px-6 py-5">
               <div>
-                <p className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em] mb-1">
+                <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-gray-400">
                   AI Generator
                 </p>
-                <h2 className="font-serif text-xl text-primary flex items-center gap-2" style={{ fontWeight: 500 }}>
+                <h2 className="flex items-center gap-2 font-serif text-xl text-primary">
                   <Sparkles size={18} className="text-accent-dark" strokeWidth={1.8} />
                   AI 按知识点出题
                 </h2>
               </div>
               <button
                 onClick={handleCloseAIGenerator}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200 cursor-pointer"
+                aria-label="关闭弹窗"
+                className="cursor-pointer p-2 text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-600"
               >
                 <X size={20} strokeWidth={1.8} />
               </button>
@@ -1540,10 +1554,10 @@ const QuestionBank = () => {
                       <button
                         key={n}
                         onClick={() => setQuestionsPerType(n)}
-                        className={`w-10 h-10 rounded-full text-sm font-mono font-medium border transition-all duration-200 cursor-pointer ${
+                        className={`h-10 w-10 cursor-pointer border font-mono text-sm font-medium transition-colors duration-150 ${
                           questionsPerType === n
-                            ? 'bg-primary text-white border-primary shadow-sm'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-warm-50'
+                            ? 'border-primary bg-primary text-white'
+                            : 'border-primary/15 bg-white text-gray-700 hover:border-primary hover:bg-warm-50'
                         }`}
                       >
                         {n}
@@ -1554,7 +1568,7 @@ const QuestionBank = () => {
               </div>
             )}
 
-            <div className="border-t border-gray-100 px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+            <div className="flex justify-end gap-3 border-t border-primary/10 px-6 py-4">
               <Button variant="secondary" onClick={handleCloseAIGenerator}>
                 取消
               </Button>

@@ -9,6 +9,7 @@ import WrongBook from './pages/WrongBook';
 import QuestionBank from './pages/QuestionBank';
 import Supervise from './pages/Supervise';
 import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 import useReducedMotion from './hooks/useReducedMotion';
 
 function ScrollToTop() {
@@ -40,8 +41,8 @@ function PageTransition({ children }) {
 
     const anim = animate(mainRef.current, {
       opacity: [0, 1],
-      y: [14, 0],
-      duration: 420,
+      y: [10, 0],
+      duration: 320,
       ease: 'outCubic',
       onComplete: () => {
         if (mainRef.current) mainRef.current.style.transform = '';
@@ -53,6 +54,8 @@ function PageTransition({ children }) {
 
   return (
     <main
+      id="main"
+      tabIndex={-1}
       ref={mainRef}
       className="mx-auto w-full max-w-[1440px] px-5 pb-24 pt-24 sm:px-8 lg:px-14 lg:pt-14"
     >
@@ -66,6 +69,7 @@ function App() {
     <Router>
       <ScrollToTop />
       <div className="min-h-screen bg-transparent">
+        <a href="#main" className="skip-link">跳到主要内容</a>
         <Navbar />
         <div className="lg:pl-[264px]">
           <PageTransition>
@@ -77,6 +81,7 @@ function App() {
               <Route path="/wrong-book" element={<WrongBook />} />
               <Route path="/supervise" element={<Supervise />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </PageTransition>
         </div>
