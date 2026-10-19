@@ -36,54 +36,50 @@ const OnboardingSteps = () => {
 
   return (
     <div>
-      <div className="flex items-baseline gap-3 mb-6">
-        <h2 className="text-2xl font-serif text-primary" style={{ fontWeight: 400 }}>
-          三步开始
-        </h2>
-        <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="h-2.5 w-2.5 shrink-0 bg-accent" />
+        <h2 className="font-serif text-[22px] leading-none text-primary">三步开始</h2>
+        <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-400">
           Get Started
         </span>
-        <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+        <span className="ml-2 h-px flex-1 bg-primary/15" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {steps.map((step, idx) => {
           const Icon = step.icon;
           return (
             <Card
               key={step.id}
-              className="p-7 card-hover stagger-item relative overflow-hidden group"
+              className="card-hover group relative overflow-hidden p-6 stagger-item"
               elevated
             >
-              {/* 大号衬线编号 - 装饰性背景元素 */}
-              <span
-                className="absolute -top-2 -right-2 font-serif text-7xl text-gray-50 group-hover:text-accent/8 tabular-nums pointer-events-none transition-colors duration-300"
-                style={{ fontWeight: 400, letterSpacing: '-0.06em', lineHeight: 1 }}
-              >
+              {/* 大号展示编号 - 装饰性背景元素 */}
+              <span className="pointer-events-none absolute -right-2 -top-3 font-serif text-7xl tabular-nums text-gray-50 transition-colors duration-200 group-hover:text-accent/10">
                 {step.index}
               </span>
 
               <div className="relative">
-                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center mb-5 border border-accent/20">
-                  <Icon className="w-4 h-4 text-accent-dark" strokeWidth={2} />
+                <div className="mb-5 flex h-10 w-10 items-center justify-center border-2 border-accent/25 bg-accent/10">
+                  <Icon className="h-4 w-4 text-accent-dark" strokeWidth={2} />
                 </div>
 
-                <h3 className="text-lg font-serif text-primary mb-2" style={{ fontWeight: 500 }}>
+                <h3 className="mb-2 font-serif text-lg text-primary">
                   {step.title}
                 </h3>
 
-                <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                <p className="mb-6 text-sm leading-relaxed text-gray-500">
                   {step.description}
                 </p>
 
                 {step.isLast ? (
                   <Button className="w-full" onClick={() => navigate('/upload')}>
                     上传我的资料
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-2 text-[11px] text-gray-400 font-mono">
-                    <span className="w-5 h-px bg-gray-300" />
+                  <div className="flex items-center gap-2 font-mono text-[11px] text-gray-400">
+                    <span className="h-px w-5 bg-gray-300" />
                     <span>STEP {idx + 1}</span>
                   </div>
                 )}

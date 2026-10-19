@@ -43,25 +43,29 @@ const AgentsPanel = ({ agents, className = '', compact = false }) => {
           <Card
             key={agent.id}
             hover
-            className={`p-5 cursor-pointer ${staggerClass}`}
+            className={`group p-5 cursor-pointer ${staggerClass}`}
             onClick={() => toggleExpand(agent.id)}
+            role="button"
+            tabIndex={0}
+            aria-expanded={isExpanded}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleExpand(agent.id);
+              }
+            }}
           >
             <div className="flex items-start gap-3">
               <AgentAvatar agent={agent} size="md" className="flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-semibold text-primary whitespace-nowrap">{agent.name}</h3>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap"
-                    style={{
-                      backgroundColor: `${agent.color}15`,
-                      color: agent.color
-                    }}
-                  >
+                  <h3 className="whitespace-nowrap font-semibold text-primary">{agent.name}</h3>
+                  <span className="flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap border border-primary/15 bg-white px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em] text-gray-500">
+                    <span className="h-1.5 w-1.5" style={{ backgroundColor: agent.color }} />
                     {getStatusText(agent.status)}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1 line-clamp-1">{agent.description}</p>
+                <p className="mt-1 line-clamp-1 text-xs text-gray-500">{agent.description}</p>
 
                 {!isExpanded && (
                   <p className="text-sm text-gray-700 mt-3 line-clamp-2 leading-relaxed">
@@ -76,8 +80,8 @@ const AgentsPanel = ({ agents, className = '', compact = false }) => {
             </div>
 
             {isExpanded && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-3">
+              <div className="mt-4 border-t border-primary/10 pt-4">
+                <div className="mb-3 flex items-center justify-between">
                   <span className="text-xs font-semibold text-gray-500">对话历史</span>
                   <ChevronUp size={16} className="text-gray-400" />
                 </div>

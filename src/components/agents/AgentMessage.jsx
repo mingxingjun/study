@@ -152,8 +152,8 @@ const AgentMessage = ({ agent, message, isTyping = false, className = '' }) => {
         <div className={`flex items-start gap-3 animate-fade-in ${className}`}>
             <AgentAvatar agent={agent} size="sm" className="flex-shrink-0 mt-0.5" />
             <div
-                className="bg-gray-50 rounded-2xl rounded-tl-md px-4 py-3 max-w-[80%]"
-                style={{ borderLeft: `3px solid ${color}` }}
+                className="max-w-[80%] border-2 border-primary border-l-[6px] bg-white px-4 py-3"
+                style={{ borderLeftColor: color }}
             >
                 {isTyping ? (
                     <div className="flex items-center gap-1 py-1">

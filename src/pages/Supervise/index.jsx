@@ -9,22 +9,8 @@ import StatsCharts from './StatsCharts';
 import StreakDisplay from './StreakDisplay';
 import AgentMessage from '../../components/agents/AgentMessage';
 import Card from '../../components/ui/Card';
+import SectionTitle from '../../components/ui/SectionTitle';
 import useStaggerAnimation from '../../hooks/useStaggerAnimation';
-
-/**
- * 区块标题 - 衬线中文 + mono 英文 + 渐变细线
- */
-const SectionTitle = ({ title, subtitle }) => (
-    <div className="flex items-baseline gap-3 mb-6">
-        <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
-            {title}
-        </h2>
-        <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
-            {subtitle}
-        </span>
-        <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
-    </div>
-);
 
 const Supervise = () => {
   usePageTitle('督学中心');
@@ -55,17 +41,23 @@ const Supervise = () => {
 
   const supervisorAgent = agents.find(a => a.id === 'supervisor');
 
+  const totalFocusMinutes = Object.values(state.dailyRecords || {}).reduce(
+    (sum, record) => sum + (record.focusMinutes || 0),
+    0
+  );
+
   return (
     <div ref={pageRef} className="page-fade-in">
-      {/* 页面标题 - 衬线大字 + mono 标签 */}
-      <div className="mb-14 stagger-item">
-        <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+      {/* 页面标题 - 展示大字 + mono 眉标 */}
+      <div className="mb-10 stagger-item">
+        <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400">
+          <span className="h-1.5 w-1.5 bg-accent" />
           Focus · Check-in · Stats
         </p>
-        <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
-          督学中心
+        <h1 className="mb-3 text-primary">
+          督学中心<span className="text-accent">.</span>
         </h1>
-        <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
+        <p className="max-w-2xl text-base leading-relaxed text-gray-500">
           专注学习，劳逸结合。在这里管理你的番茄钟、每日打卡与学习数据。
         </p>
       </div>
@@ -125,13 +117,19 @@ const Supervise = () => {
         <div className="stagger-item">
           <SectionTitle title="学习热力图" subtitle="Heatmap" />
           <Card elevated className="p-6 lg:p-7">
-            <div className="flex items-baseline justify-between mb-5">
-              <h3 className="font-serif text-lg text-primary" style={{ fontWeight: 500 }}>
+            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
+              <h3 className="font-serif text-lg text-primary">
                 最近 12 周学习记录
               </h3>
-              <span className="text-[11px] text-gray-400 font-mono tracking-[0.2em] uppercase">
-                Last 12 Weeks
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-gray-400">
+                  Total <span className="font-semibold text-primary">{totalFocusMinutes}</span> min
+                </span>
+                <span className="h-1 w-1 bg-accent" />
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-gray-400">
+                  Last 12 Weeks
+                </span>
+              </div>
             </div>
             <HeatmapChart dailyRecords={state.dailyRecords} />
           </Card>

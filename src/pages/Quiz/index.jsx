@@ -394,7 +394,7 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-14 stagger-1">
-          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+          <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400"><span className="h-1.5 w-1.5 bg-accent" />Quiz · 刷题训练</p>
           <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
             开始刷题<span className="text-accent-dark">.</span>
           </h1>
@@ -427,7 +427,7 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-14 stagger-1">
-          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+          <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400"><span className="h-1.5 w-1.5 bg-accent" />Quiz · 刷题训练</p>
           <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
             开始刷题<span className="text-accent-dark">.</span>
           </h1>
@@ -457,7 +457,7 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-14 stagger-1">
-          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Result · 练习结果</p>
+          <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400"><span className="h-1.5 w-1.5 bg-accent" />Result · 练习结果</p>
           <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
             练习结果<span className="text-accent-dark">.</span>
           </h1>
@@ -482,7 +482,7 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-12 stagger-1">
-          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+          <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400"><span className="h-1.5 w-1.5 bg-accent" />Quiz · 刷题训练</p>
           <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
             开始刷题<span className="text-accent-dark">.</span>
           </h1>
@@ -503,7 +503,7 @@ const Quiz = () => {
     return (
       <div className="page-fade-in max-w-3xl mx-auto">
         <div className="mb-14 stagger-1">
-          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+          <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400"><span className="h-1.5 w-1.5 bg-accent" />Quiz · 刷题训练</p>
           <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
             开始刷题<span className="text-accent-dark">.</span>
           </h1>
@@ -531,7 +531,7 @@ const Quiz = () => {
     <div className="page-fade-in max-w-3xl mx-auto">
       {/* 页面标题区 - 衬线大字 + mono 标签 + 金色句点 */}
       <div className="mb-12 stagger-1">
-        <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">Quiz · 刷题训练</p>
+        <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400"><span className="h-1.5 w-1.5 bg-accent" />Quiz · 刷题训练</p>
         <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
           开始刷题<span className="text-accent-dark">.</span>
         </h1>

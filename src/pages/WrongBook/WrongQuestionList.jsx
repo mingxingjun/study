@@ -60,23 +60,23 @@ const WrongQuestionList = ({
 
   return (
     <Card className="overflow-hidden card-hover" elevated>
-      {/* 卡片头部 - 衬线标题 + 计数 + 筛选开关 */}
-      <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between gap-4">
-        <div className="flex items-baseline gap-3 min-w-0">
-          <h2 className="text-lg text-primary font-serif" style={{ fontWeight: 500 }}>
+      {/* 卡片头部 - 展示字标题 + 计数 + 筛选开关 */}
+      <div className="flex items-center justify-between gap-4 border-b border-primary/10 px-6 py-5">
+        <div className="flex min-w-0 items-baseline gap-3">
+          <h2 className="font-serif text-lg text-primary">
             错题列表
           </h2>
-          <span className="text-[11px] font-mono uppercase tracking-wider text-gray-400">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-gray-400">
             {wrongQuestions.length} ITEMS
           </span>
         </div>
         {wrongQuestions.length > 0 && (
           <button
             onClick={onTogglePrioritize}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-wider transition-all cursor-pointer border ${
+            className={`flex cursor-pointer items-center gap-1.5 border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors duration-150 ${
               prioritizeDue
-                ? 'bg-accent text-primary border-accent/40 shadow-gold'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-700'
+                ? 'border-primary bg-accent text-black'
+                : 'border-primary/15 bg-white text-gray-500 hover:border-primary hover:text-primary'
             }`}
             title="优先显示今日到期/逾期的错题"
           >
@@ -87,7 +87,7 @@ const WrongQuestionList = ({
       </div>
 
       {/* 列表区 - 限高可滚动 */}
-      <div className="max-h-[640px] overflow-y-auto">
+      <div className="scrollbar-dark max-h-[640px] overflow-y-auto">
         {wrongQuestions.map((wq, idx) => {
           const question = wq.question;
           const kp = sampleKnowledgePoints.find(k => k.id === question.knowledgePointId);
@@ -102,30 +102,29 @@ const WrongQuestionList = ({
             <button
               key={wq.id}
               onClick={() => onSelect(wq)}
-              className={`w-full text-left px-6 py-5 transition-colors duration-200 border-b border-gray-100 last:border-b-0 cursor-pointer relative ${
+              className={`relative w-full cursor-pointer border-b border-primary/10 px-6 py-5 text-left transition-colors duration-150 last:border-b-0 ${
                 isSelected
                   ? 'bg-warm-50'
                   : 'hover:bg-gray-50/60'
               }`}
             >
-              {/* 选中态左侧金色细线 */}
+              {/* 选中态左侧信号橙竖条 */}
               {isSelected && (
-                <span className="absolute left-0 top-0 bottom-0 w-px bg-accent" />
+                <span className="absolute bottom-0 left-0 top-0 w-[3px] bg-accent" />
               )}
               <div className="flex items-start gap-4">
-                {/* 大号衬线编号 */}
+                {/* 大号展示编号 */}
                 <span
-                  className={`font-serif tabular-nums flex-shrink-0 mt-0.5 ${
+                  className={`mt-0.5 flex-shrink-0 font-serif text-2xl tabular-nums ${
                     isSelected ? 'text-accent-dark' : 'text-gray-300'
                   }`}
-                  style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1, fontSize: '1.5rem' }}
                 >
                   {numberStr}
                 </span>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   {/* 题干预览 */}
                   <p
-                    className={`text-sm leading-relaxed line-clamp-2 ${
+                    className={`line-clamp-2 text-sm leading-relaxed ${
                       isMastered ? 'text-gray-400' : 'text-gray-800'
                     }`}
                   >
@@ -133,18 +132,18 @@ const WrongQuestionList = ({
                   </p>
 
                   {/* 标签行 - 知识点 / 复习状态 / 掌握状态 */}
-                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {kp && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-mono uppercase tracking-wider">
+                      <span className="border border-primary/15 bg-gray-50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-gray-500">
                         {kp.name}
                       </span>
                     )}
                     {!isMastered && (
                       <span
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border ${
+                        className={`flex items-center gap-1 border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] ${
                           isDue
-                            ? 'bg-accent/10 text-accent-dark border-accent/30'
-                            : 'bg-white text-gray-500 border-gray-200'
+                            ? 'border-accent/40 bg-accent/10 text-accent-dark'
+                            : 'border-primary/15 bg-white text-gray-500'
                         }`}
                       >
                         <Clock size={10} strokeWidth={2} />
@@ -152,7 +151,7 @@ const WrongQuestionList = ({
                       </span>
                     )}
                     {isMastered && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 bg-primary text-white rounded text-[10px] font-mono uppercase tracking-wider">
+                      <span className="flex items-center gap-1 border border-primary bg-primary px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-white">
                         <Check size={10} strokeWidth={2.5} />
                         Mastered
                       </span>

@@ -11,6 +11,7 @@ import { sampleKnowledgePoints } from '../../mock/sampleData';
 import { sampleQuestions } from '../../mock/questions';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import SectionTitle from '../../components/ui/SectionTitle';
 import FileUploader from './FileUploader';
 import ParsingProcess from './ParsingProcess';
 import ParseReview from './ParseReview';
@@ -56,26 +57,6 @@ const getDefaultExamDate = () => {
   date.setDate(date.getDate() + 14);
   return date.toISOString().split('T')[0];
 };
-
-/**
- * 区块标题 - 衬线小标题 + mono 英文副标 + 渐变细线
- */
-const SectionTitle = ({ title, subtitle, count }) => (
-  <div className="flex items-baseline gap-3 mb-6">
-    <h2 className="text-2xl text-primary font-serif" style={{ fontWeight: 400 }}>
-      {title}
-    </h2>
-    <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
-      {subtitle}
-    </span>
-    {count !== undefined && (
-      <span className="text-[11px] font-mono text-accent-dark tabular-nums ml-1">
-        {count}
-      </span>
-    )}
-    <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
-  </div>
-);
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -482,43 +463,44 @@ const Upload = () => {
     <>
       <div ref={pageRef} className="page-fade-in">
       <div className="max-w-4xl mx-auto">
-        {/* 标题区 - 衬线大字 + mono 日期 + 金色强调 */}
-        <div className="mb-14 stagger-item">
-          <p className="text-xs font-mono text-gray-400 uppercase tracking-[0.25em] mb-3">
+        {/* 标题区 - 展示大字 + mono 眉标 */}
+        <div className="mb-10 stagger-item">
+          <p className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-gray-400">
+            <span className="h-1.5 w-1.5 bg-accent" />
             上传与解析 · UPLOAD
           </p>
-          <h1 className="text-4xl md:text-5xl text-primary mb-3" style={{ fontWeight: 400, lineHeight: 1.1 }}>
+          <h1 className="mb-3 text-primary">
             上传资料，生成
-            <span className="text-accent-dark">专属题库</span>
+            <span className="text-accent">专属题库</span>
           </h1>
-          <p className="text-gray-500 text-base max-w-2xl leading-relaxed">
+          <p className="max-w-2xl text-base leading-relaxed text-gray-500">
             上传学习资料，AI 将为你生成专属复习计划与智能题库。
           </p>
         </div>
 
-        {/* 步骤指示器 - 衬线编号 + 精致细线 */}
-        <div className="flex flex-wrap items-center justify-center mb-14 stagger-item">
+        {/* 步骤指示器 - 方框编号 + 墨线连接 */}
+        <div className="mb-14 flex flex-wrap items-center justify-center gap-y-4 stagger-item">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center">
               <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-serif text-sm transition-colors duration-300 ${
+                <div className={`flex h-9 w-9 items-center justify-center border-2 font-serif text-sm transition-colors duration-300 ${
                   step >= s
-                    ? 'bg-primary text-accent-light shadow-sm'
-                    : 'bg-gray-50 text-gray-400 border border-gray-200'
-                }`} style={step >= s ? { fontWeight: 400, letterSpacing: '-0.02em' } : { fontWeight: 400 }}>
+                    ? 'border-primary bg-primary text-accent-light'
+                    : 'border-gray-200 bg-gray-50 text-gray-400'
+                }`}>
                   {s}
                 </div>
                 <div className="flex flex-col">
-                  <span className={`text-sm transition-colors duration-300 font-serif ${step >= s ? 'text-primary' : 'text-gray-400'}`} style={{ fontWeight: 400 }}>
+                  <span className={`font-serif text-sm transition-colors duration-300 ${step >= s ? 'text-primary' : 'text-gray-400'}`}>
                     {stepLabels[s - 1]}
                   </span>
-                  <span className={`text-[10px] font-mono uppercase tracking-[0.2em] transition-colors duration-300 ${step >= s ? 'text-accent-dark' : 'text-gray-300'}`}>
+                  <span className={`font-mono text-[10px] uppercase tracking-[0.2em] transition-colors duration-300 ${step >= s ? 'text-accent-dark' : 'text-gray-300'}`}>
                     {stepEnglish[s - 1]}
                   </span>
                 </div>
               </div>
               {s < 3 && (
-                <div className={`h-px w-16 mx-4 transition-colors duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                <div className={`mx-4 h-px w-16 transition-colors duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   step > s ? 'bg-primary' : 'bg-gray-200'
                 }`} />
               )}

@@ -41,13 +41,13 @@ const QuickActions = () => {
 
   return (
     <div>
-      <div className="flex items-baseline gap-3 mb-5">
-        <h2 className="text-xl font-serif text-primary" style={{ fontWeight: 500 }}>
-          快捷入口
-        </h2>
-        <span className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.2em]">
+      <div className="mb-5 flex items-center gap-3">
+        <span className="h-2.5 w-2.5 shrink-0 bg-accent" />
+        <h2 className="font-serif text-[22px] leading-none text-primary">快捷入口</h2>
+        <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-400">
           Quick Actions
         </span>
+        <span className="ml-2 h-px flex-1 bg-primary/15" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -60,21 +60,18 @@ const QuickActions = () => {
               className="p-5 relative group"
               onClick={() => navigate(action.path)}
             >
-              <ArrowUpRight className="absolute top-4 right-4 w-3.5 h-3.5 text-gray-300 group-hover:text-accent-dark transition-colors duration-200" />
+              <ArrowUpRight className="absolute right-4 top-4 h-3.5 w-3.5 text-gray-300 transition-all duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" />
 
-              {/* 大号衬线编号 */}
-              <span
-                className="font-serif text-2xl text-gray-200 group-hover:text-accent/40 tabular-nums block mb-3 transition-colors duration-200"
-                style={{ fontWeight: 400, lineHeight: 1, letterSpacing: '-0.04em' }}
-              >
+              {/* 大号展示编号 */}
+              <span className="mb-3 block font-serif text-2xl tabular-nums text-gray-200 transition-colors duration-150 group-hover:text-accent">
                 {String(idx + 1).padStart(2, '0')}
               </span>
 
-              <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center mb-3 border border-gray-200/60 group-hover:bg-primary group-hover:border-primary transition-all duration-200">
-                <Icon className="w-4 h-4 text-gray-600 group-hover:text-accent transition-colors duration-200" strokeWidth={2} />
+              <div className="mb-3 flex h-9 w-9 items-center justify-center border border-primary/15 bg-gray-50 transition-colors duration-150 group-hover:border-primary group-hover:bg-accent">
+                <Icon className="h-4 w-4 text-gray-600 transition-colors duration-150 group-hover:text-black" strokeWidth={2} />
               </div>
 
-              <h3 className="text-sm font-medium text-primary mb-0.5">
+              <h3 className="mb-0.5 text-sm font-semibold text-primary">
                 {action.title}
               </h3>
               <p className="text-[11px] text-gray-500">{action.description}</p>

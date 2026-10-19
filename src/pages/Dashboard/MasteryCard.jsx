@@ -9,13 +9,16 @@ const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#ff4d00
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / 100) * circumference;
+  const angle = (value / 100) * Math.PI * 2;
+  const dotX = size / 2 + radius * Math.cos(angle);
+  const dotY = size / 2 + radius * Math.sin(angle);
 
   return (
     <div
-      className="flex items-center justify-center relative"
+      className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      <svg width={size} height={size} className="transform -rotate-90">
+      <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -36,15 +39,15 @@ const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#ff4d00
           strokeLinecap="round"
           className="transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]"
         />
+        {value > 0 && (
+          <circle cx={dotX} cy={dotY} r={2} fill="#ffffff" stroke="#0b0a08" strokeWidth={1.5} />
+        )}
       </svg>
       <div className="absolute flex flex-col items-center justify-center">
-        <span
-          className="font-serif text-3xl text-primary tabular-nums"
-          style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
-        >
+        <span className="font-serif text-3xl leading-none text-primary tabular-nums">
           {value}
         </span>
-        <span className="font-mono text-[10px] text-gray-400 mt-0.5">%</span>
+        <span className="mt-1 font-mono text-[10px] text-gray-400">%</span>
       </div>
     </div>
   );
@@ -64,38 +67,35 @@ const MasteryCard = ({ answerRecords = [] }) => {
   const label = mastery >= 80 ? '表现优秀' : mastery >= 60 ? '稳步提升' : '持续积累';
 
   return (
-    <Card className="card-hover p-7" elevated>
-      <div className="flex items-center justify-between mb-7">
+    <Card className="card-hover p-6" elevated>
+      <div className="mb-6 flex items-center justify-between">
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-wider text-accent-dark mb-1">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent-dark">
             Mastery
           </p>
-          <h2 className="text-xl font-serif text-primary" style={{ fontWeight: 500 }}>
+          <h2 className="font-serif text-xl text-primary">
             掌握度
           </h2>
         </div>
-        <div className="w-9 h-9 bg-accent/10 rounded-xl flex items-center justify-center border border-accent/20">
-          <Trophy className="w-4 h-4 text-accent-dark" strokeWidth={2} />
+        <div className="flex h-9 w-9 items-center justify-center border-2 border-accent/25 bg-accent/10">
+          <Trophy className="h-4 w-4 text-accent-dark" strokeWidth={2} />
         </div>
       </div>
 
       <div className="flex items-center gap-6">
         <CircularProgress value={mastery} />
         <div className="flex-1">
-          <div className="flex items-baseline gap-1.5 mb-2">
-            <span
-              className="font-serif text-4xl text-primary tabular-nums"
-              style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
-            >
+          <div className="mb-2 flex items-baseline gap-1.5">
+            <span className="font-serif text-4xl leading-none text-primary tabular-nums">
               {mastery}
             </span>
-            <span className="text-sm text-gray-500 font-mono">%</span>
+            <span className="font-mono text-sm text-gray-500">%</span>
           </div>
-          <div className="flex items-center gap-1.5 mb-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+          <div className="mb-3 flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 bg-accent" />
             <span className="text-xs text-gray-500">{label}</span>
           </div>
-          <p className="font-mono text-[10px] text-gray-400 tabular-nums">
+          <p className="font-mono text-[10px] tabular-nums text-gray-400">
             基于 {answerRecords.length} 条答题记录
           </p>
         </div>

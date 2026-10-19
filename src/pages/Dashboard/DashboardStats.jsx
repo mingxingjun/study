@@ -10,17 +10,17 @@ import useCountUp from '../../hooks/useCountUp';
  * @param {number} [props.size=56] - 圆环尺寸
  * @param {number} [props.strokeWidth=3] - 描边宽度
  */
-const CircularProgress = ({ value, size = 56, strokeWidth = 3 }) => {
+const CircularProgress = ({ value, size = 56, strokeWidth = 4 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / 100) * circumference;
 
   return (
     <div
-      className="flex items-center justify-center relative"
+      className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      <svg width={size} height={size} className="transform -rotate-90">
+      <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -42,7 +42,7 @@ const CircularProgress = ({ value, size = 56, strokeWidth = 3 }) => {
         />
       </svg>
       <div className="absolute flex flex-col items-center justify-center">
-        <span className="font-serif text-base text-primary tabular-nums" style={{ fontWeight: 500 }}>
+        <span className="font-serif text-base tabular-nums text-primary">
           {Math.round(value)}
         </span>
         <span className="font-mono text-[8px] text-gray-400">%</span>
@@ -61,43 +61,40 @@ const StatCard = ({ item, index }) => {
 
   return (
     <Card
-      className="p-6 card-hover overflow-hidden group"
+      className="card-hover group overflow-hidden p-5"
       elevated
     >
       {/* 卡片顶部 - mono 编号 + 图标 */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200/60">
+          <div className="flex h-7 w-7 items-center justify-center border border-primary/15 bg-gray-50">
             {item.icon}
           </div>
-          <h3 className="text-xs text-gray-500 font-medium">{item.title}</h3>
+          <h3 className="text-xs font-medium text-gray-500">{item.title}</h3>
         </div>
-        <span className="font-mono text-[10px] text-gray-300 tabular-nums tracking-wider">
+        <span className="font-mono text-[10px] tabular-nums tracking-wider text-gray-300">
           {String(index + 1).padStart(2, '0')}
         </span>
       </div>
 
-      {/* 主数据 - 衬线大数字（数字滚动动画） */}
+      {/* 主数据 - 展示大字（数字滚动动画） */}
       <div className="flex items-end justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1 mb-2">
-            <span
-              className="font-serif text-4xl text-primary tabular-nums"
-              style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
-            >
+          <div className="mb-2 flex items-baseline gap-1">
+            <span className="font-serif text-4xl leading-none text-primary tabular-nums">
               {animatedValue}
             </span>
             {item.unit && (
-              <span className="text-xs text-gray-400 font-mono">{item.unit}</span>
+              <span className="font-mono text-xs text-gray-400">{item.unit}</span>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="w-1 h-1 rounded-full bg-accent flex-shrink-0" />
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <span className="h-1 w-1 bg-accent" />
             <span className="text-[11px] text-gray-500">{item.label}</span>
           </div>
 
-          <p className="font-mono text-[10px] text-gray-400 tabular-nums">
+          <p className="font-mono text-[10px] tabular-nums text-gray-400">
             {item.subtext}
           </p>
         </div>

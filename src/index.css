@@ -17,8 +17,8 @@
   --color-gray-100: #eae5d9;
   --color-gray-200: #d8d1c0;
   --color-gray-300: #b5ad99;
-  --color-gray-400: #8a8172;
-  --color-gray-500: #6b6458;
+  --color-gray-400: #7c7365;
+  --color-gray-500: #5f584b;
   --color-gray-600: #4d473d;
   --color-gray-700: #35302a;
   --color-gray-800: #1e1b17;
@@ -111,6 +111,11 @@ body {
   color: #0b0a08;
   line-height: 1.6;
   letter-spacing: -0.008em;
+  text-rendering: optimizeLegibility;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 /* ---------- 标题：超粗展示字 ---------- */
@@ -118,7 +123,8 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif);
   font-weight: 800;
   line-height: 1.04;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
 h1 {
@@ -193,7 +199,7 @@ h1, h2, h3 {
   to { transform: translateX(-50%); }
 }
 
-.page-fade-in { animation: pageFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.page-fade-in { animation: pageFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
 
 .stagger-1 { animation: staggerFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s backwards; }
 .stagger-2 { animation: staggerFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.12s backwards; }
@@ -364,4 +370,108 @@ button, a, input, textarea, select {
   background: #ff4d00;
   display: inline-block;
   animation: blink 1.6s steps(2, start) infinite;
+}
+
+/* ---------- 无障碍：跳转主内容 ---------- */
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 999;
+  transform: translateY(-160%);
+  background: #0b0a08;
+  color: #ffffff;
+  border: 2px solid #ff4d00;
+  padding: 10px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  transition: transform 0.16s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: none;
+}
+
+/* ---------- 强调面板斜纹 ---------- */
+
+.stripe-panel {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 77, 0, 0.08) 0,
+    rgba(255, 77, 0, 0.08) 1px,
+    transparent 1px,
+    transparent 10px
+  );
+}
+
+/* ---------- 深色区域滚动条 ---------- */
+
+.scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.scrollbar-dark::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-dark::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ---------- 数字对齐 ---------- */
+
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* ---------- 自动填充：保持纸面底色 ---------- */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: #0b0a08;
+  caret-color: #0b0a08;
+  transition: background-color 9999s ease-out;
+}
+
+/* ---------- 输入光标与占位 ---------- */
+
+input, textarea, select { caret-color: #ff4d00; }
+
+input::placeholder,
+textarea::placeholder {
+  color: #7c7365;
+  opacity: 1;
+}
+
+/* ---------- 移动端抽屉动效 ---------- */
+
+@keyframes drawerIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.drawer-panel { animation: drawerIn 0.24s cubic-bezier(0.16, 1, 0.3, 1); }
+.drawer-overlay { animation: overlayIn 0.18s ease-out; }
+
+/* ---------- 触控尺寸 ---------- */
+
+.tap-44 {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* ---------- 胶囊按钮统一直角化 ---------- */
+
+button.rounded-full {
+  border-radius: 0 !important;
 }

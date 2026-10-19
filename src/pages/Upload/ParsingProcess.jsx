@@ -68,11 +68,11 @@ const ParsingProcess = ({
         <ProgressBar value={progress} size="md" />
       </div>
 
-      {/* Agent 协作阶段 - 编号 + 衬线 */}
-      <div className="bg-white rounded-xl p-5 border border-gray-200/80">
-        <div className="flex items-baseline gap-2 mb-4">
-          <h3 className="text-sm font-serif text-primary" style={{ fontWeight: 500 }}>Agent 协作阶段</h3>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Pipeline</span>
+      {/* Agent 协作阶段 - 编号 + 展示字 */}
+      <div className="border-2 border-primary bg-white p-5">
+        <div className="mb-4 flex items-baseline gap-2">
+          <h3 className="font-serif text-sm text-primary">Agent 协作阶段</h3>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-gray-400">Pipeline</span>
         </div>
         <div className="space-y-3">
           {PARSE_STAGES.map((stage, idx) => {
@@ -81,16 +81,15 @@ const ParsingProcess = ({
 
             return (
               <div key={stage.label} className="flex items-center gap-4">
-                {/* 大号衬线编号 / 完成标记 */}
+                {/* 方框编号 / 完成标记 */}
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-serif text-sm transition-colors duration-300 ${
+                  className={`flex h-8 w-8 items-center justify-center border font-serif text-sm transition-colors duration-300 ${
                     done
-                      ? 'bg-primary text-accent-light shadow-sm'
+                      ? 'border-primary bg-primary text-accent-light'
                       : active
-                        ? 'bg-accent text-primary shadow-gold'
-                        : 'bg-gray-100 text-gray-400'
+                        ? 'border-primary bg-accent text-black'
+                        : 'border-primary/15 bg-gray-100 text-gray-400'
                   }`}
-                  style={{ fontWeight: 400, letterSpacing: '-0.02em' }}
                 >
                   {done ? (
                     <CheckCircle2 size={14} strokeWidth={2.2} />
@@ -100,10 +99,9 @@ const ParsingProcess = ({
                     String(idx + 1).padStart(2, '0')
                   )}
                 </div>
-                <div className="flex-1 flex items-baseline justify-between">
+                <div className="flex flex-1 items-baseline justify-between">
                   <span
-                    className={`text-sm transition-colors duration-300 font-serif ${active ? 'text-primary' : done ? 'text-gray-700' : 'text-gray-400'}`}
-                    style={{ fontWeight: 500 }}
+                    className={`font-serif text-sm transition-colors duration-300 ${active ? 'text-primary' : done ? 'text-gray-700' : 'text-gray-400'}`}
                   >
                     {stage.label}
                   </span>
