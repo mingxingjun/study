@@ -113,7 +113,7 @@ const Dashboard = () => {
     greetSent.current = true;
     const timer = setTimeout(async () => {
       if (isNewUser) {
-        await thinkAndSay('quiz-master', '你好！欢迎使用复习搭子，我是出题官', 800);
+        await thinkAndSay('quiz-master', '你好！欢迎使用折角，我是出题官', 800);
         await thinkAndSay('explainer', '我是讲解师，有不会的题目我来帮你分析！', 800);
         await thinkAndSay('supervisor', '我是督学员，会帮你制定计划、监督学习哦！', 800);
       } else if (isDemo) {
@@ -139,10 +139,10 @@ const Dashboard = () => {
           </p>
           <h1 className="mb-3 text-primary">
             你好，欢迎使用
-            <span className="text-accent">复习搭子</span>
+            <span className="text-accent">折角</span>
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-gray-500">
-            不只是通用题库 — 上传你的教材与笔记，AI 自动生成专属复习题库。
+            从折角处，继续读下去 — 上传你的教材与笔记，AI 自动生成专属复习题库。
           </p>
         </div>
 
@@ -217,7 +217,7 @@ const Dashboard = () => {
           <span className="text-accent">.</span>
         </h1>
         <p className="max-w-2xl text-base leading-relaxed text-gray-500">
-          不只是通用题库，上传你的教材 / 笔记，AI 自动生成专属复习题库
+          从折角处，继续读下去 — 上传教材 / 笔记，AI 自动生成专属复习题库
         </p>
       </div>
 
