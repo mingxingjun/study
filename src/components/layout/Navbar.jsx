@@ -5,6 +5,7 @@ import {
   Menu, X, ArrowUpRight
 } from 'lucide-react';
 import { useStudyContext } from '../../context/StudyContext';
+import BrandMark from '../ui/BrandMark';
 
 /**
  * 侧边栏导航 — "SIGNAL" 设计系统
@@ -36,15 +37,13 @@ const SidebarBody = ({ onNavigate }) => {
         onClick={onNavigate}
         className="brand-enter group flex items-center gap-3 px-6 pb-6 pt-7"
       >
-        <span className="flex h-10 w-10 items-center justify-center bg-accent font-serif text-xl leading-none text-black ring-1 ring-white/10 transition-transform duration-150 group-hover:-translate-y-0.5">
-          复
-        </span>
+        <BrandMark className="brand-enter h-10 w-10 ring-1 ring-white/10 transition-transform duration-150 group-hover:-translate-y-0.5" />
         <span className="min-w-0">
           <span className="block font-serif text-[19px] leading-tight tracking-tight text-white">
-            复习搭子
+            折角
           </span>
           <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.24em] text-white/40">
-            Study Buddy / 1.0
+            Dog-ear / 1.0
           </span>
         </span>
       </NavLink>
@@ -113,6 +112,10 @@ const SidebarBody = ({ onNavigate }) => {
           </span>
         </NavLink>
 
+        <p className="px-1 text-[10px] leading-relaxed tracking-[0.08em] text-white/35">
+          从折角处，继续读下去
+        </p>
+
         <p className="px-1 font-mono text-[9px] uppercase leading-relaxed tracking-[0.18em] text-white/25">
           Local-first · No cloud sync
         </p>
@@ -161,10 +164,8 @@ const Navbar = () => {
       {/* 移动端顶栏 */}
       <header className="fixed inset-x-0 top-0 z-[100] flex h-16 items-center justify-between border-b-2 border-black bg-[#0b0a08] px-4 text-white lg:hidden">
         <NavLink to="/" className="flex min-w-0 items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center bg-accent font-serif text-base text-black">
-            复
-          </span>
-          <span className="truncate font-serif text-base tracking-tight">复习搭子</span>
+          <BrandMark className="h-8 w-8" />
+          <span className="truncate font-serif text-base tracking-tight">折角</span>
         </NavLink>
         <div className="flex shrink-0 items-center gap-3">
           <span className="max-w-[84px] truncate font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">

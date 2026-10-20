@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 const usePageTitle = (title) => {
   useEffect(() => {
-    document.title = `复习搭子 - ${title}`;
+    document.title = `折角 · ${title}`;
   }, [title]);
 };
 
