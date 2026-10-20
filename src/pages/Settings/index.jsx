@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Key,
     ExternalLink,
+    ArrowRight,
     Check,
     Eye,
     EyeOff,
@@ -29,25 +31,10 @@ import { getCachedCatalog, syncProviderModels } from '../../services/modelCatalo
  * @type {Array<{key: string, name: string, desc: string, icon: Object}>}
  */
 const PRESET_META = [
-    { key: 'free', name: '免费组合', desc: '优先使用含免费额度的服务商与模型，零成本即可体验正式模式。', icon: Gift },
+    { key: 'free', name: '免费组合', desc: '优先使用含免费额度的服务商与模型，零成本即可体验完整功能。', icon: Gift },
     { key: 'costEffective', name: '性价比组合', desc: '在效果与成本之间取得平衡，适合日常复习与长期学习。', icon: Zap },
     { key: 'strongest', name: '最强组合', desc: '选用推理能力最强的模型，获得更精准的出题、讲解与计划。', icon: Crown }
 ];
-
-/**
- * 运行模式元数据
- * @type {Array<{key: string, name: string, desc: string}>}
- */
-const MODE_META = {
-    demo: {
-        name: '演示模式',
-        desc: '无需配置 API Key，使用内置示例数据即可完整体验上传、刷题、错题本、督学打卡等全部功能，适合首次了解产品或网络受限时使用。'
-    },
-    formal: {
-        name: '正式模式',
-        desc: '调用真实 AI 接口完成文档解析、出题、讲解与计划生成。需要为出题官、讲解师、督学员三位助手分别配置服务商、模型和 API Key。'
-    }
-};
 
 /**
  * 根据 providerId 获取服务商对象
@@ -84,9 +71,9 @@ const isConfigComplete = (config) =>
 const Settings = () => {
     usePageTitle('AI 配置中心');
 
-    const { state, setMode, setAIConfig, setAllAIConfig, resetAIConfig } =
+    const { state, setAIConfig, setAllAIConfig, resetAIConfig } =
         useStudyContext();
-    const { mode, aiConfig } = state;
+    const { aiConfig } = state;
 
     /** 控制 API Key 输入框明文 / 密文显示，按 Agent 分别管理 */
     const [showKeys, setShowKeys] = useState({
@@ -281,14 +268,6 @@ const Settings = () => {
     };
 
     /**
-     * 切换运行模式
-     * @param {string} targetMode - 'demo' 或 'formal'
-     */
-    const handleModeChange = (targetMode) => {
-        setMode(targetMode);
-    };
-
-    /**
      * 应用预设组合方案：整体替换 aiConfig
      * @param {string} presetKey - presetCombinations 的 key
      */
@@ -358,77 +337,17 @@ const Settings = () => {
                     AI 配置中心<span className="text-accent">.</span>
                 </h1>
                 <p className="max-w-2xl text-base leading-relaxed text-gray-500">
-                    统一管理三位 AI 学习助手的运行模式与服务商配置，所有设置实时生效并自动保存到本地。
+                    统一管理三位 AI 学习助手的服务商、模型与 API Key。主 AI 配置完整后会自动启用真实 AI，无需手动切换。
                 </p>
-            </div>
-
-            {/* 运行模式切换 */}
-            <div className="mb-12 stagger-2">
-                <SectionTitle title="运行模式" subtitle="Mode" />
-                <Card elevated className="p-6 lg:p-7">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {Object.entries(MODE_META).map(([key, meta], idx) => {
-                            const isActive = mode === key;
-                            return (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => handleModeChange(key)}
-                                    className={`text-left p-5 rounded-xl border transition-all duration-200 cursor-pointer relative overflow-hidden ${
-                                        isActive
-                                            ? 'border-primary bg-warm-50/60 shadow-sm'
-                                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/60'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <span
-                                                className="font-serif text-2xl text-gray-200 tabular-nums"
-                                                style={{ fontWeight: 400, letterSpacing: '-0.04em', lineHeight: 1 }}
-                                            >
-                                                {String(idx + 1).padStart(2, '0')}
-                                            </span>
-                                            <span
-                                                className={`font-serif text-lg ${isActive ? 'text-primary' : 'text-gray-700'}`}
-                                                style={{ fontWeight: 500 }}
-                                            >
-                                                {meta.name}
-                                            </span>
-                                        </div>
-                                        {isActive && (
-                                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent shadow-gold">
-                                                <Check
-                                                    className="w-3 h-3 text-primary"
-                                                    strokeWidth={3}
-                                                />
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="text-sm text-gray-500 leading-relaxed">
-                                        {meta.desc}
-                                    </p>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {mode === 'demo' && (
-                        <div className="mt-5 flex items-start gap-3 p-4 bg-accent-light/30 rounded-xl border border-accent/25">
-                            <Sparkles className="w-4 h-4 text-accent-dark flex-shrink-0 mt-0.5" strokeWidth={1.8} />
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                                当前为演示模式：无需 API Key，上传、刷题、错题讲解、督学打卡均使用示例数据完整可体验。若想使用自己的复习资料并调用真实 AI，请切换到正式模式。
-                            </p>
-                        </div>
-                    )}
-                    {mode === 'formal' && (
-                        <div className="mt-5 flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                            <Key className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" strokeWidth={1.8} />
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                                正式模式已开启：系统将为出题官、讲解师、督学员分别调用真实 AI 接口。请确保每位助手都配置了有效的服务商、模型与 API Key，否则对应功能将不可用。
-                            </p>
-                        </div>
-                    )}
-                </Card>
+                <p className="mt-3">
+                    <Link
+                        to="/manual"
+                        className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-gray-500 transition-colors hover:text-primary"
+                    >
+                        第一次使用？查看 使用手册与效果展示
+                        <ArrowRight className="h-3 w-3" />
+                    </Link>
+                </p>
             </div>
 
             {/* 健壮性说明 */}
@@ -1057,7 +976,7 @@ const Settings = () => {
                     所有配置仅保存在本地浏览器，不会上传至服务器。请妥善保管 API Key。
                 </p>
                 <p className="text-xs text-gray-400 font-mono tracking-wide">
-                    遇到模型无响应或返回异常时，可尝试切换服务商、检查 API Key 余额，或回到演示模式继续使用。
+                    遇到模型无响应或返回异常时，可尝试切换服务商、检查 API Key 余额，或到使用手册载入示例数据继续体验。
                 </p>
             </div>
         </div>
