@@ -4,9 +4,7 @@ import {
   LayoutDashboard, Upload, BookOpen, BookMarked, BookX, Clock, Settings,
   Menu, X, ArrowUpRight
 } from 'lucide-react';
-import { useStudyContext } from '../../context/StudyContext';
 import BrandMark from '../ui/BrandMark';
-
 /**
  * 侧边栏导航 — "SIGNAL" 设计系统
  * 深墨底色 + 编号索引 + 信号橙激活块；移动端折叠为顶部栏 + 抽屉
@@ -22,8 +20,6 @@ const NAV_ITEMS = [
 ];
 
 const SidebarBody = ({ onNavigate }) => {
-  const { state } = useStudyContext();
-  const isDemoMode = state.mode === 'demo';
   const location = useLocation();
 
   const isActive = (path) =>
@@ -92,23 +88,23 @@ const SidebarBody = ({ onNavigate }) => {
         })}
       </nav>
 
-      {/* 模式 + 页脚 */}
+      {/* 使用手册 + 页脚 */}
       <div className="space-y-3 border-t border-white/10 px-3 pb-5 pt-4">
         <NavLink
-          to="/settings"
+          to="/manual"
           onClick={onNavigate}
           style={{ '--i': 7 }}
           className="nav-enter group block border border-white/15 p-3 transition-colors duration-150 hover:border-accent hover:bg-white/[0.04]"
         >
           <span className="flex items-center justify-between">
             <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
-              <span className="h-1.5 w-1.5 bg-accent" />
-              {isDemoMode ? 'Demo Mode' : 'Live Mode'}
+              <BookOpen className="h-3 w-3" />
+              Guide & Demo
             </span>
             <ArrowUpRight className="h-3.5 w-3.5 text-white/35 transition-transform duration-150 group-hover:-translate-y-0.5" />
           </span>
           <span className="mt-2 block text-[11px] leading-relaxed text-white/45">
-            {isDemoMode ? '本地示例数据 · 无需配置 AI' : '真实 AI 接口 · 数据仅存本地'}
+            使用手册 · 效果展示 · 载入示例
           </span>
         </NavLink>
 

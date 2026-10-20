@@ -117,7 +117,7 @@ const Dashboard = () => {
         await thinkAndSay('explainer', '我是讲解师，有不会的题目我来帮你分析！', 800);
         await thinkAndSay('supervisor', '我是督学员，会帮你制定计划、监督学习哦！', 800);
       } else if (isDemo) {
-        await thinkAndSay('quiz-master', '欢迎体验演示模式！来试试刷题功能吧！', 800);
+        await thinkAndSay('quiz-master', '欢迎体验示例数据！来试试刷题功能吧！', 800);
       } else {
         await thinkAndSay('quiz-master', '欢迎回来！今天准备好开始学习了吗？', 800);
         await thinkAndSay('explainer', '遇到不会的题目随时问我，我会为你详细解析。', 1000);
@@ -170,12 +170,10 @@ const Dashboard = () => {
                 上传我的资料
                 <ArrowRight className="h-4 w-4" />
               </Button>
-              {state.mode === 'demo' && (
-                <Button variant="secondary" size="lg" onClick={handleLoadDemo}>
-                  <Play className="h-4 w-4" />
-                  先看看演示
-                </Button>
-              )}
+              <Button variant="secondary" size="lg" onClick={handleLoadDemo}>
+                <Play className="h-4 w-4" />
+                载入示例数据
+              </Button>
             </div>
           </div>
         </Card>
@@ -213,7 +211,7 @@ const Dashboard = () => {
           {formatDate()}
         </p>
         <h1 className="mb-3 text-primary">
-          {isDemo ? '演示模式' : '你好，欢迎回来'}
+          {isDemo ? '示例数据' : '你好，欢迎回来'}
           <span className="text-accent">.</span>
         </h1>
         <p className="max-w-2xl text-base leading-relaxed text-gray-500">

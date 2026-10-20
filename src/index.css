@@ -688,3 +688,13 @@ main h1 + p {
   transform-origin: left center;
   animation: ruleGrow 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
 }
+
+/* FAQ 展开：加号旋转 */
+.faq-plus {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+details[open] .faq-plus {
+  transform: rotate(45deg);
+}

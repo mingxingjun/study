@@ -45,6 +45,14 @@ const calculateCurrentStreak = (checkInDates) => {
 };
 
 /**
+ * 判断单个 Agent 的 AI 配置是否完整
+ * @param {Object} config
+ * @returns {boolean}
+ */
+const isAgentConfigured = (config) =>
+  Boolean(config?.providerId && config?.modelId && config?.apiKey);
+
+/**
  * @typedef {Object} Material
  * @property {string} id
  * @property {string} name
@@ -611,6 +619,20 @@ export const StudyProvider = ({ children }) => {
   useEffect(() => {
     saveData(STORAGE_KEY, state);
   }, [state]);
+
+  // 配置好主 AI 后自动进入正式模式（模式切换已从设置页移除）
+  const autoFormalRef = useRef(null);
+  useEffect(() => {
+    const ready = isAgentConfigured(state.aiConfig?.['quiz-master']);
+    if (autoFormalRef.current === null) {
+      autoFormalRef.current = ready;
+      return;
+    }
+    if (!autoFormalRef.current && ready && state.mode === 'demo') {
+      dispatch({ type: 'SET_MODE', payload: 'formal' });
+    }
+    autoFormalRef.current = ready;
+  }, [state.aiConfig, state.mode]);
 
   useEffect(() => {
     const today = getToday();

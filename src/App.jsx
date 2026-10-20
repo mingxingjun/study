@@ -9,6 +9,7 @@ import WrongBook from './pages/WrongBook';
 import QuestionBank from './pages/QuestionBank';
 import Supervise from './pages/Supervise';
 import Settings from './pages/Settings';
+import Manual from './pages/Manual';
 import NotFound from './pages/NotFound';
 import useReducedMotion from './hooks/useReducedMotion';
 
@@ -87,6 +88,7 @@ function App() {
               <Route path="/wrong-book" element={<WrongBook />} />
               <Route path="/supervise" element={<Supervise />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/manual" element={<Manual />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PageTransition>

@@ -516,7 +516,7 @@ const Upload = () => {
                   <AlertCircle size={20} className="text-amber-500 flex-shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm font-serif text-amber-800" style={{ fontWeight: 500 }}>请先在设置页面配置 AI</p>
-                    <p className="text-xs text-amber-600 mt-0.5 leading-relaxed">未配置 AI 服务时将使用演示数据，无法进行真实文档解析</p>
+                    <p className="text-xs text-amber-600 mt-0.5 leading-relaxed">未配置 AI 服务时将使用示例数据，无法进行真实文档解析</p>
                   </div>
                   <Link
                     to="/settings"
