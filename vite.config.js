@@ -19,13 +19,15 @@ export default defineConfig({
     }
   },
   build: {
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom', 'recharts', 'katex', 'react-katex', 'lucide-react'],
-          pdfjs: ['pdfjs-dist'],
-          mammoth: ['mammoth']
+          // 首屏只强制包含最核心的运行时；其余第三方库交给 Rollup
+          // 按「谁先用到谁下载」自动切分，避免 vendor 里塞进图表/公式/图形库。
+          vendor: ['react', 'react-dom', 'react-router-dom', 'scheduler'],
+          charts: ['recharts'],
+          math: ['katex', 'react-katex']
         }
       }
     }

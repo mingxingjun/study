@@ -41,7 +41,7 @@ const CheckIn = ({ onCheckIn }) => {
         className={`w-full cursor-pointer border-2 py-3.5 font-serif text-base transition-all duration-150 active:translate-y-0 ${
           isCheckedIn
             ? 'cursor-not-allowed border-primary/15 bg-gray-100 text-gray-500'
-            : 'border-primary bg-accent text-black hover:-translate-y-0.5 hover:shadow-md'
+            : 'border-primary bg-accent-light text-primary hover:-translate-y-0.5 hover:shadow-md'
         } ${isAnimating ? 'translate-y-0.5' : ''}`}
       >
         {isCheckedIn ? (

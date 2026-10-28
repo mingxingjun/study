@@ -187,7 +187,7 @@ const PomodoroTimer = ({ onFocusComplete }) => {
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={targetOffset}
-            style={isFocusMode ? { filter: 'drop-shadow(0 0 8px rgba(201, 162, 39, 0.25))' } : {}}
+            style={isFocusMode ? { filter: 'drop-shadow(0 0 8px rgba(13, 35, 73, 0.28))' } : {}}
           />
         </svg>
 

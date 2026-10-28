@@ -75,7 +75,7 @@ const WrongQuestionList = ({
             onClick={onTogglePrioritize}
             className={`flex cursor-pointer items-center gap-1.5 border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors duration-150 ${
               prioritizeDue
-                ? 'border-primary bg-accent text-black'
+                ? 'border-primary bg-accent-light text-primary'
                 : 'border-primary/15 bg-white text-gray-500 hover:border-primary hover:text-primary'
             }`}
             title="优先显示今日到期/逾期的错题"
@@ -103,7 +103,7 @@ const WrongQuestionList = ({
               key={wq.id}
               onClick={() => onSelect(wq)}
               style={{ '--d': idx }}
-              className={`row-in relative w-full cursor-pointer border-b border-primary/10 px-6 py-5 text-left transition-colors duration-150 last:border-b-0 ${
+              className={`cv-row row-in relative w-full cursor-pointer border-b border-primary/10 px-6 py-5 text-left transition-colors duration-150 last:border-b-0 ${
                 isSelected
                   ? 'bg-warm-50'
                   : 'hover:bg-gray-50/60'

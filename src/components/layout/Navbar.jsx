@@ -5,9 +5,10 @@ import {
   Menu, X, ArrowUpRight
 } from 'lucide-react';
 import BrandMark from '../ui/BrandMark';
+import { prefetchRoute } from '../../router/pages';
 /**
  * 侧边栏导航 — "SIGNAL" 设计系统
- * 深墨底色 + 编号索引 + 信号橙激活块；移动端折叠为顶部栏 + 抽屉
+ * 深海军蓝底色 + 编号索引 + 雾蓝激活块；移动端折叠为顶部栏 + 抽屉
  */
 const NAV_ITEMS = [
   { path: '/', label: '仪表盘', en: 'Dashboard', icon: LayoutDashboard },
@@ -60,6 +61,9 @@ const SidebarBody = ({ onNavigate }) => {
               to={item.path}
               end={item.path === '/'}
               onClick={onNavigate}
+              // 悬停 / 键盘聚焦时提前下载该页面的代码，点击后无需等待
+              onMouseEnter={() => prefetchRoute(item.path)}
+              onFocus={() => prefetchRoute(item.path)}
               style={{ '--i': idx }}
               className={`nav-enter group flex min-h-[44px] items-center gap-3 border-l-2 px-3 py-2.5 transition-colors duration-150 ${
                 active
@@ -93,6 +97,8 @@ const SidebarBody = ({ onNavigate }) => {
         <NavLink
           to="/manual"
           onClick={onNavigate}
+          onMouseEnter={() => prefetchRoute('/manual')}
+          onFocus={() => prefetchRoute('/manual')}
           style={{ '--i': 7 }}
           className="nav-enter group block border border-white/15 p-3 transition-colors duration-150 hover:border-[#bdcddc] hover:bg-white/[0.04]"
         >

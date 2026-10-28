@@ -87,7 +87,7 @@ const ParsingProcess = ({
                     done
                       ? 'border-primary bg-primary text-accent-light'
                       : active
-                        ? 'border-primary bg-accent text-black'
+                        ? 'border-primary bg-accent-light text-primary'
                         : 'border-primary/15 bg-gray-100 text-gray-400'
                   }`}
                 >

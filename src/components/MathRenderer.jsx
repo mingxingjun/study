@@ -138,8 +138,8 @@ const parseTextToSegments = (text) => {
     return result;
 };
 
-// 变量高亮背景色（金色半透明，契合黑白金极简设计系统）
-const HIGHLIGHT_BACKGROUND = 'rgba(201, 162, 39, 0.3)';
+// 变量高亮背景色（雾蓝半透明，契合深蓝 / 雾蓝极简设计系统）
+const HIGHLIGHT_BACKGROUND = 'rgba(189, 205, 220, 0.55)';
 // 块级公式容器类名，用于变量高亮作用域限定（行内公式不挂载此类）
 const BLOCK_CONTAINER_CLASS = 'math-block-container';
 
