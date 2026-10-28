@@ -214,7 +214,7 @@ const StudyPlan = ({ plan, dueReviewQuestions = [] }) => {
                 {tasksByDate[selectedDate].map((task, idx) => {
                   const status = getStatusStyle(task.status);
                   const StatusIcon = task.isReviewTask ? RefreshCw : status.icon;
-                  const nodeClass = task.isReviewTask ? 'bg-accent text-primary shadow-gold' : status.node;
+                  const nodeClass = task.isReviewTask ? 'bg-accent-light text-primary shadow-gold' : status.node;
                   return (
                     <div key={idx} className="bg-white rounded-lg p-3.5 flex items-center gap-3 border border-gray-200/80">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${nodeClass}`}>
@@ -259,7 +259,7 @@ const StudyPlan = ({ plan, dueReviewQuestions = [] }) => {
                 {allTasksSorted.map((task, idx) => {
                   const status = getStatusStyle(task.status);
                   const StatusIcon = task.isReviewTask ? RefreshCw : status.icon;
-                  const nodeClass = task.isReviewTask ? 'bg-accent text-primary shadow-gold' : status.node;
+                  const nodeClass = task.isReviewTask ? 'bg-accent-light text-primary shadow-gold' : status.node;
                   const iconColor = task.isReviewTask ? 'text-primary' : status.color;
                   return (
                     <div key={idx} className="relative">

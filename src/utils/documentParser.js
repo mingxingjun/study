@@ -4,14 +4,41 @@
  * 增强版：支持 PDF/Word 内嵌图片提取为 base64，用于多模态 AI 视觉识别
  */
 
-import * as pdfjsLib from 'pdfjs-dist';
-import mammoth from 'mammoth';
+/**
+ * pdfjs（约 460KB）与 mammoth（约 490KB）体积较大，且只有真正解析上传文件时才用得到。
+ * 这里改为按需动态加载：首屏与其它页面完全不会下载它们，
+ * 只有第一次解析 PDF / Word 时才会加载，且加载结果会被缓存复用。
+ */
+let pdfjsPromise = null;
+const loadPdfjs = () => {
+    if (!pdfjsPromise) {
+        pdfjsPromise = import('pdfjs-dist').then((mod) => {
+            // 配置 PDF.js worker 路径，确保多线程解析
+            mod.GlobalWorkerOptions.workerSrc = new URL(
+                'pdfjs-dist/build/pdf.worker.min.mjs',
+                import.meta.url
+            ).href;
+            return mod;
+        }).catch((error) => {
+            pdfjsPromise = null;
+            throw error;
+        });
+    }
+    return pdfjsPromise;
+};
 
-// 配置 PDF.js worker 路径，确保多线程解析
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url
-).href;
+let mammothPromise = null;
+const loadMammoth = () => {
+    if (!mammothPromise) {
+        mammothPromise = import('mammoth')
+            .then((mod) => mod.default || mod)
+            .catch((error) => {
+                mammothPromise = null;
+                throw error;
+            });
+    }
+    return mammothPromise;
+};
 
 // ==================== 康熙部首 → CJK 字符归一化 ====================
 // PDF 字体编码有时会将中文汉字映射到康熙部首区（U+2F00-U+2FD5），
@@ -101,6 +128,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const parsePDF = async (file, onProgress) => {
     // 读取文件为 ArrayBuffer，供 PDF.js 解析使用
     const arrayBuffer = await file.arrayBuffer();
+    const pdfjsLib = await loadPdfjs();
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdfDocument = await loadingTask.promise;
     const totalPages = pdfDocument.numPages;
@@ -136,6 +164,7 @@ export const parsePDF = async (file, onProgress) => {
  */
 export const parseWord = async (file) => {
     const arrayBuffer = await file.arrayBuffer();
+    const mammoth = await loadMammoth();
     const result = await mammoth.extractRawText({ arrayBuffer });
     return result.value;
 };
@@ -242,6 +271,7 @@ const imageDataToBase64 = (imgData) => {
  * @returns {Promise<void>}
  */
 const extractImagesFromPDFPage = async (page, images) => {
+    const pdfjsLib = await loadPdfjs();
     let opList;
     try {
         opList = await page.getOperatorList();
@@ -295,6 +325,7 @@ const extractImagesFromPDFPage = async (page, images) => {
  */
 export const parsePDFWithImages = async (file, onProgress) => {
     const arrayBuffer = await file.arrayBuffer();
+    const pdfjsLib = await loadPdfjs();
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdfDocument = await loadingTask.promise;
     const totalPages = pdfDocument.numPages;
@@ -335,6 +366,7 @@ export const parsePDFWithImages = async (file, onProgress) => {
  */
 export const parseWordWithImages = async (file) => {
     const arrayBuffer = await file.arrayBuffer();
+    const mammoth = await loadMammoth();
     const images = [];
 
     // mammoth.convertToHtml 会保留图片标签，通过 convertImage 钩子转换图片为 base64
@@ -413,6 +445,45 @@ export const parseDocumentWithImages = async (file, onProgress) => {
     throw new Error(`不支持的文件类型: ${file.name}`);
 };
 
+// ==================== 文本层版面解析（无视觉模型）====================
+
+/**
+ * 提取 PDF 每页的文本层原始数据，供 layout 模块做版面重建
+ * 不渲染页面、不调用任何模型，只读取 pdf.js 的 textContent
+ *
+ * @param {File} file - PDF 文件对象
+ * @param {Function} [onProgress] - 进度回调 (0-100)
+ * @returns {Promise<Array<{pageNumber:number,width:number,height:number,items:Array}>>}
+ */
+export const extractPdfPagesForLayout = async (file, onProgress) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfjsLib = await loadPdfjs();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdfDocument = await loadingTask.promise;
+    const totalPages = pdfDocument.numPages;
+    const pages = [];
+
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        const page = await pdfDocument.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1 });
+        const textContent = await page.getTextContent();
+        pages.push({
+            pageNumber: pageNum,
+            width: viewport.width,
+            height: viewport.height,
+            items: textContent.items
+        });
+        if (typeof onProgress === 'function') {
+            onProgress(Math.round((pageNum / totalPages) * 100));
+        }
+    }
+
+    if (typeof pdfDocument.destroy === 'function') {
+        await pdfDocument.destroy();
+    }
+    return pages;
+};
+
 // ==================== PDF 整页渲染（用于多模态 AI 看图解析 + 原文预览）====================
 
 /**
@@ -448,6 +519,7 @@ const MAX_PAGE_IMAGE_WIDTH = 2000;
  */
 export const renderPdfPages = async (file, onProgress, scale = DEFAULT_RENDER_SCALE) => {
     const arrayBuffer = await file.arrayBuffer();
+    const pdfjsLib = await loadPdfjs();
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdfDocument = await loadingTask.promise;
     const totalPages = pdfDocument.numPages;

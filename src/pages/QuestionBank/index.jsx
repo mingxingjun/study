@@ -1353,7 +1353,7 @@ const QuestionBank = () => {
                         onClick={() => handleChange('answer', opt.value)}
                         className={`flex-1 py-2.5 rounded-full border text-sm font-medium transition-all duration-200 cursor-pointer ${
                           form.answer === opt.value
-                            ? 'bg-accent text-primary border-accent shadow-gold'
+                            ? 'bg-accent-light text-primary border-accent shadow-gold'
                             : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-warm-50'
                         }`}
                       >
@@ -1447,9 +1447,9 @@ const QuestionBank = () => {
                         <div
                           className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono transition-all duration-200 ${
                             isDone
-                              ? 'bg-accent text-primary shadow-gold'
+                              ? 'bg-accent-light text-primary shadow-gold'
                               : isActive
-                                ? 'bg-accent text-primary shadow-gold'
+                                ? 'bg-accent-light text-primary shadow-gold'
                                 : 'bg-gray-100 text-gray-400'
                           }`}
                         >
@@ -1532,7 +1532,7 @@ const QuestionBank = () => {
                         onClick={() => toggleQuestionType(type.value)}
                         className={`px-3 py-2 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer min-h-[40px] touch-manipulation ${
                           selectedTypes.includes(type.value)
-                            ? 'bg-accent text-primary border-accent shadow-gold'
+                            ? 'bg-accent-light text-primary border-accent shadow-gold'
                             : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-warm-50'
                         }`}
                       >

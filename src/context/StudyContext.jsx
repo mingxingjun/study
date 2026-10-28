@@ -616,9 +616,51 @@ export const StudyProvider = ({ children }) => {
     stateRef.current = state;
   }, [state]);
 
+  /**
+   * 持久化：合并短时间内的连续变更再统一写入。
+   * 之前每次 dispatch 都同步 JSON.stringify 整个 state，
+   * 题库大时打字/答题会出现明显掉帧；现在合并 + 空闲写入。
+   * 页面隐藏或关闭前会强制落盘，保证不丢数据。
+   */
+  const persistTimerRef = useRef(null);
+  const flushPersist = useCallback(() => {
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current);
+      persistTimerRef.current = null;
+    }
+    saveData(STORAGE_KEY, stateRef.current);
+  }, []);
+
   useEffect(() => {
-    saveData(STORAGE_KEY, state);
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    persistTimerRef.current = setTimeout(() => {
+      persistTimerRef.current = null;
+      const write = () => saveData(STORAGE_KEY, stateRef.current);
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(write, { timeout: 1000 });
+      } else {
+        write();
+      }
+    }, 300);
+    return () => {
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+      persistTimerRef.current = null;
+    };
   }, [state]);
+
+  useEffect(() => {
+    // 页面进入后台/关闭时立即落盘，避免去抖窗口内的最后一次改动丢失
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flushPersist();
+    };
+    window.addEventListener('pagehide', flushPersist);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('pagehide', flushPersist);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      flushPersist();
+    };
+  }, [flushPersist]);
 
   // 配置好主 AI 后自动进入正式模式（模式切换已从设置页移除）
   const autoFormalRef = useRef(null);

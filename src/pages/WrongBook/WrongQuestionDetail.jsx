@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { animate, stagger } from 'animejs';
 import {
     ExternalLink, Check, Clock, Loader2, Brain, BookOpen, Lightbulb,
@@ -10,7 +10,8 @@ import Card from '../../components/ui/Card';
 import QuestionImage from '../../components/ui/QuestionImage';
 import MathRenderer from '../../components/MathRenderer';
 import VisualizationRenderer from '../../components/visualization/VisualizationRenderer';
-import FunctionPlot from '../../components/visualization/FunctionPlot';
+// jsxgraph 较重，仅在打开可视化编辑器时才加载
+const FunctionPlot = lazy(() => import('../../components/visualization/FunctionPlot'));
 import { useStudyContext } from '../../context/StudyContext';
 import { sampleKnowledgePoints } from '../../mock/sampleData';
 import useReducedMotion from '../../hooks/useReducedMotion';
@@ -209,7 +210,15 @@ const VisualizationFormModal = ({ open, onClose, onConfirm }) => {
                     <div>
                         <label className={labelClass}>实时预览</label>
                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                            <FunctionPlot data={buildPlotData(form)} />
+                            <Suspense
+                                fallback={
+                                    <div className="flex h-[220px] items-center justify-center font-mono text-[10px] uppercase tracking-[0.14em] text-gray-400">
+                                        Loading plot…
+                                    </div>
+                                }
+                            >
+                                <FunctionPlot data={buildPlotData(form)} />
+                            </Suspense>
                         </div>
                     </div>
                 </div>
