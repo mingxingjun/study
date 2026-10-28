@@ -10,7 +10,7 @@
  */
 const SectionTitle = ({ title, subtitle, action, count, className = '' }) => (
   <div className={`section-title mb-5 flex flex-wrap items-center gap-3 ${className}`}>
-    <span className="section-square h-2.5 w-2.5 shrink-0 bg-accent" />
+    <span className="section-square h-2.5 w-2.5 shrink-0 bg-primary" />
     <h2 className="font-serif text-[22px] leading-none text-primary">{title}</h2>
     {subtitle && (
       <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-400">

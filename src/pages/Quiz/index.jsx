@@ -435,7 +435,7 @@ const Quiz = () => {
         </div>
         <Card className="p-12 sm:p-16 text-center card-hover stagger-2" elevated>
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-7 shadow-md">
-            <Upload className="text-accent" size={28} strokeWidth={1.5} />
+            <Upload className="text-accent-light" size={28} strokeWidth={1.5} />
           </div>
           <h2 className="font-serif text-3xl text-primary mb-4" style={{ fontWeight: 400, letterSpacing: '-0.025em' }}>
             还没有可用题目

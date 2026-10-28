@@ -153,7 +153,7 @@ const Dashboard = () => {
 
           <div className="relative mx-auto max-w-2xl text-center">
             <div className="mx-auto mb-7 flex h-16 w-16 items-center justify-center border-2 border-primary bg-primary">
-              <Sparkles className="h-7 w-7 text-accent" strokeWidth={1.5} />
+              <Sparkles className="h-7 w-7 text-accent-light" strokeWidth={1.5} />
             </div>
 
             <h2 className="mb-4 text-3xl text-primary md:text-4xl">
@@ -247,10 +247,10 @@ const Dashboard = () => {
             <MasteryCard answerRecords={answerRecords} />
           </div>
 
-          {/* 今日待复习 - 信号橙强调卡片 */}
+          {/* 今日待复习 - 雾蓝强调卡片 */}
           <div className="stagger-item">
-            <Card className="card-hover relative overflow-hidden border-accent/30 bg-[#fff3ec] p-6" elevated>
-              <span className="absolute left-0 top-0 h-1 w-full bg-accent" />
+            <Card className="card-hover relative overflow-hidden border-primary/20 bg-[#e9f0f6] p-6" elevated>
+              <span className="absolute left-0 top-0 h-1 w-full bg-primary" />
               <div className="mb-5 flex items-start justify-between">
                 <div>
                   <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent-dark">
@@ -261,8 +261,8 @@ const Dashboard = () => {
                   </h3>
                   <p className="mt-1 font-mono text-[11px] text-gray-500">艾宾浩斯遗忘曲线</p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center border-2 border-primary bg-accent">
-                  <RefreshCw className="h-4 w-4 text-black" strokeWidth={2.4} />
+                <div className="flex h-10 w-10 items-center justify-center border-2 border-primary bg-accent-light">
+                  <RefreshCw className="h-4 w-4 text-primary" strokeWidth={2.4} />
                 </div>
               </div>
               <div className="mb-6 flex items-baseline gap-2">

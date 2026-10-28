@@ -26,22 +26,22 @@ const QuizResult = ({
   return (
     <Card
       className="mt-6 scale-in"
-      style={{ borderLeftWidth: '2px', borderLeftColor: isCorrect ? '#ff4d00' : '#a3a3a3' }}
+      style={{ borderLeftWidth: '2px', borderLeftColor: isCorrect ? '#2f6b5f' : '#8e3b4e' }}
       elevated
     >
       <div className="flex items-start gap-5">
-        {/* 状态徽标 - 正确金色实底 / 错误描边 */}
+        {/* 状态徽标 - 正确墨绿实底 / 错误酒红描边 */}
         <div
           className={`flex items-center justify-center w-12 h-12 rounded-xl flex-shrink-0 transition-colors ${
             isCorrect
-              ? 'bg-accent shadow-gold'
-              : 'bg-white border border-gray-300'
+              ? 'bg-[#2f6b5f] shadow-gold'
+              : 'bg-white border-2 border-[#8e3b4e]'
           }`}
         >
           {isCorrect ? (
-            <Check className="text-primary" size={22} strokeWidth={2.5} />
+            <Check className="text-white" size={22} strokeWidth={2.5} />
           ) : (
-            <X className="text-gray-500" size={22} strokeWidth={2.5} />
+            <X className="text-[#8e3b4e]" size={22} strokeWidth={2.5} />
           )}
         </div>
 
@@ -52,7 +52,7 @@ const QuizResult = ({
             </span>
           </div>
           <h3
-            className={`font-serif text-2xl ${isCorrect ? 'text-primary' : 'text-gray-700'}`}
+            className={`font-serif text-2xl ${isCorrect ? 'text-primary' : 'text-[#8e3b4e]'}`}
             style={{ fontWeight: 400, letterSpacing: '-0.025em' }}
           >
             {isCorrect ? '回答正确' : '回答错误'}

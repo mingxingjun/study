@@ -55,10 +55,10 @@ const QuestionCard = ({
     let anim;
 
     if (isCorrect) {
-      // 正确：背景色 #ffd8c7 → #ffffff，600ms
+      // 正确：背景色 #bdcddc → #f5f8fb，600ms
       // fromTo 用数组 [from, to] 实现
       anim = animate(node, {
-        backgroundColor: ['#ffd8c7', '#ffffff'],
+        backgroundColor: ['#bdcddc', '#f5f8fb'],
         duration: 600,
         ease: 'outQuad',
         onComplete: () => {
@@ -73,7 +73,7 @@ const QuestionCard = ({
         defaults: { duration: 80, ease: 'inOutQuad' }
       });
       // 初始红色背景，抖动 4 段后回到 0，并过渡到白色
-      utils.set(node, { backgroundColor: '#fee2e2' });
+      utils.set(node, { backgroundColor: '#f1e4e8' });
       tl.add({
         targets: node,
         x: [0, -6],
@@ -85,7 +85,7 @@ const QuestionCard = ({
         .add({
           targets: node,
           x: 0,
-          backgroundColor: '#ffffff',
+          backgroundColor: '#f5f8fb',
           duration: 250,
           ease: 'outQuad',
           onComplete: () => {

@@ -7,8 +7,8 @@ import { useMemo } from 'react';
 
 // ===== 设计系统色板 =====
 const COLORS = {
-    PRIMARY: '#0b0a08',
-    GRID: '#d8d1c0',
+    PRIMARY: '#0d2349',
+    GRID: '#bdcddc',
     AXIS_LABEL: '#666'
 };
 

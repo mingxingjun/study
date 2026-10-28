@@ -67,8 +67,8 @@ const QuickActions = () => {
                 {String(idx + 1).padStart(2, '0')}
               </span>
 
-              <div className="mb-3 flex h-9 w-9 items-center justify-center border border-primary/15 bg-gray-50 transition-colors duration-150 group-hover:border-primary group-hover:bg-accent">
-                <Icon className="h-4 w-4 text-gray-600 transition-colors duration-150 group-hover:text-black" strokeWidth={2} />
+              <div className="mb-3 flex h-9 w-9 items-center justify-center border border-primary/15 bg-gray-50 transition-colors duration-150 group-hover:border-primary group-hover:bg-accent-light">
+                <Icon className="h-4 w-4 text-gray-600 transition-colors duration-150 group-hover:text-primary" strokeWidth={2} />
               </div>
 
               <h3 className="mb-0.5 text-sm font-semibold text-primary">

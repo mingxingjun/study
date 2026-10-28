@@ -21,8 +21,8 @@ const WeakPointsChart = ({ weakPoints }) => {
   }
 
   const getLevel = (rate) => {
-    if (rate >= 60) return { label: '严重薄弱', color: 'bg-accent', text: 'text-accent-dark' };
-    if (rate >= 30) return { label: '需要巩固', color: 'bg-primary', text: 'text-primary' };
+    if (rate >= 60) return { label: '严重薄弱', color: 'bg-primary', text: 'text-primary' };
+    if (rate >= 30) return { label: '需要巩固', color: 'bg-accent', text: 'text-accent-dark' };
     return { label: '基本掌握', color: 'bg-gray-300', text: 'text-gray-400' };
   };
 
@@ -78,11 +78,11 @@ const WeakPointsChart = ({ weakPoints }) => {
       {/* 图例 */}
       <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-primary/10 pt-5">
         <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 bg-accent" />
+          <span className="h-1.5 w-1.5 bg-primary" />
           <span className="text-[11px] text-gray-500">严重薄弱 (≥60%)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 bg-primary" />
+          <span className="h-1.5 w-1.5 bg-accent" />
           <span className="text-[11px] text-gray-500">需要巩固 (30-59%)</span>
         </div>
         <div className="flex items-center gap-1.5">

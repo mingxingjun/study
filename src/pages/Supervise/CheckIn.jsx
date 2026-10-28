@@ -47,7 +47,7 @@ const CheckIn = ({ onCheckIn }) => {
         {isCheckedIn ? (
           <span className="flex items-center justify-center gap-2">
             <span className="flex h-5 w-5 items-center justify-center bg-primary">
-              <Check className="h-3 w-3 text-accent" strokeWidth={3} />
+              <Check className="h-3 w-3 text-accent-light" strokeWidth={3} />
             </span>
             <span>今日已打卡</span>
           </span>

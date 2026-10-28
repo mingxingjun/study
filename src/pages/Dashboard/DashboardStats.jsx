@@ -4,7 +4,7 @@ import ProgressBar from '../../components/ui/ProgressBar';
 import useCountUp from '../../hooks/useCountUp';
 
 /**
- * 圆环进度组件 - 精致金色描边
+ * 圆环进度组件 - 深蓝描边
  * @param {Object} props
  * @param {number} props.value - 当前数值（已由外部动画驱动，逐帧更新）
  * @param {number} [props.size=56] - 圆环尺寸
@@ -26,7 +26,7 @@ const CircularProgress = ({ value, size = 56, strokeWidth = 4 }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#eae5d9"
+          stroke="#e2eaf2"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -34,7 +34,7 @@ const CircularProgress = ({ value, size = 56, strokeWidth = 4 }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#ff4d00"
+          stroke="#0d2349"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -106,7 +106,7 @@ const StatCard = ({ item, index }) => {
         )}
         {item.visualType === 'bar' && (
           <div className="flex-shrink-0 w-full max-w-[120px]">
-            <ProgressBar value={animatedValue} size="md" color="#0b0a08" animated />
+            <ProgressBar value={animatedValue} size="md" color="#0d2349" animated />
           </div>
         )}
       </div>

@@ -2,14 +2,14 @@ import { useState, useMemo } from 'react';
 import { Calendar } from 'lucide-react';
 import { formatDate } from '../../utils/date';
 
-// 信号橙热力色阶（与设计系统一致）
+// 深海蓝热力色阶（与设计系统一致）
 const COLORS = [
-  '#f0ece2', // 无学习
-  '#ffe1d3', // 少量
-  '#ffb694', // 较少
-  '#ff8451', // 中等
-  '#ff4d00', // 较多
-  '#a72f00'  // 大量
+  '#e9f0f6', // 无学习
+  '#d5e1ec', // 少量
+  '#bdcddc', // 较少
+  '#93a6ba', // 中等
+  '#768294', // 较多
+  '#0d2349'  // 大量
 ];
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];

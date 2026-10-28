@@ -108,19 +108,19 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
           <LineChart data={chartData} margin={{ top: 10, right: 12, left: -8, bottom: 5 }}>
             <CartesianGrid
               strokeDasharray="2 4"
-              stroke="#e6dfcf"
+              stroke="#d4e0ea"
               vertical={false}
             />
             <XAxis
               dataKey="date"
-              tick={{ fill: '#7c7365', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-              axisLine={{ stroke: '#e6dfcf' }}
+              tick={{ fill: '#5f7084', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+              axisLine={{ stroke: '#d4e0ea' }}
               tickLine={false}
               dy={8}
             />
             <YAxis
               yAxisId="left"
-              tick={{ fill: '#7c7365', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+              tick={{ fill: '#5f7084', fontSize: 11, fontFamily: 'JetBrains Mono' }}
               axisLine={false}
               tickLine={false}
             />
@@ -128,12 +128,12 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
               yAxisId="right"
               orientation="right"
               domain={[0, 100]}
-              tick={{ fill: '#7c7365', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+              tick={{ fill: '#5f7084', fontSize: 11, fontFamily: 'JetBrains Mono' }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `${v}%`}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#d8d1c0', strokeWidth: 1, strokeDasharray: '3 3' }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#bdcddc', strokeWidth: 1, strokeDasharray: '3 3' }} />
             <Legend
               wrapperStyle={{ paddingTop: '16px' }}
               iconType="square"
@@ -144,20 +144,20 @@ const StatsCharts = ({ answerRecords = [], dailyRecords = {} }) => {
               yAxisId="left"
               type="monotone"
               dataKey="复习时长"
-              stroke="#0b0a08"
+              stroke="#0d2349"
               strokeWidth={2}
-              dot={{ fill: '#0b0a08', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, fill: '#0b0a08', stroke: '#f4f1e8', strokeWidth: 2 }}
+              dot={{ fill: '#0d2349', strokeWidth: 0, r: 3 }}
+              activeDot={{ r: 5, fill: '#0d2349', stroke: '#eef3f8', strokeWidth: 2 }}
             />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="正确率"
-              stroke="#ff4d00"
+              stroke="#768294"
               strokeWidth={2}
               strokeDasharray="4 4"
-              dot={{ fill: '#ff4d00', strokeWidth: 0, r: 3 }}
-              activeDot={{ r: 5, fill: '#ff4d00', stroke: '#f4f1e8', strokeWidth: 2 }}
+              dot={{ fill: '#768294', strokeWidth: 0, r: 3 }}
+              activeDot={{ r: 5, fill: '#768294', stroke: '#eef3f8', strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>

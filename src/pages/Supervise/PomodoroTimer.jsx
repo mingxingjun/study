@@ -137,9 +137,9 @@ const PomodoroTimer = ({ onFocusComplete }) => {
     }
   };
 
-  // 暖灰阶配色：专注模式金色进度环，休息模式温灰
-  const ringColor = isFocusMode ? '#ff4d00' : '#8a8172';
-  const bgRingColor = isFocusMode ? '#f4f1e8' : '#e6dfcf';
+  // 蓝灰阶配色：专注模式深蓝进度环，休息模式灰蓝
+  const ringColor = isFocusMode ? '#0d2349' : '#768294';
+  const bgRingColor = isFocusMode ? '#e2eaf2' : '#d4e0ea';
 
   return (
     <div className="flex flex-col items-center w-full relative">
@@ -223,7 +223,7 @@ const PomodoroTimer = ({ onFocusComplete }) => {
         <button
           onClick={handleStartPause}
           aria-label={isRunning ? '暂停' : '开始'}
-          className="w-16 h-16 rounded-full bg-primary text-accent flex items-center justify-center hover:bg-secondary transition-all duration-200 active:scale-95 cursor-pointer shadow-md hover:shadow-lg"
+          className="w-16 h-16 rounded-full bg-primary text-accent-light flex items-center justify-center hover:bg-secondary transition-all duration-200 active:scale-95 cursor-pointer shadow-md hover:shadow-lg"
         >
           {isRunning ? (
             <Pause className="w-6 h-6" fill="currentColor" strokeWidth={1.5} />

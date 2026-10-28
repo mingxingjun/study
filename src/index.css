@@ -1,6 +1,6 @@
 /**
  * 折角 Dog-ear — "SIGNAL" 设计系统
- * 新粗野编辑风：骨白纸面 / 墨黑结构 / 信号橙
+ * 深海军蓝结构 / 雾蓝纸面 / 灰蓝点色
  * 版式：Archivo Black 展示字 + Manrope 正文 + JetBrains Mono 数据
  */
 
@@ -9,35 +9,69 @@
 
 @theme {
   /* ---------- 基础色 ---------- */
-  --color-black: #0b0a08;
-  --color-white: #ffffff;
+  --color-black: #0d2349;
+  --color-white: #f5f8fb;
 
   /* ---------- 中性灰阶：暖骨白 → 墨黑 ---------- */
-  --color-gray-50: #f4f1e8;
-  --color-gray-100: #eae5d9;
-  --color-gray-200: #d8d1c0;
-  --color-gray-300: #b5ad99;
-  --color-gray-400: #7c7365;
-  --color-gray-500: #5f584b;
-  --color-gray-600: #4d473d;
-  --color-gray-700: #35302a;
-  --color-gray-800: #1e1b17;
-  --color-gray-900: #0b0a08;
-  --color-gray-950: #050504;
+  --color-gray-50: #eef3f8;
+  --color-gray-100: #e2eaf2;
+  --color-gray-200: #bdcddc;
+  --color-gray-300: #aebccb;
+  --color-gray-400: #5f7084;
+  --color-gray-500: #4f6076;
+  --color-gray-600: #40526a;
+  --color-gray-700: #30435b;
+  --color-gray-800: #1d314b;
+  --color-gray-900: #0d2349;
+  --color-gray-950: #08152b;
 
   /* ---------- 暖色 ---------- */
-  --color-warm-50: #faf7ef;
-  --color-warm-100: #f2ede0;
-  --color-warm-200: #e6dfcf;
-  --color-warm-300: #d2c9b4;
-  --color-warm-400: #a89d86;
+  --color-warm-50: #f5f8fb;
+  --color-warm-100: #e9f0f6;
+  --color-warm-200: #d4e0ea;
+  --color-warm-300: #aebccb;
+  --color-warm-400: #93a6ba;
 
-  /* ---------- 品牌：墨黑 + 信号橙 ---------- */
-  --color-primary: #0b0a08;
-  --color-secondary: #35302a;
-  --color-accent: #ff4d00;
-  --color-accent-light: #ffd8c7;
-  --color-accent-dark: #b83200;
+  /* ---------- 品牌：深海军蓝 + 雾蓝 + 灰蓝 ---------- */
+  --color-primary: #0d2349;
+  --color-secondary: #30435b;
+  --color-accent: #768294;
+  --color-accent-light: #bdcddc;
+  --color-accent-dark: #40526a;
+
+  /* ---------- 语义色：去饱和，融入蓝灰体系 ---------- */
+  --color-red-50: #f4e9ec;
+  --color-red-100: #edd9de;
+  --color-red-200: #dfbcc5;
+  --color-red-300: #c99aa7;
+  --color-red-400: #a86a7c;
+  --color-red-500: #8e3b4e;
+  --color-red-600: #7c3243;
+  --color-red-700: #692938;
+  --color-red-800: #571f2d;
+
+  --color-green-50: #e8f0ed;
+  --color-green-100: #d6e5df;
+  --color-green-200: #b5d0c7;
+  --color-green-300: #8fb5a9;
+  --color-green-400: #5f8f81;
+  --color-green-500: #2f6b5f;
+  --color-green-600: #285c51;
+  --color-green-700: #214d43;
+  --color-green-800: #1a3e36;
+
+  --color-amber-50: #f4efe3;
+  --color-amber-100: #ece2cd;
+  --color-amber-200: #dccba8;
+  --color-amber-300: #c7ae7f;
+  --color-amber-400: #ab8d55;
+  --color-amber-500: #94763f;
+  --color-amber-600: #836834;
+  --color-amber-700: #6e5628;
+  --color-amber-800: #5a4520;
+
+  --color-yellow-50: #f4f0e0;
+  --color-yellow-700: #6e5d21;
 
   /* ---------- 字体 ---------- */
   --font-sans: 'Manrope', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -54,12 +88,12 @@
   --radius-3xl: 6px;
 
   /* ---------- 阴影：硬偏移，不用柔和投影 ---------- */
-  --shadow-xs: 0 1px 0 rgba(11, 10, 8, 0.10);
-  --shadow-sm: 2px 2px 0 #0b0a08;
-  --shadow-md: 4px 4px 0 #0b0a08;
-  --shadow-lg: 6px 6px 0 #0b0a08;
-  --shadow-xl: 10px 10px 0 #0b0a08;
-  --shadow-gold: 4px 4px 0 #ff4d00;
+  --shadow-xs: 0 1px 0 rgba(13, 35, 73, 0.10);
+  --shadow-sm: 2px 2px 0 #0d2349;
+  --shadow-md: 4px 4px 0 #0d2349;
+  --shadow-lg: 6px 6px 0 #0d2349;
+  --shadow-xl: 10px 10px 0 #0d2349;
+  --shadow-gold: 4px 4px 0 #768294;
 }
 
 @layer base {
@@ -94,21 +128,21 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-  background-color: #f2efe7;
+  background-color: #dfe7f0;
 }
 
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f2efe7;
+  background-color: #dfe7f0;
   /* 细网格纸面 */
   background-image:
-    linear-gradient(rgba(11, 10, 8, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(11, 10, 8, 0.045) 1px, transparent 1px);
+    linear-gradient(rgba(13, 35, 73, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13, 35, 73, 0.05) 1px, transparent 1px);
   background-size: 32px 32px;
   background-attachment: fixed;
-  color: #0b0a08;
+  color: #0d2349;
   line-height: 1.6;
   letter-spacing: -0.008em;
   text-rendering: optimizeLegibility;
@@ -151,16 +185,16 @@ h1, h2, h3 {
 .shadow-xs { box-shadow: var(--shadow-xs); }
 .shadow-gold { box-shadow: var(--shadow-gold); }
 
-.hard-shadow { box-shadow: 6px 6px 0 #0b0a08; }
-.hard-shadow-sm { box-shadow: 3px 3px 0 #0b0a08; }
-.hard-shadow-accent { box-shadow: 6px 6px 0 #ff4d00; }
+.hard-shadow { box-shadow: 6px 6px 0 #0d2349; }
+.hard-shadow-sm { box-shadow: 3px 3px 0 #0d2349; }
+.hard-shadow-accent { box-shadow: 6px 6px 0 #768294; }
 
 /* 主内容区里的卡片边框统一转为墨线 */
-.border-gray-200 { border-color: #0b0a08; }
-.border-gray-200\/80 { border-color: rgba(11, 10, 8, 0.8); }
-.border-gray-200\/60 { border-color: rgba(11, 10, 8, 0.55); }
-.border-gray-300 { border-color: #0b0a08; }
-.border-gray-100 { border-color: rgba(11, 10, 8, 0.14); }
+.border-gray-200 { border-color: #0d2349; }
+.border-gray-200\/80 { border-color: rgba(13, 35, 73, 0.8); }
+.border-gray-200\/60 { border-color: rgba(13, 35, 73, 0.55); }
+.border-gray-300 { border-color: #0d2349; }
+.border-gray-100 { border-color: rgba(13, 35, 73, 0.14); }
 
 /* ---------- 入场动画 ---------- */
 
@@ -228,8 +262,8 @@ button, a, input, textarea, select {
 
 @media (hover: hover) {
   .card-hover:hover {
-    border-color: #0b0a08;
-    box-shadow: 6px 6px 0 #0b0a08;
+    border-color: #0d2349;
+    box-shadow: 6px 6px 0 #0d2349;
     transform: translate(-2px, -2px);
   }
 }
@@ -245,12 +279,12 @@ button, a, input, textarea, select {
   }
 }
 
-/* ---------- 高亮标记：橙色马克笔 ---------- */
+/* ---------- 高亮标记：雾蓝马克笔 ---------- */
 
 .gold-underline {
   position: relative;
   display: inline-block;
-  background-image: linear-gradient(transparent 68%, rgba(255, 77, 0, 0.42) 68%);
+  background-image: linear-gradient(transparent 68%, rgba(189, 205, 220, 0.9) 68%);
   padding: 0 0.06em;
 }
 
@@ -267,12 +301,12 @@ button, a, input, textarea, select {
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(11, 10, 8, 0.28);
+  background: rgba(13, 35, 73, 0.28);
   border: 3px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(11, 10, 8, 0.55);
+  background: rgba(13, 35, 73, 0.55);
   background-clip: padding-box;
   border: 3px solid transparent;
 }
@@ -280,16 +314,22 @@ button, a, input, textarea, select {
 /* ---------- 选区 ---------- */
 
 ::selection {
-  background-color: #ff4d00;
-  color: #0b0a08;
+  background-color: #0d2349;
+  color: #bdcddc;
 }
 
 /* ---------- 焦点 ---------- */
 
 *:focus-visible {
-  outline: 2px solid #ff4d00;
+  outline: 2px solid #0d2349;
   outline-offset: 2px;
   border-radius: 1px;
+}
+
+/* 深色侧栏 / 顶栏中的焦点改用雾蓝 */
+aside :focus-visible,
+header :focus-visible {
+  outline-color: #bdcddc;
 }
 
 /* ---------- 减少动画 ---------- */
@@ -314,16 +354,16 @@ button, a, input, textarea, select {
 }
 
 .custom-select option {
-  background-color: #ffffff;
-  color: #0b0a08;
+  background-color: #f5f8fb;
+  color: #0d2349;
   padding: 8px 12px;
 }
 
 .custom-select option:checked,
 .custom-select option:hover,
 .custom-select option:focus {
-  background-color: #ffd8c7;
-  color: #0b0a08;
+  background-color: #bdcddc;
+  color: #0d2349;
 }
 
 .custom-select::-ms-expand { display: none; }
@@ -339,10 +379,10 @@ button, a, input, textarea, select {
   letter-spacing: -0.02em;
 }
 
-/* ---------- 旧的金色渐变数字：改为橙黑渐变 ---------- */
+/* ---------- 品牌渐变数字 ---------- */
 
 .text-gold-gradient {
-  background: linear-gradient(120deg, #ff4d00 0%, #b83200 55%, #0b0a08 100%);
+  background: linear-gradient(120deg, #768294 0%, #40526a 55%, #0d2349 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -356,18 +396,18 @@ button, a, input, textarea, select {
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #6b6458;
+  color: #4f6076;
 }
 
 .hairline {
   height: 1px;
-  background: rgba(11, 10, 8, 0.18);
+  background: rgba(13, 35, 73, 0.18);
 }
 
 .dot-live {
   width: 7px;
   height: 7px;
-  background: #ff4d00;
+  background: #768294;
   display: inline-block;
   animation: blink 1.6s steps(2, start) infinite;
 }
@@ -380,9 +420,9 @@ button, a, input, textarea, select {
   left: 12px;
   z-index: 999;
   transform: translateY(-160%);
-  background: #0b0a08;
-  color: #ffffff;
-  border: 2px solid #ff4d00;
+  background: #0d2349;
+  color: #f5f8fb;
+  border: 2px solid #768294;
   padding: 10px 16px;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -400,8 +440,8 @@ button, a, input, textarea, select {
 .stripe-panel {
   background-image: repeating-linear-gradient(
     -45deg,
-    rgba(255, 77, 0, 0.08) 0,
-    rgba(255, 77, 0, 0.08) 1px,
+    rgba(13, 35, 73, 0.06) 0,
+    rgba(13, 35, 73, 0.06) 1px,
     transparent 1px,
     transparent 10px
   );
@@ -432,19 +472,19 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
-  -webkit-text-fill-color: #0b0a08;
-  caret-color: #0b0a08;
+  -webkit-box-shadow: 0 0 0 1000px #f5f8fb inset;
+  -webkit-text-fill-color: #0d2349;
+  caret-color: #0d2349;
   transition: background-color 9999s ease-out;
 }
 
 /* ---------- 输入光标与占位 ---------- */
 
-input, textarea, select { caret-color: #ff4d00; }
+input, textarea, select { caret-color: #768294; }
 
 input::placeholder,
 textarea::placeholder {
-  color: #7c7365;
+  color: #5f7084;
   opacity: 1;
 }
 
@@ -494,7 +534,7 @@ button.rounded-full {
   right: 0;
   z-index: 300;
   height: 3px;
-  background: #ff4d00;
+  background: #768294;
   transform-origin: left center;
   animation: routeBar 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
   pointer-events: none;
@@ -629,13 +669,13 @@ main h1 + p {
 
 @media (hover: hover) {
   .btn-crisp:hover {
-    box-shadow: 4px 4px 0 #0b0a08;
+    box-shadow: 4px 4px 0 #0d2349;
     transform: translate(-1px, -1px);
   }
 }
 
 .btn-crisp:active {
-  box-shadow: 0 0 0 #0b0a08;
+  box-shadow: 0 0 0 #0d2349;
   transform: translate(0, 0);
 }
 
