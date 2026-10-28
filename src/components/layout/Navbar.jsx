@@ -49,7 +49,7 @@ const SidebarBody = ({ onNavigate }) => {
 
       {/* 导航 */}
       <nav className="scrollbar-dark mt-4 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
-        <p className="px-3 pb-2 pt-2 font-mono text-[9px] uppercase tracking-[0.24em] text-white/25">
+        <p className="px-3 pb-2 pt-2 font-mono text-[9px] uppercase tracking-[0.24em] text-white/45">
           导航 · Navigation
         </p>
         {NAV_ITEMS.map((item, idx) => {
@@ -73,7 +73,7 @@ const SidebarBody = ({ onNavigate }) => {
             >
               <span
                 className={`w-5 font-mono text-[10px] tabular-nums ${
-                  active ? 'text-[#0d2349]/55' : 'text-white/30 group-hover:text-white/50'
+                  active ? 'text-[#0d2349]/55' : 'text-white/45 group-hover:text-white/70'
                 }`}
               >
                 {String(idx + 1).padStart(2, '0')}
@@ -82,7 +82,7 @@ const SidebarBody = ({ onNavigate }) => {
               <span className="text-[13px] font-semibold tracking-wide">{item.label}</span>
               <span
                 className={`ml-auto max-w-[72px] truncate font-mono text-[8px] uppercase tracking-[0.18em] ${
-                  active ? 'text-[#0d2349]/45' : 'text-white/0 group-hover:text-white/35'
+                  active ? 'text-[#0d2349]/45' : 'text-white/0 group-hover:text-white/50'
                 }`}
               >
                 {item.en}
@@ -107,18 +107,18 @@ const SidebarBody = ({ onNavigate }) => {
               <BookOpen className="h-3 w-3" />
               Guide & Demo
             </span>
-            <ArrowUpRight className="h-3.5 w-3.5 text-white/35 transition-transform duration-150 group-hover:-translate-y-0.5" />
+            <ArrowUpRight className="h-3.5 w-3.5 text-white/50 transition-transform duration-150 group-hover:-translate-y-0.5" />
           </span>
           <span className="mt-2 block text-[11px] leading-relaxed text-white/45">
             使用手册 · 效果展示 · 载入示例
           </span>
         </NavLink>
 
-        <p className="px-1 text-[10px] leading-relaxed tracking-[0.08em] text-white/35">
+        <p className="px-1 text-[10px] leading-relaxed tracking-[0.08em] text-white/50">
           从折角处，继续读下去
         </p>
 
-        <p className="px-1 font-mono text-[9px] uppercase leading-relaxed tracking-[0.18em] text-white/25">
+        <p className="px-1 font-mono text-[9px] uppercase leading-relaxed tracking-[0.18em] text-white/45">
           Local-first · No cloud sync
         </p>
       </div>
