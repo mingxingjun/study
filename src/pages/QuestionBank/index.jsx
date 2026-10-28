@@ -813,7 +813,7 @@ const QuestionBank = () => {
                       <div className={`flex-shrink-0 flex items-center gap-2`}>
                         <span
                           className={`font-serif text-sm tabular-nums ${
-                            isActive ? 'text-accent' : 'text-gray-300'
+                            isActive ? 'text-accent-light' : 'text-gray-400'
                           }`}
                           style={{ fontWeight: 400, letterSpacing: '-0.02em' }}
                         >

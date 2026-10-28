@@ -55,7 +55,7 @@ const OnboardingSteps = () => {
               elevated
             >
               {/* 大号展示编号 - 装饰性背景元素 */}
-              <span className="pointer-events-none absolute -right-2 -top-3 font-serif text-7xl tabular-nums text-gray-50 transition-colors duration-200 group-hover:text-accent/10">
+              <span className="pointer-events-none absolute -right-2 -top-3 font-serif text-7xl tabular-nums text-gray-200 transition-colors duration-200 group-hover:text-accent/25">
                 {step.index}
               </span>
 

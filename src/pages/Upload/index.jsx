@@ -494,7 +494,7 @@ const Upload = () => {
                   <span className={`font-serif text-sm transition-colors duration-300 ${step >= s ? 'text-primary' : 'text-gray-400'}`}>
                     {stepLabels[s - 1]}
                   </span>
-                  <span className={`font-mono text-[10px] uppercase tracking-[0.2em] transition-colors duration-300 ${step >= s ? 'text-accent-dark' : 'text-gray-300'}`}>
+                  <span className={`font-mono text-[10px] uppercase tracking-[0.2em] transition-colors duration-300 ${step >= s ? 'text-accent-dark' : 'text-gray-500'}`}>
                     {stepEnglish[s - 1]}
                   </span>
                 </div>
