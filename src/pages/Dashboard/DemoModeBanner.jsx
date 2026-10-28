@@ -37,10 +37,10 @@ const DemoModeBanner = () => {
   };
 
   return (
-    <Card className="stripe-panel relative overflow-hidden border-accent/30 bg-[#fff6f0] p-5 sm:p-6" elevated>
+    <Card className="stripe-panel relative overflow-hidden border-accent/30 bg-[#eaf1f7] p-5 sm:p-6" elevated>
       <div className="relative flex items-start gap-4">
         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border-2 border-primary bg-primary">
-          <Cpu className="h-5 w-5 text-accent" strokeWidth={2} />
+          <Cpu className="h-5 w-5 text-accent-light" strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.2em] text-accent-dark">

@@ -26,7 +26,7 @@ const SidebarBody = ({ onNavigate }) => {
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
   return (
-    <div className="flex h-full flex-col bg-[#0b0a08] text-white">
+    <div className="flex h-full flex-col bg-[#0d2349] text-white">
       {/* 品牌 */}
       <NavLink
         to="/"
@@ -63,13 +63,13 @@ const SidebarBody = ({ onNavigate }) => {
               style={{ '--i': idx }}
               className={`nav-enter group flex min-h-[44px] items-center gap-3 border-l-2 px-3 py-2.5 transition-colors duration-150 ${
                 active
-                  ? 'border-accent bg-accent text-black'
+                  ? 'border-[#bdcddc] bg-[#bdcddc] text-[#0d2349]'
                   : 'border-transparent text-white/60 hover:border-white/25 hover:bg-white/[0.06] hover:text-white'
               }`}
             >
               <span
                 className={`w-5 font-mono text-[10px] tabular-nums ${
-                  active ? 'text-black/55' : 'text-white/30 group-hover:text-white/50'
+                  active ? 'text-[#0d2349]/55' : 'text-white/30 group-hover:text-white/50'
                 }`}
               >
                 {String(idx + 1).padStart(2, '0')}
@@ -78,7 +78,7 @@ const SidebarBody = ({ onNavigate }) => {
               <span className="text-[13px] font-semibold tracking-wide">{item.label}</span>
               <span
                 className={`ml-auto max-w-[72px] truncate font-mono text-[8px] uppercase tracking-[0.18em] ${
-                  active ? 'text-black/45' : 'text-white/0 group-hover:text-white/35'
+                  active ? 'text-[#0d2349]/45' : 'text-white/0 group-hover:text-white/35'
                 }`}
               >
                 {item.en}
@@ -94,10 +94,10 @@ const SidebarBody = ({ onNavigate }) => {
           to="/manual"
           onClick={onNavigate}
           style={{ '--i': 7 }}
-          className="nav-enter group block border border-white/15 p-3 transition-colors duration-150 hover:border-accent hover:bg-white/[0.04]"
+          className="nav-enter group block border border-white/15 p-3 transition-colors duration-150 hover:border-[#bdcddc] hover:bg-white/[0.04]"
         >
           <span className="flex items-center justify-between">
-            <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
+            <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#bdcddc]">
               <BookOpen className="h-3 w-3" />
               Guide & Demo
             </span>
@@ -158,7 +158,7 @@ const Navbar = () => {
       </aside>
 
       {/* 移动端顶栏 */}
-      <header className="fixed inset-x-0 top-0 z-[100] flex h-16 items-center justify-between border-b-2 border-black bg-[#0b0a08] px-4 text-white lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-[100] flex h-16 items-center justify-between border-b-2 border-black bg-[#0d2349] px-4 text-white lg:hidden">
         <NavLink to="/" className="flex min-w-0 items-center gap-2.5">
           <BrandMark className="h-8 w-8" />
           <span className="truncate font-serif text-base tracking-tight">折角</span>

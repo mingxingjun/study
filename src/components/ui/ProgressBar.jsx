@@ -1,10 +1,10 @@
 /**
  * 进度条组件 — "SIGNAL" 设计系统
- * 直角轨道 + 墨黑/信号橙填充
+ * 直角轨道 + 深蓝/雾蓝填充
  * @param {Object} props
  * @param {number} [props.value=0] - 当前进度值 (0-100)
  * @param {number} [props.max=100] - 最大值
- * @param {string} [props.color='#0b0a08'] - 进度条颜色
+ * @param {string} [props.color='#0d2349'] - 进度条颜色
  * @param {string} [props.className] - 额外的 CSS 类名
  * @param {boolean} [props.showLabel=false] - 是否显示百分比标签
  * @param {string} [props.size='md'] - 进度条大小 (sm/md/lg)
@@ -13,7 +13,7 @@
 const ProgressBar = ({
   value = 0,
   max = 100,
-  color = '#0b0a08',
+  color = '#0d2349',
   className = '',
   showLabel = false,
   size = 'md',

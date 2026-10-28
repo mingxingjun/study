@@ -162,7 +162,7 @@ const ParseLog = ({ parseLog, onClose }) => {
                                     <ProgressBar
                                         value={ruleStats.successCount}
                                         max={ruleStats.totalCount}
-                                        color="#16a34a"
+                                        color="#2f6b5f"
                                         size="md"
                                     />
                                 </div>

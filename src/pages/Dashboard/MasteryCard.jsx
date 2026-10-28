@@ -4,9 +4,9 @@ import Card from '../../components/ui/Card';
 import useCountUp from '../../hooks/useCountUp';
 
 /**
- * 圆环进度组件 - 大号金色圆环
+ * 圆环进度组件 - 大号深蓝圆环
  */
-const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#ff4d00' }) => {
+const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#0d2349' }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / 100) * circumference;
@@ -25,7 +25,7 @@ const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#ff4d00
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#eae5d9"
+          stroke="#e2eaf2"
           strokeWidth={strokeWidth}
         />
         <circle
@@ -41,7 +41,7 @@ const CircularProgress = ({ value, size = 120, strokeWidth = 5, color = '#ff4d00
           className="transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]"
         />
         {value > 0 && (
-          <circle cx={dotX} cy={dotY} r={2} fill="#ffffff" stroke="#0b0a08" strokeWidth={1.5} />
+          <circle cx={dotX} cy={dotY} r={2} fill="#f5f8fb" stroke="#0d2349" strokeWidth={1.5} />
         )}
       </svg>
       <div className="absolute flex flex-col items-center justify-center">

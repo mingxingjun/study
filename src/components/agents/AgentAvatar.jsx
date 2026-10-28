@@ -17,7 +17,14 @@ import useReducedMotion from '../../hooks/useReducedMotion';
  * @param {string} [props.className] - 额外的 CSS 类名
  */
 const AgentAvatar = ({ agent, size = 'md', className = '' }) => {
-  const { color, avatarEmoji, role, status = 'idle' } = agent;
+  const { avatarEmoji, role, status = 'idle' } = agent;
+  // 统一使用新配色，避免旧本地数据里的历史颜色残留
+  const roleColors = {
+    quizMaster: '#0d2349',
+    explainer: '#40526a',
+    supervisor: '#30435b'
+  };
+  const color = roleColors[role] || agent.color || '#0d2349';
   const reducedMotion = useReducedMotion();
   const avatarRef = useRef(null);
 
@@ -106,7 +113,7 @@ const AgentAvatar = ({ agent, size = 'md', className = '' }) => {
       default:
         return {
           ...base,
-          borderColor: '#d8d1c0'
+          borderColor: '#bdcddc'
         };
     }
   };
@@ -124,7 +131,7 @@ const AgentAvatar = ({ agent, size = 'md', className = '' }) => {
         />
         <div
           className={`${config.container} rounded-full flex items-center justify-center bg-white z-10 ${config.text}`}
-          style={{ border: '2px solid #d8d1c0' }}
+          style={{ border: '2px solid #bdcddc' }}
         >
           {renderContent()}
         </div>
